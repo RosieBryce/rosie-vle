@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Code Library · VLE</title>
+  <link rel="stylesheet" href="../shared.css">
+  <script src="../shared.js"></script>
+  <style>
+    .lib-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .lib-card {
+      display: block;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem 1.5rem;
+      text-decoration: none;
+      color: var(--text);
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .lib-card:hover {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(88,166,255,.12);
+    }
+    .lib-card.dim {
+      opacity: .45;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    .lib-card-top {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      margin-bottom: .6rem;
+    }
+    .lib-status {
+      font-size: .7rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; padding: .2rem .55rem; border-radius: 99px;
+      margin-left: auto;
+    }
+    .status-live    { background: var(--blue-bg); color: var(--blue); border: 1px solid rgba(88,166,255,.3); }
+    .status-coming  { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+
+    .lib-card-title { font-weight: 700; font-size: .975rem; margin-bottom: .3rem; }
+    .lib-card-meta  { font-size: .8rem; color: var(--muted); line-height: 1.5; }
+
+    .block-label {
+      font-size: .75rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--muted);
+      margin: 1.75rem 0 .75rem;
+    }
+    .block-label:first-of-type { margin-top: 0; }
+  </style>
+</head>
+<body>
+<script>initNav('../');</script>
+
+<div class="container">
+
+  <div style="margin-bottom:1.75rem">
+    <h1 style="font-size:1.4rem;font-weight:700;letter-spacing:-.02em;margin-bottom:.3rem">Code Library</h1>
+    <p style="color:var(--muted);font-size:.875rem">
+      Every model from the certificate — annotated from first principles.
+      Assumes little prior knowledge. Read the context, then study the code.
+    </p>
+  </div>
+
+  <!-- ── Core ML block ── -->
+  <div class="block-label">Core ML &amp; Deep Learning (Courses 1–6)</div>
+  <div class="lib-grid">
+
+    <a class="lib-card" href="c03.html">
+      <div class="lib-card-top">
+        <span style="font-size:1.3rem">📖</span>
+        <span class="lib-status status-live">Live</span>
+      </div>
+      <div class="lib-card-title">Course 3 — Keras &amp; TensorFlow</div>
+      <div class="lib-card-meta">10 models · Functional API · CNN · Transfer Learning · Fine-Tuning · Transformer · Autoencoder · VAE · GAN · DQN</div>
+    </a>
+
+    <div class="lib-card dim">
+      <div class="lib-card-top">
+        <span style="font-size:1.3rem">📖</span>
+        <span class="lib-status status-coming">C4</span>
+      </div>
+      <div class="lib-card-title">Course 4 — Intro to PyTorch</div>
+      <div class="lib-card-meta">Training loop · autograd · linear regression · logistic regression · DataLoader</div>
+    </div>
+
+    <div class="lib-card dim">
+      <div class="lib-card-top">
+        <span style="font-size:1.3rem">📖</span>
+        <span class="lib-status status-coming">C5</span>
+      </div>
+      <div class="lib-card-title">Course 5 — Deep Learning with PyTorch</div>
+      <div class="lib-card-meta">Cross-entropy · softmax regression · shallow NNs · deep NNs · CNNs in PyTorch</div>
+    </div>
+
+  </div>
+
+  <!-- ── Gen AI block ── -->
+  <div class="block-label">Gen AI (Courses 7–13) · Build as you reach each course</div>
+  <div class="lib-grid">
+
+    <div class="lib-card dim">
+      <div class="lib-card-top">
+        <span style="font-size:1.3rem">📖</span>
+        <span class="lib-status status-coming">C7–C9</span>
+      </div>
+      <div class="lib-card-title">Courses 7–9 — LLMs &amp; Transformers</div>
+      <div class="lib-card-meta">Tokenisation · pretraining · GPT-style generation · decoding strategies</div>
+    </div>
+
+    <div class="lib-card dim">
+      <div class="lib-card-top">
+        <span style="font-size:1.3rem">📖</span>
+        <span class="lib-status status-coming">C10–C11</span>
+      </div>
+      <div class="lib-card-title">Courses 10–11 — Fine-Tuning</div>
+      <div class="lib-card-meta">Full fine-tuning · LoRA / PEFT · RLHF · DPO · QLoRA</div>
+    </div>
+
+    <div class="lib-card dim">
+      <div class="lib-card-top">
+        <span style="font-size:1.3rem">📖</span>
+        <span class="lib-status status-coming">C12–C13</span>
+      </div>
+      <div class="lib-card-title">Courses 12–13 — RAG &amp; Agents</div>
+      <div class="lib-card-meta">LangChain · RAG pipeline · prompt engineering · LangChain agents</div>
+    </div>
+
+  </div>
+
+</div>
+</body>
+</html>

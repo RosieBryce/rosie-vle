@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bias–Variance Tradeoff · VLE Visualisations</title>
+  <link rel="stylesheet" href="../shared.css">
+  <script src="../shared.js"></script>
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+  <style>
+    input[type=range] { accent-color: var(--blue); flex: 1; min-width: 120px; max-width: 280px; }
+    .ctrl-label { font-size: .83rem; color: var(--muted); min-width: 130px; flex-shrink: 0; }
+    .ctrl-value { font-size: .83rem; color: var(--blue); font-variant-numeric: tabular-nums; min-width: 45px; }
+    .zone-tag { display: inline-block; padding: .15rem .55rem; border-radius: 4px; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+    .zone-under { background: var(--blue-bg); color: var(--blue); border: 1px solid rgba(88,166,255,.3); }
+    .zone-sweet { background: var(--green-bg); color: var(--green); border: 1px solid rgba(63,185,80,.3); }
+    .zone-over  { background: var(--red-bg);  color: var(--red);  border: 1px solid rgba(248,81,73,.3); }
+  </style>
+</head>
+<body>
+<script>initNav('../');</script>
+
+<div class="container">
+
+  <!-- Header -->
+  <div style="margin-bottom:1.5rem">
+    <div class="tag tag-blue" style="margin-bottom:.4rem">Visualisation</div>
+    <h1 style="font-size:1.4rem;font-weight:700;letter-spacing:-.02em;margin-bottom:.375rem">Bias–Variance Tradeoff</h1>
+    <p style="color:var(--muted);font-size:.875rem;line-height:1.55">
+      A core ML concept and a common assessment topic. A model with high bias underfits — it's too simple to
+      capture the true pattern. A model with high variance overfits — it memorises training noise instead of
+      learning the underlying function. Adjusting model complexity moves you along this tradeoff.
+    </p>
+  </div>
+
+  <!-- Controls -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.25rem;margin-bottom:1rem">
+    <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:.875rem">
+      <span class="ctrl-label">Polynomial degree</span>
+      <input type="range" id="deg-sl" min="1" max="12" step="1" value="3" oninput="setDeg(+this.value)">
+      <span class="ctrl-value" id="deg-val">3</span>
+      <span style="font-size:.78rem;color:var(--muted);margin-left:.5rem" id="zone-label"></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+      <span class="ctrl-label">Noise level</span>
+      <input type="range" id="noise-sl" min="0.0" max="1.0" step="0.05" value="0.3" oninput="setNoise(+this.value)">
+      <span class="ctrl-value" id="noise-val">0.30</span>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+    <div>
+      <div style="font-size:.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.375rem">Data + Fitted Curve</div>
+      <div id="fit-chart" style="height:320px"></div>
+    </div>
+    <div>
+      <div style="font-size:.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.375rem">Train vs Test Error by Degree</div>
+      <div id="err-chart" style="height:320px"></div>
+    </div>
+  </div>
+
+  <!-- Conceptual explanation -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.875rem;margin-bottom:1.5rem">
+    <div class="card card-blue">
+      <div style="margin-bottom:.5rem"><span class="zone-tag zone-under">Underfitting</span></div>
+      <div style="font-size:.875rem;font-weight:600;margin-bottom:.35rem">High Bias, Low Variance</div>
+      <div style="font-size:.78rem;color:var(--muted);line-height:1.5">Model is too simple. Both train and test error are high. Increasing complexity will help.</div>
+      <div style="font-size:.78rem;color:var(--blue);margin-top:.5rem">Degree 1–2 on this dataset</div>
+    </div>
+    <div class="card card-green">
+      <div style="margin-bottom:.5rem"><span class="zone-tag zone-sweet">Sweet Spot</span></div>
+      <div style="font-size:.875rem;font-weight:600;margin-bottom:.35rem">Balanced Bias and Variance</div>
+      <div style="font-size:.78rem;color:var(--muted);line-height:1.5">Model complexity matches the true data complexity. Test error at its minimum.</div>
+      <div style="font-size:.78rem;color:var(--green);margin-top:.5rem">Around degree 3–4 here</div>
+    </div>
+    <div class="card card-red">
+      <div style="margin-bottom:.5rem"><span class="zone-tag zone-over">Overfitting</span></div>
+      <div style="font-size:.875rem;font-weight:600;margin-bottom:.35rem">Low Bias, High Variance</div>
+      <div style="font-size:.78rem;color:var(--muted);line-height:1.5">Model memorises noise. Train error is very low; test error climbs. Adding data or regularisation helps.</div>
+      <div style="font-size:.78rem;color:var(--red);margin-top:.5rem">Degree 8+ on this dataset</div>
+    </div>
+  </div>
+
+  <!-- What to notice -->
+  <div class="card" style="margin-bottom:1.5rem">
+    <div style="font-size:.83rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--blue);margin-bottom:.75rem">What to Notice</div>
+    <ul style="font-size:.875rem;line-height:1.65;padding-left:1.25rem">
+      <li><strong>Train error always decreases with degree:</strong> A higher-degree polynomial can always fit the training points better (degree = n−1 can pass through all n points exactly). But this doesn't mean it generalises.</li>
+      <li><strong>Test error has a U-shape:</strong> It decreases as the model gets complex enough to capture the true pattern, then increases again as the model starts fitting noise. The minimum is the "sweet spot".</li>
+      <li><strong>More noise → sweet spot shifts left:</strong> When data is noisy, simpler models generalise better because there's less signal to capture. Increase noise and watch the optimal degree drop.</li>
+      <li><strong>The assessment link:</strong> Regularisation (L1/L2, Dropout, early stopping) adds a penalty for complexity, effectively moving the model left along this curve without changing architecture. Cross-validation finds the sweet spot empirically.</li>
+      <li><strong>Overfitting symptoms:</strong> Low train loss, high val/test loss. The gap between train and test error is a direct measure of variance.</li>
+    </ul>
+  </div>
+
+  <div class="footer">
+    <a href="../index.html">← VLE Home</a> ·
+    <a href="backprop.html">← Backpropagation</a>
+  </div>
+
+</div>
+
+<script>
+// ── Polynomial fitting (normal equations) ─────────────────────────────────────
+// Build Vandermonde row: [1, x, x², ..., x^d]
+function vRow(x, d) {
+  const r = [1];
+  for (let i = 1; i <= d; i++) r.push(r[i-1] * x);
+  return r;
+}
+
+// Matrix multiply A (m×k) × B (k×n)
+function matMul(A, B) {
+  const m = A.length, k = B.length, n = B[0].length;
+  return Array.from({length: m}, (_, i) =>
+    Array.from({length: n}, (_, j) =>
+      A[i].reduce((s, _, l) => s + A[i][l] * B[l][j], 0)));
+}
+// Transpose
+const T = M => M[0].map((_, j) => M.map(r => r[j]));
+
+// Solve Ax = b via Gaussian elimination (A is (d+1)×(d+1), b is (d+1)×1)
+function solve(A, b) {
+  const n = A.length;
+  const M = A.map((r, i) => [...r, b[i]]);
+  for (let col = 0; col < n; col++) {
+    let pivot = col;
+    for (let row = col+1; row < n; row++) if (Math.abs(M[row][col]) > Math.abs(M[pivot][col])) pivot = row;
+    [M[col], M[pivot]] = [M[pivot], M[col]];
+    if (Math.abs(M[col][col]) < 1e-12) continue;
+    for (let row = 0; row < n; row++) {
+      if (row === col) continue;
+      const f = M[row][col] / M[col][col];
+      for (let k = col; k <= n; k++) M[row][k] -= f * M[col][k];
+    }
+  }
+  return M.map((r, i) => r[n] / r[i]);
+}
+
+function polyFit(xs, ys, d) {
+  const V  = xs.map(x => vRow(x, d));
+  const Vt = T(V);
+  const VtV = matMul(Vt, V);
+  const Vty = matMul(Vt, ys.map(y => [y])).map(r => r[0]);
+  return solve(VtV, Vty);
+}
+
+function polyEval(coefs, x) {
+  return coefs.reduce((s, c, i) => s + c * x**i, 0);
+}
+
+// ── Data generation ──────────────────────────────────────────────────────────
+function makeData(noiseSd) {
+  const seed = 42;
+  const rng = (i => () => {
+    let s = i;
+    for (let j = 0; j < 10; j++) s = (s * 1664525 + 1013904223) & 0xFFFFFFFF;
+    return (s >>> 0) / 0xFFFFFFFF;
+  })(seed);
+  const randn = () => {
+    const u = 1 - rng(), v = rng();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  };
+  const N = 30;
+  const trainX = [], trainY = [], testX = [], testY = [];
+  for (let i = 0; i < N; i++) {
+    const x = i / (N - 1) * 2 * Math.PI;
+    const y = Math.sin(x) + randn() * noiseSd;
+    if (i % 3 === 0) { testX.push(x); testY.push(y); }
+    else { trainX.push(x); trainY.push(y); }
+  }
+  return { trainX, trainY, testX, testY };
+}
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let degree = 3, noiseSd = 0.3;
+
+// ── Plotly theme ──────────────────────────────────────────────────────────────
+const THEME = {
+  paper_bgcolor: '#0d1117', plot_bgcolor: '#161b22',
+  font: { color: '#e6edf3', size: 11, family: "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" },
+  xaxis: { gridcolor: '#30363d', zerolinecolor: '#30363d', linecolor: '#30363d' },
+  yaxis: { gridcolor: '#30363d', zerolinecolor: '#30363d', linecolor: '#30363d' },
+  margin: { l: 52, r: 16, t: 20, b: 48 },
+  legend: { bgcolor: 'rgba(0,0,0,0)', font: { size: 10 } },
+};
+
+function rmse(pred, true_) {
+  return Math.sqrt(pred.reduce((s, p, i) => s + (p - true_[i])**2, 0) / pred.length);
+}
+
+function render() {
+  const d = makeData(noiseSd);
+  let coefs;
+  try {
+    coefs = polyFit(d.trainX, d.trainY, degree);
+  } catch(e) {
+    return; // singular matrix at high degree with few points — skip
+  }
+
+  // Fit chart: data + curve
+  const curvX = [], curvY = [];
+  for (let x = 0; x <= 2*Math.PI; x += 0.05) {
+    const y = polyEval(coefs, x);
+    if (Math.abs(y) < 10) { curvX.push(+x.toFixed(3)); curvY.push(y); }
+  }
+
+  Plotly.react('fit-chart', [
+    { x: d.trainX, y: d.trainY, mode: 'markers', name: 'train',
+      marker: { color: '#58a6ff', size: 7 } },
+    { x: d.testX, y: d.testY, mode: 'markers', name: 'test',
+      marker: { color: '#d29922', size: 7, symbol: 'diamond' } },
+    { x: [0, 2*Math.PI], y: [0, Math.sin(2*Math.PI)], mode: 'lines', name: 'true sin(x)',
+      line: { color: '#3fb950', width: 1.5, dash: 'dot' } },
+    { x: curvX, y: curvY, mode: 'lines', name: `degree ${degree} fit`,
+      line: { color: '#f85149', width: 2 } },
+  ], { ...THEME,
+    xaxis: { ...THEME.xaxis, title: { text: 'x' }, range: [0, 6.3] },
+    yaxis: { ...THEME.yaxis, title: { text: 'y' }, range: [-3, 3] },
+    title: { text: `Degree ${degree} polynomial fit`, font: { size: 12, color: '#e6edf3' }, x: 0.5 }
+  }, { responsive: true, displayModeBar: false });
+
+  // Error chart: train vs test error for degrees 1-12
+  const degs = [], trainErrs = [], testErrs = [];
+  for (let deg = 1; deg <= 12; deg++) {
+    degs.push(deg);
+    try {
+      const c2 = polyFit(d.trainX, d.trainY, deg);
+      const trnPred  = d.trainX.map(x => polyEval(c2, x));
+      const testPred = d.testX.map(x => polyEval(c2, x));
+      const te = rmse(testPred, d.testY);
+      trainErrs.push(rmse(trnPred, d.trainY));
+      testErrs.push(te < 10 ? te : null);
+    } catch(e) {
+      trainErrs.push(null); testErrs.push(null);
+    }
+  }
+
+  // Find optimal degree (min test error)
+  let optDeg = 1, optErr = Infinity;
+  testErrs.forEach((e, i) => { if (e !== null && e < optErr) { optErr = e; optDeg = i + 1; } });
+
+  Plotly.react('err-chart', [
+    { x: degs, y: trainErrs, mode: 'lines+markers', name: 'Train RMSE',
+      line: { color: '#58a6ff', width: 2 }, marker: { size: 6 } },
+    { x: degs, y: testErrs,  mode: 'lines+markers', name: 'Test RMSE',
+      line: { color: '#f85149', width: 2 }, marker: { size: 6 } },
+    { x: [degree, degree], y: [0, Math.max(...testErrs.filter(Boolean), ...trainErrs.filter(Boolean))],
+      mode: 'lines', name: 'current',
+      line: { color: '#d29922', width: 1.5, dash: 'dot' }, showlegend: true },
+  ], { ...THEME,
+    xaxis: { ...THEME.xaxis, title: { text: 'Polynomial degree' }, tickmode: 'linear', dtick: 1 },
+    yaxis: { ...THEME.yaxis, title: { text: 'RMSE' } },
+    annotations: [
+      { x: optDeg, y: optErr, xanchor: 'left', yanchor: 'top', ax: 20, ay: -20,
+        text: `best (d=${optDeg})`, font: { color: '#3fb950', size: 10 },
+        arrowcolor: '#3fb950', arrowsize: 0.8, showarrow: true }
+    ]
+  }, { responsive: true, displayModeBar: false });
+
+  // Zone label
+  const label = document.getElementById('zone-label');
+  if (degree <= 2) label.innerHTML = '<span class="zone-tag zone-under">Underfitting</span>';
+  else if (degree >= 8) label.innerHTML = '<span class="zone-tag zone-over">Overfitting</span>';
+  else label.innerHTML = '<span class="zone-tag zone-sweet">Good fit zone</span>';
+}
+
+function setDeg(d) {
+  degree = d;
+  document.getElementById('deg-val').textContent = d;
+  render();
+}
+function setNoise(n) {
+  noiseSd = n;
+  document.getElementById('noise-val').textContent = n.toFixed(2);
+  render();
+}
+
+document.addEventListener('DOMContentLoaded', render);
+</script>
+</body>
+</html>

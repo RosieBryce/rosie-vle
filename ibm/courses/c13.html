@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>C13 — Project: Generative AI Applications with RAG and LangChain · VLE</title>
+  <link rel="stylesheet" href="../shared.css">
+  <script src="../shared.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</head>
+<body>
+<script>initNav('../');</script>
+
+<div class="container">
+
+  <!-- ═══ HEADER ══════════════════════════════════════════════ -->
+  <div style="margin-bottom:1.75rem">
+    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem;flex-wrap:wrap">
+      <span style="color:var(--muted);font-size:.83rem">Course 13 of 13</span>
+      <span class="badge badge-pending"><span class="dot dot-m"></span>Not Started</span>
+      <span class="badge badge-pending">9 hours</span>
+    </div>
+    <h1 style="font-size:1.5rem;font-weight:700;letter-spacing:-.02em;margin-bottom:.375rem">
+      Project: Generative AI Applications with RAG and LangChain
+    </h1>
+    <p style="color:var(--muted);font-size:.875rem;line-height:1.55">
+      The capstone project for the Gen AI block. Build a full end-to-end RAG application with a Gradio interface.
+      Less new theory — focus is on putting Course 12 into practice, evaluation, and shipping a working system.
+      This is the finish line.
+    </p>
+  </div>
+
+  <!-- ═══ FLIPPED CLASSROOM ════════════════════════════════════ -->
+  <div class="flip-card" style="margin-bottom:2rem">
+    <div class="flip-header">
+      <span>📖</span>
+      Flipped Classroom — Before You Watch
+    </div>
+
+    <div class="flip-sublabel">Prime your thinking — bring these questions into the lectures</div>
+    <ul class="flip-questions">
+      <li>
+        <span class="flip-q-num">1</span>
+        <span>You're building a QA bot where users upload PDFs and ask questions. The app must support multiple users simultaneously. Why is a global variable for the FAISS index problematic in a multi-user Gradio app? How would you scope state to individual users?</span>
+      </li>
+      <li>
+        <span class="flip-q-num">2</span>
+        <span>Your QA bot is supposed to answer only from the uploaded documents, but it keeps answering from the LLM's parametric knowledge instead. What explicit instruction in the prompt template would make it refuse to answer if the context doesn't contain the answer?</span>
+      </li>
+      <li>
+        <span class="flip-q-num">3</span>
+        <span>You set k=10 and chunk_size=500 characters in your RAG pipeline. Estimate the number of tokens injected into the context. How might this cause silent failures with smaller LLMs (e.g., a model with a 2048-token context window)?</span>
+      </li>
+    </ul>
+
+    <div class="flip-sublabel">Watch for…</div>
+    <div class="watch-for">
+      The evaluation section is often skipped but it's what distinguishes a good submission.
+      RAGAS provides automated evaluation metrics — learn the three key metrics (faithfulness, answer relevance, context relevance).
+      Also: the source citation pattern — returning <code>source_documents</code> alongside the answer
+      is required for full marks.
+    </div>
+  </div>
+
+  <!-- ═══ CORE THEORY ══════════════════════════════════════════ -->
+  <div class="section-head">
+    Core Theory
+    <span class="section-hint">Assessment priority — project methodology, evaluation, and what graders look for</span>
+  </div>
+
+  <!-- 1. Application Architecture -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">Architecture</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">The QA Bot Architecture</h3>
+    <p style="font-size:.875rem;line-height:1.6;margin-bottom:.75rem">
+      The capstone builds a document question-answering bot. The required components:
+    </p>
+    <div style="display:flex;flex-direction:column;gap:.5rem;margin-bottom:.75rem">
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <span style="flex-shrink:0;min-width:24px;height:24px;border-radius:50%;background:var(--blue-bg);border:1px solid rgba(88,166,255,.3);color:var(--blue);font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center">1</span>
+        <div style="font-size:.875rem"><strong>Document loading</strong> — PDFs, text files, or web pages via LangChain loaders</div>
+      </div>
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <span style="flex-shrink:0;min-width:24px;height:24px;border-radius:50%;background:var(--blue-bg);border:1px solid rgba(88,166,255,.3);color:var(--blue);font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center">2</span>
+        <div style="font-size:.875rem"><strong>Chunking and embedding</strong> — RecursiveCharacterTextSplitter → HuggingFace embeddings → FAISS</div>
+      </div>
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <span style="flex-shrink:0;min-width:24px;height:24px;border-radius:50%;background:var(--blue-bg);border:1px solid rgba(88,166,255,.3);color:var(--blue);font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center">3</span>
+        <div style="font-size:.875rem"><strong>RAG chain</strong> — retriever + prompt template + LLM + output parser</div>
+      </div>
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <span style="flex-shrink:0;min-width:24px;height:24px;border-radius:50%;background:var(--blue-bg);border:1px solid rgba(88,166,255,.3);color:var(--blue);font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center">4</span>
+        <div style="font-size:.875rem"><strong>Gradio interface</strong> — ChatInterface or Blocks with question input, answer output, source display</div>
+      </div>
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <span style="flex-shrink:0;min-width:24px;height:24px;border-radius:50%;background:var(--blue-bg);border:1px solid rgba(88,166,255,.3);color:var(--blue);font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center">5</span>
+        <div style="font-size:.875rem"><strong>Source attribution</strong> — <code>return_source_documents=True</code> to display which chunks were used</div>
+      </div>
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <span style="flex-shrink:0;min-width:24px;height:24px;border-radius:50%;background:var(--blue-bg);border:1px solid rgba(88,166,255,.3);color:var(--blue);font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center">6</span>
+        <div style="font-size:.875rem"><strong>Evaluation</strong> — test on known questions; RAGAS metrics; document results</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. RAG Evaluation -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">Evaluation</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">RAG Evaluation Metrics (RAGAS)</h3>
+    <p style="font-size:.875rem;line-height:1.6;margin-bottom:.75rem">
+      RAG is hard to evaluate automatically. RAGAS provides three key automated metrics:
+    </p>
+    <div style="overflow-x:auto;margin-bottom:.75rem">
+      <table class="concept-table">
+        <thead><tr><th>Metric</th><th>What it measures</th><th>Ideal value</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Faithfulness</strong></td>
+            <td>Does each claim in the answer appear in the source documents? (No hallucination)</td>
+            <td>Close to 1.0</td>
+          </tr>
+          <tr>
+            <td><strong>Answer Relevance</strong></td>
+            <td>Does the answer actually address the question?</td>
+            <td>Close to 1.0</td>
+          </tr>
+          <tr>
+            <td><strong>Context Recall</strong></td>
+            <td>Were the retrieved chunks actually relevant to the question?</td>
+            <td>Close to 1.0</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="insight ins-info">
+      Even without RAGAS, demonstrate evaluation by manually testing at least 5 known questions and documenting whether the answers are correct and faithful to the documents.
+    </div>
+  </div>
+
+  <!-- 3. What Graders Look For -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">Grading</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">What Project Graders Look For</h3>
+    <div style="overflow-x:auto">
+      <table class="decision-table">
+        <thead><tr><th>Criterion</th><th>What demonstrates it</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Working application</strong></td>
+            <td>QA bot actually answers questions from the loaded documents</td>
+          </tr>
+          <tr>
+            <td><strong>Correct RAG pipeline</strong></td>
+            <td>Clear code: load → chunk → embed → store → retrieve → generate</td>
+          </tr>
+          <tr>
+            <td><strong>Source attribution</strong></td>
+            <td><code>return_source_documents=True</code>; display source pages/chunks in output</td>
+          </tr>
+          <tr>
+            <td><strong>Evaluation</strong></td>
+            <td>At least 5 test questions with documented correct/incorrect answers</td>
+          </tr>
+          <tr>
+            <td><strong>Clean code</strong></td>
+            <td>Well-organised notebook with markdown explanations; sensible variable names</td>
+          </tr>
+          <tr>
+            <td><strong>Justified parameters</strong></td>
+            <td>Explain why you chose chunk_size, k, temperature in comments/markdown</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 4. Deployment Options -->
+  <div class="card" style="margin-bottom:2rem">
+    <div class="tag tag-blue">Deployment</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">Deployment Options</h3>
+    <div style="overflow-x:auto">
+      <table class="decision-table">
+        <thead><tr><th>Option</th><th>Setup</th><th>Cost</th><th>Durability</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><code>demo.launch()</code></td>
+            <td>Local only</td>
+            <td>Free</td>
+            <td>Single user, dev only</td>
+          </tr>
+          <tr>
+            <td><code>demo.launch(share=True)</code></td>
+            <td>Gradio tunnel</td>
+            <td>Free</td>
+            <td>72-hour temporary URL</td>
+          </tr>
+          <tr>
+            <td>Hugging Face Spaces</td>
+            <td>Git push to HF</td>
+            <td>Free tier available</td>
+            <td>Permanent URL; public</td>
+          </tr>
+          <tr>
+            <td>IBM Cloud / Watson Studio</td>
+            <td>IBM credentials</td>
+            <td>Paid</td>
+            <td>Enterprise, scalable</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="insight ins-warn">
+      <strong>share=True creates a temporary public URL (not permanent deployment).</strong>
+      The URL expires after 72 hours. For submission, either include a screenshot demonstrating the running app or push to Hugging Face Spaces for a permanent link.
+    </div>
+  </div>
+
+  <!-- ═══ MUST-KNOW CONCEPTS ════════════════════════════════════ -->
+  <div class="section-head">Must-Know Concepts</div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:2rem">
+    <table class="concept-table">
+      <thead><tr><th>Term</th><th>One-liner (assessment vocabulary)</th></tr></thead>
+      <tbody>
+        <tr><td>Gradio ChatInterface</td><td>High-level Gradio component for multi-turn chat UI; accepts fn(message, history) → response</td></tr>
+        <tr><td>Gradio Blocks</td><td>Lower-level Gradio API for custom layouts with multiple inputs, outputs, and event handlers</td></tr>
+        <tr><td>gr.State</td><td>Per-session state in Gradio — use instead of global variables for multi-user apps</td></tr>
+        <tr><td>return_source_documents</td><td>RetrievalQA parameter; when True, includes retrieved chunks in the output dict — required for citations</td></tr>
+        <tr><td>faithfulness (RAGAS)</td><td>Fraction of answer claims supported by retrieved context — measures hallucination</td></tr>
+        <tr><td>ConversationalRetrievalChain</td><td>LangChain chain handling multi-turn conversation; uses memory for chat history — vs RetrievalQA (single-turn)</td></tr>
+        <tr><td>context overflow</td><td>k × chunk_size tokens exceed model context window — silent failure; reduce k or chunk_size</td></tr>
+        <tr><td>PyPDFLoader</td><td>LangChain loader for PDFs; struggles with scanned PDFs — use UnstructuredPDFLoader for OCR</td></tr>
+        <tr><td>packing (SFTTrainer)</td><td>Concatenates examples to fill context window; efficient but model sees multiple examples per forward pass</td></tr>
+        <tr><td>FAISS add_documents</td><td>Adds new chunks to existing FAISS index without rebuilding; from_documents() creates a fresh index</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══ EXAM TRAPS ════════════════════════════════════════════ -->
+  <div class="section-head">Exam Traps</div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 1 — RAG does not update model weights</div>
+    <strong>This is the single most important conceptual distinction in the Gen AI block.</strong>
+    RAG retrieves context and injects it at inference time. The model's weights never change.
+    Fine-tuning updates weights. Prompting and RAG do not.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 2 — Same embedding model required</div>
+    <strong>The embedding model used during indexing must be identical to the one used during retrieval.</strong>
+    This also means: if you rebuild the index with a different model, you must embed the query with the same new model.
+    Mismatched embedding models produce meaningless similarity scores.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 3 — share=True is temporary, not permanent</div>
+    <strong>Gradio's <code>share=True</code> creates a tunnel URL that expires after 72 hours.</strong>
+    It is not a deployment. For a permanent, publicly accessible URL, use Hugging Face Spaces or
+    a cloud platform.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 4 — ConversationalRetrievalChain vs RetrievalQA</div>
+    <strong><code>RetrievalQA</code> is single-turn (no memory).</strong>
+    Each question is answered independently, with no awareness of previous conversation.
+    <code>ConversationalRetrievalChain</code> handles multi-turn conversation using memory.
+    For a chat bot, you need ConversationalRetrievalChain.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 5 — Hallucination can occur even with retrieved context</div>
+    <strong>A sufficiently capable LLM may prefer its parametric knowledge over the provided context.</strong>
+    RAG reduces hallucination but does not eliminate it. Use explicit prompt instructions:
+    "Answer ONLY using the provided context. If the answer is not in the context, say 'I don't know'."
+    Even then, strong LLMs sometimes ignore this instruction.
+  </div>
+
+  <!-- ═══ INTERACTIVE VIZ ══════════════════════════════════════ -->
+  <div class="section-head" style="margin-top:2rem">Interactive Visualisations</div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.875rem;margin-bottom:2rem">
+    <a class="viz-card" href="../viz/tokenisation.html">
+      <div class="viz-card-title">🔤 Tokenisation Explorer</div>
+      <div class="viz-card-desc">Calculate exact token counts for chunks — essential for context window planning.</div>
+    </a>
+    <a class="viz-card" href="../viz/attention.html">
+      <div class="viz-card-title">🎯 Attention Visualiser</div>
+      <div class="viz-card-desc">See how the LLM attends to retrieved context in the augmented prompt.</div>
+    </a>
+  </div>
+
+  <!-- ═══ PRACTICAL NOTES (collapsed) ══════════════════════════ -->
+  <div style="margin-bottom:2rem">
+    <button class="collapse-toggle">
+      <span class="c-arrow">▶</span>
+      Practical Notes &amp; Code Patterns
+      <span style="margin-left:.5rem;font-size:.75rem;color:var(--muted)">(useful for application — not needed to pass the assessment)</span>
+    </button>
+    <div class="collapse-body">
+
+      <div class="card" style="margin-bottom:1rem">
+        <div class="tag tag-blue">Common Gotchas</div>
+        <ul style="font-size:.875rem;line-height:1.7;padding-left:1.25rem;color:var(--text)">
+          <li><strong>Context window overflow</strong> — k=10 × chunk_size=500 chars ≈ 5000 tokens; add prompt overhead; may exceed model limit</li>
+          <li><strong>LLM answers from memory not context</strong> — add explicit "Answer ONLY from context; if not in context, say I don't know"</li>
+          <li><strong>FAISS index not rebuilt when docs added</strong> — use vectorstore.add_documents(new_chunks) to extend existing index</li>
+          <li><strong>Gradio global state in multi-user app</strong> — use gr.State() for per-session vectorstore; global = users overwrite each other</li>
+          <li><strong>HuggingFaceHub rate limits</strong> — free tier is strict; cache results or use local model for demos</li>
+          <li><strong>PyPDFLoader fails on scanned PDFs</strong> — use UnstructuredPDFLoader or an OCR-based approach</li>
+        </ul>
+      </div>
+
+      <div class="card" style="margin-bottom:1rem">
+        <div class="tag tag-blue">Full Application Pattern</div>
+        <pre><code class="language-python">import gradio as gr
+from langchain_community.document_loaders import PyPDFLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain.chains import RetrievalQA
+from langchain.prompts import PromptTemplate
+
+def build_qa_chain(pdf_path):
+    loader   = PyPDFLoader(pdf_path)
+    docs     = loader.load()
+    splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+    chunks   = splitter.split_documents(docs)
+    embedder = HuggingFaceEmbeddings(model_name='all-MiniLM-L6-v2')
+    vs       = FAISS.from_documents(chunks, embedder)
+
+    prompt = PromptTemplate(
+        template="Context: {context}\nQuestion: {question}\n"
+                 "Answer ONLY from the context. If not in context, say 'I don't know'.\nAnswer:",
+        input_variables=['context', 'question']
+    )
+    return RetrievalQA.from_chain_type(
+        llm=llm,
+        retriever=vs.as_retriever(search_kwargs={'k': 3}),
+        chain_type_kwargs={'prompt': prompt},
+        return_source_documents=True
+    )
+
+def respond(question, history, chain):
+    result  = chain({'query': question})
+    answer  = result['result']
+    sources = '\n'.join(set(d.metadata.get('source', '') for d in result['source_documents']))
+    return f"{answer}\n\nSources: {sources}"
+
+with gr.Blocks() as demo:
+    chain_state = gr.State()
+    file_input  = gr.File(label="Upload PDF")
+    load_btn    = gr.Button("Load")
+    chatbot     = gr.Chatbot()
+    question    = gr.Textbox(placeholder="Ask a question...")
+    submit_btn  = gr.Button("Ask")
+
+    load_btn.click(build_qa_chain, inputs=file_input, outputs=chain_state)
+    submit_btn.click(respond, inputs=[question, chatbot, chain_state], outputs=chatbot)
+
+demo.launch()</code></pre>
+      </div>
+
+      <div class="card" style="margin-bottom:.5rem">
+        <div class="tag tag-blue">Pre-submission Checklist</div>
+        <pre><code class="language-text">[ ] Documents load correctly — check len(documents), sample page_content
+[ ] Chunks are sensible — print a few, check for broken sentences
+[ ] Vector store created and saved (save_local())
+[ ] Retrieval test: similarity_search("test query", k=3) returns relevant chunks
+[ ] RAG chain answers correctly on known questions
+[ ] Gradio interface runs without errors
+[ ] Source documents displayed in output (return_source_documents=True)
+[ ] At least 5 test questions evaluated and results documented
+[ ] Code is clean with markdown cells explaining each step
+[ ] Chunk size, k, and temperature choices are justified</code></pre>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ STUDY GAMES (placeholder) ════════════════════════════ -->
+  <div class="section-head" style="margin-top:1rem">Study Games</div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.875rem;margin-bottom:2rem;opacity:.45">
+    <div class="card" style="cursor:not-allowed">
+      <div class="tag">🎮 Project Reviewer</div>
+      <div style="font-size:.875rem">Score a sample capstone submission against the rubric — coming Phase 4</div>
+    </div>
+    <div class="card" style="cursor:not-allowed">
+      <div class="tag">🐛 RAG Debugger</div>
+      <div style="font-size:.875rem">Identify common pipeline bugs in code snippets — coming Phase 4</div>
+    </div>
+  </div>
+
+  <!-- ═══ FULL NOTES LINK ══════════════════════════════════════ -->
+  <div class="card" style="margin-bottom:1.5rem;background:var(--surface2)">
+    <div style="font-size:.875rem;color:var(--muted)">
+      Full curated notes (Obsidian):
+      <a href="obsidian://open?vault=IBM%20Courses&file=claude-content%2F13-project-genai-rag-langchain"
+         style="color:var(--blue)">
+        claude-content/13-project-genai-rag-langchain →
+      </a>
+    </div>
+  </div>
+
+  <div class="footer">
+    <a href="../index.html">← VLE Home</a> ·
+    <a href="c12.html">← C12</a> ·
+    <a href="../course-tracker.html" target="_blank">📊 Tracker</a>
+  </div>
+
+</div>
+</body>
+</html>

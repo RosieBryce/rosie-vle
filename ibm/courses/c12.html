@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>C12 — Fundamentals of AI Agents Using RAG and LangChain · VLE</title>
+  <link rel="stylesheet" href="../shared.css">
+  <script src="../shared.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</head>
+<body>
+<script>initNav('../');</script>
+
+<div class="container">
+
+  <!-- ═══ HEADER ══════════════════════════════════════════════ -->
+  <div style="margin-bottom:1.75rem">
+    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem;flex-wrap:wrap">
+      <span style="color:var(--muted);font-size:.83rem">Course 12 of 13</span>
+      <span class="badge badge-pending"><span class="dot dot-m"></span>Not Started</span>
+      <span class="badge badge-pending">9 hours</span>
+    </div>
+    <h1 style="font-size:1.5rem;font-weight:700;letter-spacing:-.02em;margin-bottom:.375rem">
+      Fundamentals of AI Agents Using RAG and LangChain
+    </h1>
+    <p style="color:var(--muted);font-size:.875rem;line-height:1.55">
+      Where LLMs stop being standalone models and start being components of systems.
+      RAG solves the context window and stale knowledge problem. LangChain provides the plumbing.
+      Agents add the ability to take actions. The most industry-relevant course in the programme.
+    </p>
+  </div>
+
+  <!-- ═══ FLIPPED CLASSROOM ════════════════════════════════════ -->
+  <div class="flip-card" style="margin-bottom:2rem">
+    <div class="flip-header">
+      <span>📖</span>
+      Flipped Classroom — Before You Watch
+    </div>
+
+    <div class="flip-sublabel">Prime your thinking — bring these questions into the lectures</div>
+    <ul class="flip-questions">
+      <li>
+        <span class="flip-q-num">1</span>
+        <span>An LLM has a knowledge cutoff date and can only process as much text as fits in its context window. RAG addresses both. Sketch out a pipeline that handles a user query about a 200-page document the LLM has never seen. What are the key steps?</span>
+      </li>
+      <li>
+        <span class="flip-q-num">2</span>
+        <span>You split a document into chunks of 500 characters. What determines whether a sentence that appears on the boundary between two chunks will be correctly retrievable? How does chunk overlap solve this?</span>
+      </li>
+      <li>
+        <span class="flip-q-num">3</span>
+        <span>An agent uses an LLM to decide which tool to call next. The LLM can produce any text output — what mechanism forces it to produce a valid tool call rather than free-form text? What happens if the LLM produces malformed output?</span>
+      </li>
+    </ul>
+
+    <div class="flip-sublabel">Watch for…</div>
+    <div class="watch-for">
+      The embedding model must be the same at indexing time and retrieval time — using different models makes similarity scores meaningless.
+      Also: RAG does NOT update model weights — it only provides context at inference time.
+      And: LCEL's <code>|</code> operator is LangChain's pipe for composing Runnable objects, not the Python bitwise-OR.
+    </div>
+  </div>
+
+  <!-- ═══ CORE THEORY ══════════════════════════════════════════ -->
+  <div class="section-head">
+    Core Theory
+    <span class="section-hint">Assessment priority — RAG pipeline stages, chunk tradeoffs, and agent loop</span>
+  </div>
+
+  <!-- 1. RAG Pipeline -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">RAG</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">The RAG Pipeline — Two Phases</h3>
+    <p style="font-size:.875rem;line-height:1.6;margin-bottom:.75rem">
+      RAG solves two fundamental LLM limitations: stale knowledge (training cutoff) and finite context (can't process whole document libraries in one prompt).
+    </p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem">
+      <div style="background:var(--surface2);border-radius:8px;padding:.875rem;border-left:3px solid var(--blue)">
+        <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--blue);margin-bottom:.4rem">Indexing (offline, one-time)</div>
+        <div style="font-size:.78rem;color:var(--muted);line-height:1.7">
+          Documents → Load → Split into chunks → Embed chunks → Store in vector DB
+        </div>
+      </div>
+      <div style="background:var(--surface2);border-radius:8px;padding:.875rem;border-left:3px solid var(--green)">
+        <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--green);margin-bottom:.4rem">Retrieval (online, per query)</div>
+        <div style="font-size:.78rem;color:var(--muted);line-height:1.7">
+          Query → Embed → Similarity search → Top-k chunks → Augmented prompt → LLM → Answer
+        </div>
+      </div>
+    </div>
+    <div class="insight ins-warn">
+      <strong>RAG does NOT update model weights</strong> — it provides context at inference time only. The LLM's parameters are unchanged. This is the most important conceptual distinction in this course.
+    </div>
+  </div>
+
+  <!-- 2. Chunk Size Tradeoffs -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">Chunking</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">Chunk Size — The Most Impactful RAG Parameter</h3>
+    <div style="overflow-x:auto;margin-bottom:.75rem">
+      <table class="decision-table">
+        <thead><tr><th></th><th>Small chunks (~200 chars)</th><th>Large chunks (~2000 chars)</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Retrieval precision</strong></td>
+            <td style="color:var(--green)">Higher — more targeted</td>
+            <td style="color:var(--yellow)">Lower — may include irrelevant content</td>
+          </tr>
+          <tr>
+            <td><strong>Context completeness</strong></td>
+            <td style="color:var(--yellow)">Lower — may miss surrounding context</td>
+            <td style="color:var(--green)">Higher — more context per result</td>
+          </tr>
+          <tr>
+            <td><strong>Best for</strong></td>
+            <td>Fact lookup, specific questions</td>
+            <td>Conceptual questions, summaries</td>
+          </tr>
+          <tr>
+            <td><strong>DB size</strong></td>
+            <td>More chunks, more vectors</td>
+            <td>Fewer chunks, fewer vectors</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:.83rem;color:var(--muted);line-height:1.5">
+      <strong>Chunk overlap</strong> ensures sentences split across chunk boundaries appear complete in at least one chunk.
+      Rule of thumb: <code>chunk_overlap ≥ 20% of chunk_size</code>.
+    </p>
+  </div>
+
+  <!-- 3. Vector Stores -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">Vector Stores</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">Vector Stores &amp; Similarity Search</h3>
+    <div style="overflow-x:auto;margin-bottom:.75rem">
+      <table class="concept-table">
+        <thead><tr><th>Store</th><th>Type</th><th>Best for</th></tr></thead>
+        <tbody>
+          <tr><td><strong>FAISS</strong></td><td>In-memory, local</td><td>Prototyping; fast but not persistent by default</td></tr>
+          <tr><td><strong>Chroma</strong></td><td>Persistent, local</td><td>Small-medium production; open-source</td></tr>
+          <tr><td><strong>Pinecone / Qdrant</strong></td><td>Cloud/managed</td><td>Large-scale production; automatic scaling</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="insight ins-warn">
+      <strong>The embedding model must be identical at indexing and retrieval time.</strong>
+      Embedding chunks with model A and querying with model B produces meaningless similarity scores.
+      The vector space from one model is incompatible with the vector space of another.
+    </div>
+  </div>
+
+  <!-- 4. Agents -->
+  <div class="card" style="margin-bottom:2rem">
+    <div class="tag tag-blue">Agents</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">AI Agents — The ReAct Pattern</h3>
+    <p style="font-size:.875rem;line-height:1.6;margin-bottom:.75rem">
+      An agent uses an LLM as a reasoning engine to decide what actions to take in a Reason + Act loop:
+    </p>
+    <div style="background:var(--surface2);border-radius:8px;padding:.875rem;font-family:monospace;font-size:.78rem;line-height:1.9;border:1px solid var(--border);margin-bottom:.75rem">
+      Thought: I need to find the current population of France.<br>
+      Action: search_tool("France population 2024")<br>
+      Observation: France has approximately 68 million people.<br>
+      Thought: I now have the answer.<br>
+      Final Answer: France's population is approximately 68 million.
+    </div>
+    <div style="overflow-x:auto">
+      <table class="concept-table">
+        <thead><tr><th>LangChain Abstraction</th><th>Role</th></tr></thead>
+        <tbody>
+          <tr><td><strong>LLM / ChatModel</strong></td><td>The reasoning engine — generates thoughts and action decisions</td></tr>
+          <tr><td><strong>Tool</strong></td><td>A function the agent can call (search, calculator, code runner)</td></tr>
+          <tr><td><strong>AgentExecutor</strong></td><td>Runs the Thought/Action/Observation loop; handles tool calls and errors</td></tr>
+          <tr><td><strong>Memory</strong></td><td>Stores conversation history (ConversationBufferMemory, ConversationSummaryMemory)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══ MUST-KNOW CONCEPTS ════════════════════════════════════ -->
+  <div class="section-head">Must-Know Concepts</div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:2rem">
+    <table class="concept-table">
+      <thead><tr><th>Term</th><th>One-liner (assessment vocabulary)</th></tr></thead>
+      <tbody>
+        <tr><td>RAG</td><td>Retrieval-Augmented Generation — retrieves relevant document chunks at query time and injects into prompt; does NOT update weights</td></tr>
+        <tr><td>vector store</td><td>Database that stores and searches high-dimensional embeddings by similarity (cosine, dot product)</td></tr>
+        <tr><td>chunk overlap</td><td>Repeated text between consecutive chunks; prevents context loss at boundaries; use ≥20% of chunk size</td></tr>
+        <tr><td>FAISS</td><td>Facebook AI Similarity Search — fast in-memory approximate nearest-neighbour; not persistent by default</td></tr>
+        <tr><td>k (in retrieval)</td><td>Number of chunks retrieved per query; more k = more context but also more noise and longer prompts</td></tr>
+        <tr><td>LCEL</td><td>LangChain Expression Language — composes Runnable objects with | pipe operator (not Python OR)</td></tr>
+        <tr><td>ReAct</td><td>Reason + Act — agent pattern where LLM alternates between reasoning (Thought) and tool use (Action)</td></tr>
+        <tr><td>ConversationBufferMemory</td><td>Stores all messages verbatim; grows unboundedly — must manually handle context overflow</td></tr>
+        <tr><td>ConversationSummaryMemory</td><td>Summarises old history to stay within context window; uses LLM to compress</td></tr>
+        <tr><td>hallucination in RAG</td><td>LLM can still hallucinate even with relevant context retrieved — RAG reduces but does not eliminate it</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══ EXAM TRAPS ════════════════════════════════════════════ -->
+  <div class="section-head">Exam Traps</div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 1 — RAG does not update weights</div>
+    <strong>RAG provides external context at inference time — model weights are never changed.</strong>
+    This is distinct from fine-tuning, where weights are updated. RAG makes the model's knowledge
+    dynamic and up-to-date without the computational cost of fine-tuning.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 2 — Embedding model must match</div>
+    <strong>The embedding model used to index documents must be identical to the one used at retrieval.</strong>
+    Different embedding models produce different vector spaces. Mixing them means your query vector
+    and document vectors live in different geometric spaces — similarity scores are meaningless.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 3 — FAISS is not persistent by default</div>
+    <strong>FAISS stores the index in memory only.</strong>
+    Call <code>vectorstore.save_local('path/')</code> after building to persist it.
+    Otherwise the entire index is lost when the Python process ends and must be rebuilt from scratch.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 4 — Agents can loop indefinitely</div>
+    <strong>Agents are non-deterministic and can get stuck in loops or produce malformed tool calls.</strong>
+    Always set <code>max_iterations</code> in <code>AgentExecutor</code>.
+    Without it, a confused agent can call tools indefinitely, incurring API costs or hanging.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 5 — ConversationBufferMemory grows unboundedly</div>
+    <strong><code>ConversationBufferMemory</code> does NOT automatically trim itself.</strong>
+    Every message is stored verbatim. In a long conversation, this will eventually exceed the LLM's
+    context window. Use <code>ConversationSummaryMemory</code> or manually truncate for long sessions.
+  </div>
+
+  <!-- ═══ INTERACTIVE VIZ ══════════════════════════════════════ -->
+  <div class="section-head" style="margin-top:2rem">Interactive Visualisations</div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.875rem;margin-bottom:2rem">
+    <a class="viz-card" href="../viz/attention.html">
+      <div class="viz-card-title">🎯 Attention Visualiser</div>
+      <div class="viz-card-desc">Understand how the LLM attends to retrieved context within the augmented prompt.</div>
+    </a>
+    <a class="viz-card" href="../viz/tokenisation.html">
+      <div class="viz-card-title">🔤 Tokenisation Explorer</div>
+      <div class="viz-card-desc">Calculate actual token counts for chunks and prompts — critical for context window planning.</div>
+    </a>
+  </div>
+
+  <!-- ═══ PRACTICAL NOTES (collapsed) ══════════════════════════ -->
+  <div style="margin-bottom:2rem">
+    <button class="collapse-toggle">
+      <span class="c-arrow">▶</span>
+      Practical Notes &amp; Code Patterns
+      <span style="margin-left:.5rem;font-size:.75rem;color:var(--muted)">(useful for application — not needed to pass the assessment)</span>
+    </button>
+    <div class="collapse-body">
+
+      <div class="card" style="margin-bottom:1rem">
+        <div class="tag tag-blue">Common Gotchas</div>
+        <ul style="font-size:.875rem;line-height:1.7;padding-left:1.25rem;color:var(--text)">
+          <li><strong>Embedding model mismatch</strong> — index and query must use identical embedding model</li>
+          <li><strong>FAISS not persistent</strong> — call vectorstore.save_local() after building; otherwise lost on process exit</li>
+          <li><strong>LLM still hallucinates with RAG</strong> — RAG reduces hallucination but doesn't eliminate it; include explicit "answer only from context" instructions</li>
+          <li><strong>Agents can loop indefinitely</strong> — always set max_iterations in AgentExecutor</li>
+          <li><strong>ConversationBufferMemory grows unboundedly</strong> — use SummaryMemory for long sessions</li>
+          <li><strong>LangChain API changes frequently</strong> — pin your version; 0.0.x, 0.1.x, 0.2.x are all different</li>
+          <li><strong>k × chunk_size can overflow context</strong> — ensure retrieved tokens + prompt + query fits within model context window</li>
+        </ul>
+      </div>
+
+      <div class="card" style="margin-bottom:1rem">
+        <div class="tag tag-blue">RAG Pipeline Pattern</div>
+        <pre><code class="language-python">from langchain_community.document_loaders import PyPDFLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.vectorstores import FAISS
+
+# Indexing
+loader   = PyPDFLoader("document.pdf")
+docs     = loader.load()
+splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+chunks   = splitter.split_documents(docs)
+embedder = HuggingFaceEmbeddings(model_name='all-MiniLM-L6-v2')
+vs       = FAISS.from_documents(chunks, embedder)
+vs.save_local('faiss_index')    # persist!
+
+# Retrieval
+vs = FAISS.load_local('faiss_index', embedder)  # same embedder!
+results = vs.similarity_search("What is fine-tuning?", k=4)</code></pre>
+      </div>
+
+      <div class="card" style="margin-bottom:1rem">
+        <div class="tag tag-blue">LCEL RAG Chain</div>
+        <pre><code class="language-python">from langchain_openai import ChatOpenAI
+from langchain_core.runnables import RunnablePassthrough
+from langchain_core.output_parsers import StrOutputParser
+from langchain.prompts import PromptTemplate
+
+llm = ChatOpenAI(model='gpt-3.5-turbo', temperature=0)
+prompt = PromptTemplate.from_template(
+    "Context: {context}\nQuestion: {question}\nAnswer:"
+)
+
+chain = (
+    {"context": vs.as_retriever(), "question": RunnablePassthrough()}
+    | prompt
+    | llm
+    | StrOutputParser()
+)
+answer = chain.invoke("What is QLoRA?")</code></pre>
+      </div>
+
+      <div class="card" style="margin-bottom:.5rem">
+        <div class="tag tag-blue">ReAct Agent Pattern</div>
+        <pre><code class="language-python">from langchain.agents import create_react_agent, AgentExecutor
+from langchain.tools import Tool
+
+tools = [
+    Tool(name='Search', func=search_fn,
+         description='Search the web for current information'),
+]
+
+agent = create_react_agent(llm, tools, prompt)
+executor = AgentExecutor(
+    agent=agent, tools=tools,
+    max_iterations=10,          # prevent infinite loops
+    verbose=True
+)
+executor.invoke({'input': 'What is the population of France?'})</code></pre>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ STUDY GAMES (placeholder) ════════════════════════════ -->
+  <div class="section-head" style="margin-top:1rem">Study Games</div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.875rem;margin-bottom:2rem;opacity:.45">
+    <div class="card" style="cursor:not-allowed">
+      <div class="tag">🎮 RAG Pipeline Builder</div>
+      <div style="font-size:.875rem">Order the indexing and retrieval steps correctly — coming Phase 4</div>
+    </div>
+    <div class="card" style="cursor:not-allowed">
+      <div class="tag">⚙ Chunk Size Advisor</div>
+      <div style="font-size:.875rem">Select chunk size and overlap for different document types and query types — coming Phase 4</div>
+    </div>
+  </div>
+
+  <!-- ═══ FULL NOTES LINK ══════════════════════════════════════ -->
+  <div class="card" style="margin-bottom:1.5rem;background:var(--surface2)">
+    <div style="font-size:.875rem;color:var(--muted)">
+      Full curated notes (Obsidian):
+      <a href="obsidian://open?vault=IBM%20Courses&file=claude-content%2F12-ai-agents-rag-langchain"
+         style="color:var(--blue)">
+        claude-content/12-ai-agents-rag-langchain →
+      </a>
+    </div>
+  </div>
+
+  <div class="footer">
+    <a href="../index.html">← VLE Home</a> ·
+    <a href="c11.html">← C11</a> ·
+    <a href="c13.html">C13 →</a> ·
+    <a href="../course-tracker.html" target="_blank">📊 Tracker</a>
+  </div>
+
+</div>
+</body>
+</html>

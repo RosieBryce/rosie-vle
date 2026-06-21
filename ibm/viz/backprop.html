@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Backpropagation · VLE Visualisations</title>
+  <link rel="stylesheet" href="../shared.css">
+  <script src="../shared.js"></script>
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+  <style>
+    /* Network diagram */
+    .net-grid { display: grid; grid-template-columns: 1fr 80px 1fr 80px 1fr; align-items: center; gap: 0; margin: 1.25rem 0; }
+    .net-node { background: var(--surface2); border: 2px solid var(--border); border-radius: 12px; padding: 1rem .875rem; text-align: center; transition: border-color .2s, background .2s; }
+    .net-node.active { border-color: var(--blue); background: var(--blue-bg); }
+    .net-node.done   { border-color: var(--green); background: var(--green-bg); }
+    .net-node-title  { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: .375rem; }
+    .net-val  { font-size: .83rem; font-variant-numeric: tabular-nums; line-height: 1.6; }
+    .net-val .label { color: var(--muted); font-size: .75rem; }
+    .net-val .value { color: var(--text); font-weight: 600; }
+    .net-val .grad  { color: var(--yellow); font-size: .78rem; }
+    .net-arrow { display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 1.25rem; }
+    /* Step panel */
+    .step-panel { background: var(--surface2); border-radius: 8px; padding: 1.125rem 1.25rem; min-height: 140px; margin-bottom: 1rem; }
+    .step-phase { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .09em; margin-bottom: .375rem; }
+    .step-title { font-size: 1rem; font-weight: 600; margin-bottom: .625rem; }
+    .step-calc  { font-size: .875rem; line-height: 1.75; font-variant-numeric: tabular-nums; }
+    .step-calc .eq { color: var(--muted); }
+    .step-calc .result { color: var(--green); font-weight: 700; }
+    .step-calc .formula { color: var(--blue); font-size: .83rem; }
+    /* Controls */
+    .ctrl-btn { padding: .45rem 1.1rem; border-radius: 6px; font-size: .875rem; font-weight: 600; cursor: pointer; border: none; font-family: inherit; transition: all .15s; }
+    .btn-next  { background: var(--blue); color: #fff; }
+    .btn-next:disabled { opacity: .4; cursor: not-allowed; }
+    .btn-reset { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+    .btn-train { background: var(--green); color: #0d1117; }
+    .edit-field { background: var(--surface2); border: 1px solid var(--border); border-radius: 5px; padding: .25rem .5rem; font-size: .83rem; color: var(--text); font-family: inherit; width: 72px; text-align: center; }
+    .edit-field:focus { outline: none; border-color: var(--blue); }
+  </style>
+</head>
+<body>
+<script>initNav('../');</script>
+
+<div class="container">
+
+  <!-- Header -->
+  <div style="margin-bottom:1.5rem">
+    <div class="tag tag-blue" style="margin-bottom:.4rem">Visualisation</div>
+    <h1 style="font-size:1.4rem;font-weight:700;letter-spacing:-.02em;margin-bottom:.375rem">Backpropagation</h1>
+    <p style="color:var(--muted);font-size:.875rem;line-height:1.55">
+      Step through forward propagation and backpropagation in a 2-neuron network.
+      Uses course notation (z = weighted input, a = activation, σ = sigmoid).
+      The math here is what PyTorch's <code>tensor.backward()</code> computes automatically.
+    </p>
+  </div>
+
+  <!-- Editable parameters -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.25rem;margin-bottom:1rem">
+    <div style="font-size:.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.875rem">Network Parameters</div>
+    <div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:center;font-size:.875rem">
+      <label>x &nbsp;<input class="edit-field" id="p-x"  value="0.1" type="number" step="0.1"></label>
+      <label>y (target) &nbsp;<input class="edit-field" id="p-y"  value="1.0" type="number" step="0.1"></label>
+      <label>w₁ &nbsp;<input class="edit-field" id="p-w1" value="0.15" type="number" step="0.05"></label>
+      <label>b₁ &nbsp;<input class="edit-field" id="p-b1" value="0.4"  type="number" step="0.05"></label>
+      <label>w₂ &nbsp;<input class="edit-field" id="p-w2" value="0.45" type="number" step="0.05"></label>
+      <label>b₂ &nbsp;<input class="edit-field" id="p-b2" value="0.65" type="number" step="0.05"></label>
+      <label>α &nbsp;<input class="edit-field" id="p-lr" value="0.5"  type="number" step="0.1"></label>
+      <button class="ctrl-btn btn-reset" onclick="resetAll()">Apply &amp; Reset</button>
+    </div>
+  </div>
+
+  <!-- Network diagram -->
+  <div class="net-grid" id="net-diag">
+    <!-- Input -->
+    <div class="net-node" id="n-input">
+      <div class="net-node-title">Input</div>
+      <div class="net-val"><span class="label">x = </span><span class="value" id="nv-x">0.1000</span></div>
+    </div>
+    <div class="net-arrow">→</div>
+    <!-- Neuron 1 -->
+    <div class="net-node" id="n-1">
+      <div class="net-node-title">Neuron 1</div>
+      <div class="net-val"><span class="label">z₁ = </span><span class="value" id="nv-z1">—</span></div>
+      <div class="net-val"><span class="label">a₁ = σ(z₁) = </span><span class="value" id="nv-a1">—</span></div>
+      <div class="net-val grad" id="nv-g1" style="display:none"></div>
+    </div>
+    <div class="net-arrow">→</div>
+    <!-- Neuron 2 -->
+    <div class="net-node" id="n-2">
+      <div class="net-node-title">Neuron 2 (output)</div>
+      <div class="net-val"><span class="label">z₂ = </span><span class="value" id="nv-z2">—</span></div>
+      <div class="net-val"><span class="label">a₂ = σ(z₂) = </span><span class="value" id="nv-a2">—</span></div>
+      <div class="net-val grad" id="nv-g2" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- Step panel -->
+  <div class="step-panel">
+    <div class="step-phase" id="sp-phase" style="color:var(--blue)">Ready</div>
+    <div class="step-title" id="sp-title">Press "Next Step" to begin forward propagation</div>
+    <div class="step-calc"  id="sp-calc"></div>
+  </div>
+
+  <!-- Controls -->
+  <div style="display:flex;gap:.625rem;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap">
+    <button class="ctrl-btn btn-next"  id="next-btn" onclick="nextStep()">Next Step ▶</button>
+    <button class="ctrl-btn btn-reset" onclick="resetAll()">Reset</button>
+    <div style="font-size:.83rem;color:var(--muted);margin-left:.5rem" id="step-counter">Step 0 / 7</div>
+    <button class="ctrl-btn btn-train" onclick="runTraining()" style="margin-left:auto">
+      Run 100 Epochs →
+    </button>
+  </div>
+
+  <!-- Loss chart -->
+  <div>
+    <div style="font-size:.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.375rem">Loss over Training Epochs</div>
+    <div id="loss-chart" style="height:240px;margin-bottom:1rem"></div>
+  </div>
+
+  <!-- What to notice -->
+  <div class="card" style="margin-bottom:1.5rem">
+    <div style="font-size:.83rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--blue);margin-bottom:.75rem">What to Notice</div>
+    <ul style="font-size:.875rem;line-height:1.65;padding-left:1.25rem">
+      <li><strong>The chain rule in action:</strong> Every gradient flows backward through the network, multiplied at each step by the local derivative (sigmoid′ = a(1−a)). This is the chain rule applied to a composition of functions.</li>
+      <li><strong>Sigmoid saturation damping:</strong> When z is large (a → 1 or a → 0), σ′(z) = a(1−a) → 0. The gradient shrinks as it passes through a saturated neuron. This is the vanishing gradient problem — worse with many layers.</li>
+      <li><strong>The gradient is the slope:</strong> dL/dw₁ tells you: if w₁ increases by a tiny amount, how much does the loss change? A large gradient means a steep slope — take a big step. A small gradient means the loss is already near flat.</li>
+      <li><strong>After "Run 100 Epochs":</strong> Watch the loss curve decrease and then flatten. The rate of decrease depends on α (learning rate). With α = 0.5, the network converges in ~50 epochs for these default values.</li>
+    </ul>
+  </div>
+
+  <div class="footer">
+    <a href="../index.html">← VLE Home</a> ·
+    <a href="activation-functions.html">← Activation Functions</a> ·
+    <a href="bias-variance.html">Bias–Variance →</a>
+  </div>
+
+</div>
+
+<script>
+// ── Math ─────────────────────────────────────────────────────────────────────
+const sig  = z => 1 / (1 + Math.exp(-Math.max(-500, Math.min(500, z))));
+const sigD = a => a * (1 - a);
+const fmt  = v => v.toFixed(6);
+const fmt4 = v => v.toFixed(4);
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let P = {}; // params
+let C = {}; // computed values
+let stepIdx = 0;
+const TOTAL_STEPS = 7;
+let lossHistory = [];
+
+function readParams() {
+  return {
+    x:  +document.getElementById('p-x').value  || 0.1,
+    y:  +document.getElementById('p-y').value  || 1.0,
+    w1: +document.getElementById('p-w1').value || 0.15,
+    b1: +document.getElementById('p-b1').value || 0.4,
+    w2: +document.getElementById('p-w2').value || 0.45,
+    b2: +document.getElementById('p-b2').value || 0.65,
+    lr: +document.getElementById('p-lr').value || 0.5,
+  };
+}
+
+function computeForward(p) {
+  const z1 = p.w1 * p.x + p.b1;
+  const a1 = sig(z1);
+  const z2 = p.w2 * a1 + p.b2;
+  const a2 = sig(z2);
+  const loss = 0.5 * (p.y - a2) ** 2;
+  return { z1, a1, z2, a2, loss };
+}
+
+function computeBackward(p, c) {
+  const dLda2 = -(p.y - c.a2);
+  const dLdz2 = dLda2 * sigD(c.a2);
+  const dLdw2 = dLdz2 * c.a1;
+  const dLdb2 = dLdz2;
+  const dLda1 = dLdz2 * p.w2;
+  const dLdz1 = dLda1 * sigD(c.a1);
+  const dLdw1 = dLdz1 * p.x;
+  const dLdb1 = dLdz1;
+  return { dLda2, dLdz2, dLdw2, dLdb2, dLda1, dLdz1, dLdw1, dLdb1 };
+}
+
+// Steps
+const STEPS = [
+  () => {
+    const z1 = P.w1 * P.x + P.b1;
+    const a1 = sig(z1);
+    C.z1 = z1; C.a1 = a1;
+    setNode('n-1', 'active');
+    setNodeVals({ z1, a1 });
+    showCalc('Forward Pass', 'Neuron 1 — weighted input + activation', `
+      <span class="formula">z₁ = w₁·x + b₁</span><br>
+      &nbsp;&nbsp;&nbsp;= ${fmt4(P.w1)} × ${fmt4(P.x)} + ${fmt4(P.b1)}<br>
+      &nbsp;&nbsp;&nbsp;= <span class="result">${fmt(z1)}</span><br><br>
+      <span class="formula">a₁ = σ(z₁) = 1 / (1 + e^(−z₁))</span><br>
+      &nbsp;&nbsp;&nbsp;= <span class="result">${fmt(a1)}</span>
+    `, 'var(--blue)');
+  },
+  () => {
+    const z2 = P.w2 * C.a1 + P.b2;
+    const a2 = sig(z2);
+    C.z2 = z2; C.a2 = a2;
+    setNode('n-2', 'active');
+    setNodeVals({ z2, a2 });
+    showCalc('Forward Pass', 'Neuron 2 — output neuron', `
+      <span class="formula">z₂ = w₂·a₁ + b₂</span><br>
+      &nbsp;&nbsp;&nbsp;= ${fmt4(P.w2)} × ${fmt(C.a1)} + ${fmt4(P.b2)}<br>
+      &nbsp;&nbsp;&nbsp;= <span class="result">${fmt(z2)}</span><br><br>
+      <span class="formula">a₂ = σ(z₂) &nbsp;&nbsp; (network output ŷ)</span><br>
+      &nbsp;&nbsp;&nbsp;= <span class="result">${fmt(a2)}</span>
+    `, 'var(--blue)');
+  },
+  () => {
+    const loss = 0.5 * (P.y - C.a2) ** 2;
+    C.loss = loss;
+    showCalc('Loss', 'MSE loss ½(y − ŷ)²', `
+      <span class="formula">L = ½(y − a₂)²</span><br>
+      &nbsp;&nbsp;&nbsp;= ½(${fmt4(P.y)} − ${fmt(C.a2)})²<br>
+      &nbsp;&nbsp;&nbsp;= <span class="result">${fmt(loss)}</span><br><br>
+      <span class="eq">Target y = ${fmt4(P.y)}&nbsp;&nbsp; Output ŷ = ${fmt(C.a2)}&nbsp;&nbsp; Error = ${fmt(P.y - C.a2)}</span>
+    `, 'var(--red)');
+  },
+  () => {
+    const g = computeBackward(P, C);
+    C.g = g;
+    setNode('n-2', 'done');
+    showGrad('n-2', 2, g.dLdw2, g.dLdb2);
+    showCalc('Backward Pass', 'Neuron 2 — gradients (right → left)', `
+      <span class="formula">dL/da₂ = −(y − a₂) = ${fmt(g.dLda2)}</span><br>
+      <span class="formula">σ′(a₂) = a₂(1−a₂) = ${fmt(sigD(C.a2))}</span><br>
+      <span class="formula">dL/dz₂ = dL/da₂ × σ′(a₂) = ${fmt(g.dLdz2)}</span><br>
+      <span class="formula">dL/dw₂ = dL/dz₂ × a₁ = ${fmt(g.dLdw2)}</span>
+      &nbsp;<span class="result">← gradient for w₂</span><br>
+      <span class="formula">dL/db₂ = dL/dz₂ = ${fmt(g.dLdb2)}</span>
+    `, 'var(--yellow)');
+  },
+  () => {
+    setNode('n-1', 'done');
+    showGrad('n-1', 1, C.g.dLdw1, C.g.dLdb1);
+    showCalc('Backward Pass', 'Neuron 1 — gradients (propagated left)', `
+      <span class="formula">dL/da₁ = dL/dz₂ × w₂ = ${fmt(C.g.dLda1)}</span><br>
+      <span class="formula">σ′(a₁) = a₁(1−a₁) = ${fmt(sigD(C.a1))}</span><br>
+      <span class="formula">dL/dz₁ = dL/da₁ × σ′(a₁) = ${fmt(C.g.dLdz1)}</span><br>
+      <span class="formula">dL/dw₁ = dL/dz₁ × x = ${fmt(C.g.dLdw1)}</span>
+      &nbsp;<span class="result">← gradient for w₁</span>
+    `, 'var(--yellow)');
+  },
+  () => {
+    const nw1 = P.w1 - P.lr * C.g.dLdw1;
+    const nb1 = P.b1 - P.lr * C.g.dLdb1;
+    const nw2 = P.w2 - P.lr * C.g.dLdw2;
+    const nb2 = P.b2 - P.lr * C.g.dLdb2;
+    C.newW = { w1: nw1, b1: nb1, w2: nw2, b2: nb2 };
+    showCalc('Weight Update', `w = w − α × dL/dw &nbsp;(α = ${P.lr})`, `
+      w₁: ${fmt4(P.w1)} − ${P.lr}×${fmt(C.g.dLdw1)} = <span class="result">${fmt(nw1)}</span><br>
+      b₁: ${fmt4(P.b1)} − ${P.lr}×${fmt(C.g.dLdb1)} = <span class="result">${fmt(nb1)}</span><br>
+      w₂: ${fmt4(P.w2)} − ${P.lr}×${fmt(C.g.dLdw2)} = <span class="result">${fmt(nw2)}</span><br>
+      b₂: ${fmt4(P.b2)} − ${P.lr}×${fmt(C.g.dLdb2)} = <span class="result">${fmt(nb2)}</span>
+    `, 'var(--green)');
+  },
+  () => {
+    // Apply update
+    P.w1 = C.newW.w1; P.b1 = C.newW.b1;
+    P.w2 = C.newW.w2; P.b2 = C.newW.b2;
+    updateInputFields();
+    setNode('n-1', ''); setNode('n-2', '');
+    clearGrads(); clearNodeVals();
+    showCalc('Epoch Complete', 'Weights updated — ready for next forward pass', `
+      New: w₁=${fmt4(P.w1)}, b₁=${fmt4(P.b1)}, w₂=${fmt4(P.w2)}, b₂=${fmt4(P.b2)}<br>
+      <span class="eq">Loss was ${fmt(C.loss)} → press "Next Step" to start a new pass</span>
+    `, 'var(--green)');
+    document.getElementById('next-btn').textContent = 'Next Step ▶';
+    stepIdx = -1; // will be incremented to 0 at end of nextStep
+  }
+];
+
+function nextStep() {
+  if (stepIdx === 0) {
+    C = {}; // fresh compute state for this pass
+    setNode('n-1', ''); setNode('n-2', '');
+    clearGrads(); clearNodeVals();
+  }
+  STEPS[stepIdx]();
+  stepIdx++;
+  document.getElementById('step-counter').textContent = `Step ${stepIdx} / ${TOTAL_STEPS}`;
+  if (stepIdx >= TOTAL_STEPS) {
+    stepIdx = 0;
+    document.getElementById('next-btn').textContent = 'Next Pass ▶';
+  }
+}
+
+// ── DOM helpers ───────────────────────────────────────────────────────────────
+function setNode(id, cls) {
+  const el = document.getElementById(id);
+  el.className = 'net-node' + (cls ? ' ' + cls : '');
+}
+function setNodeVals(vals) {
+  if (vals.z1 !== undefined) document.getElementById('nv-z1').textContent = fmt(vals.z1);
+  if (vals.a1 !== undefined) document.getElementById('nv-a1').textContent = fmt(vals.a1);
+  if (vals.z2 !== undefined) document.getElementById('nv-z2').textContent = fmt(vals.z2);
+  if (vals.a2 !== undefined) document.getElementById('nv-a2').textContent = fmt(vals.a2);
+}
+function clearNodeVals() {
+  ['z1','a1','z2','a2'].forEach(k => document.getElementById('nv-'+k).textContent = '—');
+}
+function showGrad(nodeId, n, dw, db) {
+  const el = document.getElementById('nv-g' + n);
+  el.style.display = '';
+  el.textContent = `∂L/∂w${n}=${fmt4(dw)}  ∂L/∂b${n}=${fmt4(db)}`;
+}
+function clearGrads() {
+  ['nv-g1','nv-g2'].forEach(id => { const el = document.getElementById(id); el.style.display = 'none'; el.textContent = ''; });
+}
+function showCalc(phase, title, calc, color) {
+  document.getElementById('sp-phase').textContent = phase;
+  document.getElementById('sp-phase').style.color = color;
+  document.getElementById('sp-title').textContent = title;
+  document.getElementById('sp-calc').innerHTML = calc;
+}
+function updateInputFields() {
+  document.getElementById('p-w1').value = P.w1.toFixed(4);
+  document.getElementById('p-b1').value = P.b1.toFixed(4);
+  document.getElementById('p-w2').value = P.w2.toFixed(4);
+  document.getElementById('p-b2').value = P.b2.toFixed(4);
+}
+
+// ── Reset ─────────────────────────────────────────────────────────────────────
+function resetAll() {
+  P = readParams();
+  C = {}; stepIdx = 0; lossHistory = [];
+  clearNodeVals(); clearGrads();
+  setNode('n-1', ''); setNode('n-2', '');
+  document.getElementById('nv-x').textContent = fmt4(P.x);
+  document.getElementById('next-btn').textContent = 'Next Step ▶';
+  document.getElementById('step-counter').textContent = `Step 0 / ${TOTAL_STEPS}`;
+  showCalc('Ready', 'Press "Next Step" to begin forward propagation', '', 'var(--blue)');
+  // Clear loss chart
+  Plotly.react('loss-chart', [{ x: [], y: [], mode: 'lines', line: { color: '#f85149' }, name: 'Loss' }], lossLayout(), { responsive: true, displayModeBar: false });
+}
+
+// ── Training ──────────────────────────────────────────────────────────────────
+function runTraining() {
+  P = readParams(); // snapshot current params
+  lossHistory = [];
+  const epochs = 100;
+  for (let e = 0; e < epochs; e++) {
+    const c = computeForward(P);
+    lossHistory.push({ epoch: e + 1, loss: c.loss });
+    const g = computeBackward(P, c);
+    P.w1 -= P.lr * g.dLdw1; P.b1 -= P.lr * g.dLdb1;
+    P.w2 -= P.lr * g.dLdw2; P.b2 -= P.lr * g.dLdb2;
+  }
+  updateInputFields();
+  const xs = lossHistory.map(d => d.epoch);
+  const ys = lossHistory.map(d => d.loss);
+  Plotly.react('loss-chart',
+    [{ x: xs, y: ys, mode: 'lines', line: { color: '#f85149', width: 2 }, name: 'Loss', fill: 'tozeroy', fillcolor: 'rgba(248,81,73,.12)' }],
+    lossLayout(), { responsive: true, displayModeBar: false });
+  // Reset step state
+  C = {}; stepIdx = 0;
+  showCalc('Training Complete', `100 epochs done. Final loss: ${lossHistory[99].loss.toFixed(6)}. Weights updated — inspect them above.`, '', 'var(--green)');
+}
+
+function lossLayout() {
+  return {
+    paper_bgcolor: '#0d1117', plot_bgcolor: '#161b22',
+    font: { color: '#e6edf3', size: 11, family: "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" },
+    xaxis: { gridcolor: '#30363d', zerolinecolor: '#30363d', linecolor: '#30363d', title: { text: 'Epoch' } },
+    yaxis: { gridcolor: '#30363d', zerolinecolor: '#30363d', linecolor: '#30363d', title: { text: 'Loss' } },
+    margin: { l: 52, r: 16, t: 20, b: 48 },
+    legend: { bgcolor: 'rgba(0,0,0,0)' },
+  };
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  P = readParams();
+  document.getElementById('nv-x').textContent = fmt4(P.x);
+  Plotly.newPlot('loss-chart',
+    [{ x: [], y: [], mode: 'lines', line: { color: '#f85149', width: 2 }, name: 'Loss' }],
+    lossLayout(), { responsive: true, displayModeBar: false });
+});
+</script>
+</body>
+</html>

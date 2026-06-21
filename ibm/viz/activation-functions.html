@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Activation Functions · VLE Visualisations</title>
+  <link rel="stylesheet" href="../shared.css">
+  <script src="../shared.js"></script>
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+  <style>
+    .fn-toggle { display: inline-flex; align-items: center; gap: .45rem; padding: .35rem .75rem;
+      border-radius: 6px; border: 1px solid var(--border); background: var(--surface2);
+      cursor: pointer; font-size: .83rem; font-family: inherit; color: var(--muted); transition: all .15s; }
+    .fn-toggle input { accent-color: currentColor; }
+    .fn-toggle:hover { border-color: var(--blue); color: var(--blue); }
+    .fn-toggle.on { background: var(--blue-bg); border-color: rgba(88,166,255,.4); color: var(--text); }
+    .deriv-toggle { padding: .35rem .875rem; border-radius: 6px; border: 1px solid var(--border);
+      background: var(--surface2); cursor: pointer; font-size: .83rem; font-family: inherit; color: var(--muted); transition: all .15s; }
+    .deriv-toggle.on { background: var(--yellow-bg); border-color: rgba(210,153,34,.4); color: var(--yellow); }
+    .fn-color { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  </style>
+</head>
+<body>
+<script>initNav('../');</script>
+
+<div class="container">
+
+  <!-- Header -->
+  <div style="margin-bottom:1.5rem">
+    <div class="tag tag-blue" style="margin-bottom:.4rem">Visualisation</div>
+    <h1 style="font-size:1.4rem;font-weight:700;letter-spacing:-.02em;margin-bottom:.375rem">Activation Functions</h1>
+    <p style="color:var(--muted);font-size:.875rem;line-height:1.55">
+      Activation functions introduce non-linearity into neural networks — without them, stacking linear layers
+      is equivalent to a single linear transformation. Each function has different saturation behaviour and
+      gradient properties that affect how well a network trains.
+    </p>
+  </div>
+
+  <!-- Controls -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.25rem;margin-bottom:1rem">
+    <div style="display:flex;align-items:center;gap:.625rem;flex-wrap:wrap;margin-bottom:.875rem">
+      <span style="font-size:.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;min-width:80px">Functions</span>
+      <label class="fn-toggle on" id="tog-sigmoid"><input type="checkbox" checked onchange="toggle('sigmoid',this)"><span class="fn-color" style="background:#58a6ff"></span>Sigmoid</label>
+      <label class="fn-toggle on" id="tog-tanh"><input type="checkbox" checked onchange="toggle('tanh',this)"><span class="fn-color" style="background:#3fb950"></span>Tanh</label>
+      <label class="fn-toggle on" id="tog-relu"><input type="checkbox" checked onchange="toggle('relu',this)"><span class="fn-color" style="background:#f85149"></span>ReLU</label>
+      <label class="fn-toggle" id="tog-lrelu"><input type="checkbox" onchange="toggle('lrelu',this)"><span class="fn-color" style="background:#d29922"></span>Leaky ReLU</label>
+      <label class="fn-toggle" id="tog-elu"><input type="checkbox" onchange="toggle('elu',this)"><span class="fn-color" style="background:#bc8cff"></span>ELU</label>
+    </div>
+    <div style="display:flex;align-items:center;gap:.625rem;flex-wrap:wrap">
+      <span style="font-size:.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;min-width:80px">Options</span>
+      <button class="deriv-toggle" id="deriv-btn" onclick="toggleDeriv()">Show derivatives f′(x)</button>
+      <button class="deriv-toggle" id="sat-btn" onclick="toggleSat()">Highlight saturation zones</button>
+    </div>
+  </div>
+
+  <!-- Chart -->
+  <div id="act-chart" style="height:420px;margin-bottom:1rem"></div>
+
+  <!-- Function summary -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:1.5rem">
+    <table class="concept-table">
+      <thead><tr><th>Function</th><th>Formula</th><th>Output range</th><th>Gradient issue</th><th>When to use</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span style="color:#58a6ff">Sigmoid</span></td>
+          <td>1 / (1 + e⁻ˣ)</td>
+          <td>(0, 1)</td>
+          <td><strong style="color:var(--red)">Saturates</strong> for |x| &gt; 4; gradient → 0 (vanishing)</td>
+          <td>Output layer for binary classification only</td>
+        </tr>
+        <tr>
+          <td><span style="color:#3fb950">Tanh</span></td>
+          <td>(eˣ − e⁻ˣ) / (eˣ + e⁻ˣ)</td>
+          <td>(−1, 1)</td>
+          <td><strong style="color:var(--red)">Saturates</strong> for |x| &gt; 2; stronger gradient than sigmoid</td>
+          <td>Hidden layers (better than sigmoid — zero-centred)</td>
+        </tr>
+        <tr>
+          <td><span style="color:#f85149">ReLU</span></td>
+          <td>max(0, x)</td>
+          <td>[0, ∞)</td>
+          <td>Dead neuron: gradient = 0 for x ≤ 0 (neuron never recovers)</td>
+          <td>Default for hidden layers in CNNs/MLPs — fast, sparse</td>
+        </tr>
+        <tr>
+          <td><span style="color:#d29922">Leaky ReLU</span></td>
+          <td>x &gt; 0 ? x : 0.01x</td>
+          <td>(−∞, ∞)</td>
+          <td>Small gradient for x &lt; 0 (no dead neurons)</td>
+          <td>Drop-in ReLU replacement when dead neurons are a concern</td>
+        </tr>
+        <tr>
+          <td><span style="color:#bc8cff">ELU</span></td>
+          <td>x &gt; 0 ? x : α(eˣ−1)</td>
+          <td>(−α, ∞)</td>
+          <td>Smooth near zero; can produce negative outputs → zero mean</td>
+          <td>When you need smooth gradients everywhere; α usually = 1</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- What to notice -->
+  <div class="card" style="margin-bottom:1.5rem">
+    <div style="font-size:.83rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--blue);margin-bottom:.75rem">What to Notice</div>
+    <ul style="font-size:.875rem;line-height:1.65;padding-left:1.25rem">
+      <li><strong>Sigmoid and tanh saturate:</strong> Turn on saturation zones and see the flat regions at the extremes. The derivative (f′) is near zero in those zones — this is the vanishing gradient problem. Gradients from these neurons barely update earlier layers.</li>
+      <li><strong>ReLU derivative:</strong> Toggle f′(x). ReLU is 0 for x ≤ 0 (exactly zero, not approximately). Any neuron receiving consistently negative input is permanently dead — its gradient is zero, so it never updates. Leaky ReLU fixes this with a small slope.</li>
+      <li><strong>Tanh is better than sigmoid for hidden layers:</strong> Its output is zero-centred (−1, 1) vs (0, 1). Non-zero-centred outputs cause gradient updates that are all positive or all negative, slowing convergence.</li>
+      <li><strong>ELU's smooth negative region:</strong> Unlike ReLU, ELU outputs negative values and is differentiable everywhere. This can lead to zero-mean activations naturally, which helps with gradient flow.</li>
+      <li><strong>For the assessment:</strong> Know which activation saturates (sigmoid, tanh) and which doesn't (ReLU, Leaky ReLU). Know that ReLU is the standard default for hidden layers and sigmoid is for binary output layers.</li>
+    </ul>
+  </div>
+
+  <div class="footer">
+    <a href="../index.html">← VLE Home</a> ·
+    <a href="gradient-descent.html">← Gradient Descent</a> ·
+    <a href="backprop.html">Backpropagation →</a>
+  </div>
+
+</div>
+
+<script>
+// ── Functions ─────────────────────────────────────────────────────────────────
+const XS = [];
+for (let x = -6; x <= 6; x += 0.05) XS.push(+x.toFixed(2));
+
+const sigmoid  = x => 1 / (1 + Math.exp(-Math.max(-500, Math.min(500, x))));
+const dsigmoid = x => { const s = sigmoid(x); return s * (1 - s); };
+const tanh_fn  = x => Math.tanh(x);
+const dtanh    = x => 1 - Math.tanh(x)**2;
+const relu     = x => Math.max(0, x);
+const drelu    = x => x > 0 ? 1 : 0;
+const lrelu    = x => x > 0 ? x : 0.01 * x;
+const dlrelu   = x => x > 0 ? 1 : 0.01;
+const elu      = x => x > 0 ? x : Math.exp(x) - 1;
+const delu     = x => x > 0 ? 1 : Math.exp(x);
+
+const FNS = {
+  sigmoid: { fn: sigmoid, dfn: dsigmoid, color: '#58a6ff', label: 'σ(x)' },
+  tanh:    { fn: tanh_fn, dfn: dtanh,    color: '#3fb950', label: 'tanh(x)' },
+  relu:    { fn: relu,    dfn: drelu,    color: '#f85149', label: 'ReLU(x)' },
+  lrelu:   { fn: lrelu,   dfn: dlrelu,   color: '#d29922', label: 'LeakyReLU(x)' },
+  elu:     { fn: elu,     dfn: delu,     color: '#bc8cff', label: 'ELU(x)' },
+};
+
+// State
+let active = new Set(['sigmoid', 'tanh', 'relu']);
+let showDeriv = false;
+let showSat   = false;
+
+// ── Plotly theme ──────────────────────────────────────────────────────────────
+const THEME = {
+  paper_bgcolor: '#0d1117', plot_bgcolor: '#161b22',
+  font: { color: '#e6edf3', size: 11, family: "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" },
+  xaxis: { gridcolor: '#30363d', zerolinecolor: '#8b949e', linecolor: '#30363d', range: [-6, 6], title: { text: 'x' } },
+  yaxis: { gridcolor: '#30363d', zerolinecolor: '#8b949e', linecolor: '#30363d', range: [-2, 2], title: { text: 'f(x)' } },
+  margin: { l: 52, r: 16, t: 20, b: 48 },
+  legend: { bgcolor: 'rgba(0,0,0,0)', font: { size: 10 } },
+};
+
+function buildTraces() {
+  const traces = [];
+
+  // Saturation zones (ReLU doesn't saturate; sigmoid and tanh do)
+  if (showSat) {
+    const satZones = [
+      { x: [-6,-4,-4,-6], y: [-2,-2,2,2], fill: 'toself', fillcolor: 'rgba(248,81,73,0.08)', line: { width: 0 }, mode: 'lines', showlegend: false, hoverinfo: 'skip', name: '' },
+      { x: [4,6,6,4],     y: [-2,-2,2,2], fill: 'toself', fillcolor: 'rgba(248,81,73,0.08)', line: { width: 0 }, mode: 'lines', showlegend: false, hoverinfo: 'skip', name: '' },
+    ];
+    traces.push(...satZones);
+    traces.push({
+      x: [-5], y: [1.7], mode: 'text', text: ['saturation zone'],
+      textfont: { color: '#f85149', size: 10 }, showlegend: false, hoverinfo: 'skip', name: ''
+    });
+    traces.push({
+      x: [5], y: [1.7], mode: 'text', text: ['saturation zone'],
+      textfont: { color: '#f85149', size: 10 }, showlegend: false, hoverinfo: 'skip', name: ''
+    });
+  }
+
+  // Function and derivative traces
+  active.forEach(key => {
+    const f = FNS[key];
+    const ys = XS.map(f.fn);
+    traces.push({
+      x: XS, y: ys, mode: 'lines', name: f.label,
+      line: { color: f.color, width: 2.5 }
+    });
+    if (showDeriv) {
+      const dys = XS.map(f.dfn);
+      traces.push({
+        x: XS, y: dys, mode: 'lines', name: f.label + "′",
+        line: { color: f.color, width: 1.5, dash: 'dash' }, opacity: 0.7
+      });
+    }
+  });
+
+  return traces;
+}
+
+function render() {
+  Plotly.react('act-chart', buildTraces(), THEME, { responsive: true, displayModeBar: false });
+}
+
+function toggle(key, checkbox) {
+  const label = document.getElementById('tog-' + key);
+  if (checkbox.checked) { active.add(key); label.classList.add('on'); }
+  else { active.delete(key); label.classList.remove('on'); }
+  render();
+}
+
+function toggleDeriv() {
+  showDeriv = !showDeriv;
+  const btn = document.getElementById('deriv-btn');
+  btn.classList.toggle('on', showDeriv);
+  btn.textContent = showDeriv ? 'Hide derivatives f′(x)' : 'Show derivatives f′(x)';
+  render();
+}
+
+function toggleSat() {
+  showSat = !showSat;
+  const btn = document.getElementById('sat-btn');
+  btn.classList.toggle('on', showSat);
+  btn.textContent = showSat ? 'Hide saturation zones' : 'Highlight saturation zones';
+  render();
+}
+
+document.addEventListener('DOMContentLoaded', render);
+</script>
+</body>
+</html>

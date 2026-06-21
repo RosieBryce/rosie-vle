@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gradient Descent · VLE Visualisations</title>
+  <link rel="stylesheet" href="../shared.css">
+  <script src="../shared.js"></script>
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+  <style>
+    .controls-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; margin-bottom: 1rem; }
+    .ctrl-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: .875rem; }
+    .ctrl-row:last-child { margin-bottom: 0; }
+    .ctrl-label { font-size: .83rem; color: var(--muted); flex-shrink: 0; min-width: 120px; }
+    .ctrl-value { font-size: .83rem; color: var(--blue); font-variant-numeric: tabular-nums; min-width: 50px; }
+    input[type=range] { flex: 1; min-width: 120px; max-width: 280px; accent-color: var(--blue); }
+    .preset-btn {
+      padding: .35rem .875rem; border-radius: 6px; font-size: .8rem; font-weight: 500; cursor: pointer;
+      border: 1px solid var(--border); background: var(--surface2); color: var(--muted);
+      font-family: inherit; transition: all .15s;
+    }
+    .preset-btn:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-bg); }
+    .preset-btn.active { border-color: var(--blue); color: var(--blue); background: var(--blue-bg); }
+    .action-btn {
+      padding: .4rem 1rem; border-radius: 6px; font-size: .875rem; font-weight: 600; cursor: pointer;
+      border: none; font-family: inherit; transition: all .15s;
+    }
+    .btn-run   { background: var(--green); color: #0d1117; }
+    .btn-step  { background: var(--blue-bg); color: var(--blue); border: 1px solid rgba(88,166,255,.3); }
+    .btn-reset { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+    .btn-run.running { background: var(--red); color: #fff; }
+    .stats-row { display: flex; gap: 1.25rem; flex-wrap: wrap; font-size: .83rem; font-variant-numeric: tabular-nums; }
+    .stat-item { display: flex; flex-direction: column; gap: .125rem; }
+    .stat-item .sl { color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; }
+    .stat-item .sv { color: var(--text); font-weight: 600; }
+    .notice-box { background: var(--surface2); border-radius: 8px; padding: 1rem 1.125rem; font-size: .875rem; line-height: 1.6; margin-top: .5rem; }
+    .notice-box li { margin-bottom: .5rem; }
+    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+    @media (max-width: 640px) { .charts-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<script>initNav('../');</script>
+
+<div class="container">
+
+  <!-- Header -->
+  <div style="margin-bottom:1.5rem">
+    <div class="tag tag-blue" style="margin-bottom:.4rem">Visualisation</div>
+    <h1 style="font-size:1.4rem;font-weight:700;letter-spacing:-.02em;margin-bottom:.375rem">Gradient Descent</h1>
+    <p style="color:var(--muted);font-size:.875rem;line-height:1.55">
+      Gradient descent minimises the cost function J(w) by repeatedly moving w in the direction opposite the gradient.
+      This visualises J(w) = ½n Σ(w·x − y)² on the simple dataset y = 2x (true weight w* = 2).
+    </p>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls-card">
+    <!-- Presets -->
+    <div class="ctrl-row">
+      <span class="ctrl-label">Preset</span>
+      <button class="preset-btn active" id="pre1" onclick="applyPreset(0.3, 0.0, this)">✓ Good LR (0.3)</button>
+      <button class="preset-btn" id="pre2" onclick="applyPreset(1.5, 0.0, this)">Too Large (1.5)</button>
+      <button class="preset-btn" id="pre3" onclick="applyPreset(0.005, 0.0, this)">Too Small (0.005)</button>
+    </div>
+
+    <!-- Alpha slider -->
+    <div class="ctrl-row">
+      <span class="ctrl-label">Learning rate α</span>
+      <input type="range" id="alpha-sl" min="0.001" max="2.0" step="0.001" value="0.3"
+             oninput="setAlpha(+this.value)">
+      <span class="ctrl-value" id="alpha-val">0.300</span>
+    </div>
+
+    <!-- w0 slider -->
+    <div class="ctrl-row">
+      <span class="ctrl-label">Start weight w₀</span>
+      <input type="range" id="w0-sl" min="-2" max="4" step="0.1" value="0.0"
+             oninput="setW0(+this.value)">
+      <span class="ctrl-value" id="w0-val">0.0</span>
+    </div>
+
+    <!-- Action buttons + stats -->
+    <div class="ctrl-row" style="gap:.625rem">
+      <button class="action-btn btn-run"   id="run-btn"   onclick="toggleRun()">▶ Run</button>
+      <button class="action-btn btn-step"  onclick="doStep()">Step</button>
+      <button class="action-btn btn-reset" onclick="doReset()">Reset</button>
+    </div>
+
+    <div class="stats-row" id="stats-row">
+      <div class="stat-item"><div class="sl">Iteration</div><div class="sv" id="s-iter">0</div></div>
+      <div class="stat-item"><div class="sl">w</div><div class="sv" id="s-w">0.000000</div></div>
+      <div class="stat-item"><div class="sl">J(w)</div><div class="sv" id="s-j">—</div></div>
+      <div class="stat-item"><div class="sl">dJ/dw</div><div class="sv" id="s-g">—</div></div>
+      <div class="stat-item"><div class="sl">|w − w*|</div><div class="sv" id="s-err">—</div></div>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="charts-grid">
+    <div>
+      <div style="font-size:.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.375rem">Cost Function J(w)</div>
+      <div id="cost-chart" style="height:320px"></div>
+    </div>
+    <div>
+      <div style="font-size:.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.375rem">Data + Fit Line</div>
+      <div id="fit-chart" style="height:320px"></div>
+    </div>
+  </div>
+
+  <!-- What to notice -->
+  <div class="card" style="margin-bottom:1.5rem">
+    <div style="font-size:.83rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--blue);margin-bottom:.75rem">What to Notice</div>
+    <ul class="notice-box" style="padding-left:1.25rem">
+      <li><strong>Good LR (α = 0.3):</strong> The descent point moves smoothly down the parabola, converging to w* = 2. Each step is appropriately sized — not too big, not too small.</li>
+      <li><strong>Too large (α = 1.5):</strong> Steps overshoot the minimum, bouncing from one side to the other. If α > 2 for this problem, it diverges. This is why LR is the most sensitive hyperparameter.</li>
+      <li><strong>Too small (α = 0.005):</strong> The descent crawls. Hit Run and watch hundreds of iterations pass with tiny progress. In practice this means hours of GPU time wasted.</li>
+      <li><strong>The gradient is proportional to distance from minimum:</strong> Near w*, the parabola is nearly flat — the gradient is small, so the step is automatically small. This is why gradient descent naturally "slows down" as it converges.</li>
+      <li><strong>The fit line converges to y = 2x:</strong> Watch the right chart — as w → 2, the predicted line approaches the true generating process.</li>
+    </ul>
+  </div>
+
+  <div class="footer">
+    <a href="../index.html">← VLE Home</a> ·
+    <a href="activation-functions.html">Activation Functions →</a>
+  </div>
+
+</div>
+
+<script>
+// ── Math ─────────────────────────────────────────────────────────────────────
+const TRUE_W = 2.0;
+const XS = [0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0];
+const YS = XS.map(x => TRUE_W * x);
+
+function cost(w) {
+  const n = XS.length;
+  return XS.reduce((s, x, i) => s + (w*x - YS[i])**2, 0) / (2*n);
+}
+function grad(w) {
+  const n = XS.length;
+  return XS.reduce((s, x, i) => s + (w*x - YS[i])*x, 0) / n;
+}
+
+// Precompute cost curve
+const W_CURVE = [], J_CURVE = [];
+for (let wi = -1.0; wi <= 5.0; wi += 0.04) {
+  W_CURVE.push(+wi.toFixed(3));
+  J_CURVE.push(cost(wi));
+}
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let state = { w: 0.0, alpha: 0.3, w0: 0.0, history: [0.0], iter: 0 };
+let runTimer = null;
+
+// ── Plotly theme ──────────────────────────────────────────────────────────────
+const THEME = {
+  paper_bgcolor: '#0d1117',
+  plot_bgcolor:  '#161b22',
+  font: { color: '#e6edf3', size: 11, family: "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" },
+  xaxis: { gridcolor: '#30363d', zerolinecolor: '#30363d', linecolor: '#30363d', tickfont: { size: 10 } },
+  yaxis: { gridcolor: '#30363d', zerolinecolor: '#30363d', linecolor: '#30363d', tickfont: { size: 10 } },
+  margin: { l: 52, r: 16, t: 20, b: 48 },
+};
+
+// ── Chart init ────────────────────────────────────────────────────────────────
+function initCharts() {
+  // Cost chart: 3 traces — curve, history path, current point
+  Plotly.newPlot('cost-chart', [
+    { // Parabola
+      x: W_CURVE, y: J_CURVE, mode: 'lines', name: 'J(w)',
+      line: { color: '#30363d', width: 2 }
+    },
+    { // Descent history
+      x: [], y: [], mode: 'lines+markers', name: 'path',
+      line: { color: '#58a6ff', width: 1.5, dash: 'dot' },
+      marker: { color: '#58a6ff', size: 6, symbol: 'circle-open' }
+    },
+    { // Current point
+      x: [], y: [], mode: 'markers', name: 'current',
+      marker: { color: '#f85149', size: 10, symbol: 'circle' }
+    },
+    { // Minimum line
+      x: [TRUE_W, TRUE_W], y: [0, cost(-1)], mode: 'lines', name: 'w*=2',
+      line: { color: '#3fb950', width: 1, dash: 'dot' }, showlegend: true
+    }
+  ], {
+    ...THEME,
+    xaxis: { ...THEME.xaxis, title: { text: 'w', standoff: 4 }, range: [-1.2, 5.2] },
+    yaxis: { ...THEME.yaxis, title: { text: 'J(w)', standoff: 4 } },
+    showlegend: true,
+    legend: { bgcolor: 'rgba(0,0,0,0)', font: { size: 10 } },
+    annotations: [{
+      x: TRUE_W, y: 0.02, xanchor: 'left', yanchor: 'bottom',
+      text: 'w* = 2', showarrow: false,
+      font: { color: '#3fb950', size: 10 }
+    }]
+  }, { responsive: true, displayModeBar: false });
+
+  // Fit chart: data scatter + fit line
+  Plotly.newPlot('fit-chart', [
+    { // Data
+      x: XS, y: YS, mode: 'markers', name: 'data (y=2x)',
+      marker: { color: '#58a6ff', size: 8, symbol: 'circle' }
+    },
+    { // Fit line
+      x: [0, 2.5], y: [0, 0], mode: 'lines', name: 'fit: y=ŵx',
+      line: { color: '#f85149', width: 2 }
+    }
+  ], {
+    ...THEME,
+    xaxis: { ...THEME.xaxis, title: { text: 'x', standoff: 4 }, range: [0, 2.6] },
+    yaxis: { ...THEME.yaxis, title: { text: 'y', standoff: 4 } },
+    showlegend: true,
+    legend: { bgcolor: 'rgba(0,0,0,0)', font: { size: 10 } },
+  }, { responsive: true, displayModeBar: false });
+
+  updateCharts();
+}
+
+function updateCharts() {
+  const w = state.w;
+  const hist = state.history;
+  const histJ = hist.map(wi => cost(wi));
+
+  // Update cost chart traces 1 (path) and 2 (current)
+  Plotly.restyle('cost-chart', { x: [hist], y: [histJ] }, 1);
+  Plotly.restyle('cost-chart', { x: [[w]], y: [[cost(w)]] }, 2);
+
+  // Update fit line
+  const yFit = [0, 2.5 * w];
+  Plotly.restyle('fit-chart', { y: [yFit] }, 1);
+
+  // Update stats
+  const j = cost(w), g = grad(w);
+  document.getElementById('s-iter').textContent = state.iter;
+  document.getElementById('s-w').textContent    = w.toFixed(6);
+  document.getElementById('s-j').textContent    = j.toFixed(6);
+  document.getElementById('s-g').textContent    = g.toFixed(6);
+  document.getElementById('s-err').textContent  = Math.abs(w - TRUE_W).toFixed(6);
+}
+
+// ── Controls ──────────────────────────────────────────────────────────────────
+function doStep() {
+  const g = grad(state.w);
+  state.w = state.w - state.alpha * g;
+  state.history.push(state.w);
+  state.iter++;
+  updateCharts();
+}
+
+function toggleRun() {
+  if (runTimer) {
+    clearInterval(runTimer);
+    runTimer = null;
+    document.getElementById('run-btn').textContent = '▶ Run';
+    document.getElementById('run-btn').classList.remove('running');
+  } else {
+    document.getElementById('run-btn').textContent = '⏹ Stop';
+    document.getElementById('run-btn').classList.add('running');
+    runTimer = setInterval(() => {
+      doStep();
+      // Auto-stop if converged or diverged
+      if (Math.abs(grad(state.w)) < 1e-8 || Math.abs(state.w) > 100) {
+        clearInterval(runTimer); runTimer = null;
+        document.getElementById('run-btn').textContent = '▶ Run';
+        document.getElementById('run-btn').classList.remove('running');
+      }
+    }, 80);
+  }
+}
+
+function doReset() {
+  if (runTimer) { clearInterval(runTimer); runTimer = null; }
+  document.getElementById('run-btn').textContent = '▶ Run';
+  document.getElementById('run-btn').classList.remove('running');
+  state.w       = state.w0;
+  state.history = [state.w0];
+  state.iter    = 0;
+  updateCharts();
+}
+
+function setAlpha(v) {
+  state.alpha = v;
+  document.getElementById('alpha-val').textContent = v.toFixed(3);
+  clearPresets();
+}
+
+function setW0(v) {
+  state.w0 = v;
+  document.getElementById('w0-val').textContent = v.toFixed(1);
+  doReset();
+  clearPresets();
+}
+
+function clearPresets() {
+  ['pre1','pre2','pre3'].forEach(id => document.getElementById(id).classList.remove('active'));
+}
+
+function applyPreset(alpha, w0, btn) {
+  clearPresets();
+  btn.classList.add('active');
+  state.alpha = alpha;
+  state.w0    = w0;
+  document.getElementById('alpha-sl').value = alpha;
+  document.getElementById('alpha-val').textContent = alpha.toFixed(3);
+  document.getElementById('w0-sl').value = w0;
+  document.getElementById('w0-val').textContent = w0.toFixed(1);
+  doReset();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', initCharts);
+</script>
+</body>
+</html>

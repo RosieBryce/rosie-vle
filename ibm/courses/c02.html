@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>C2 — Intro to Deep Learning &amp; Neural Networks with Keras · VLE</title>
+  <link rel="stylesheet" href="../shared.css">
+  <script src="../shared.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</head>
+<body>
+<script>initNav('../');</script>
+
+<div class="container">
+
+  <!-- ═══ HEADER ══════════════════════════════════════════════ -->
+  <div style="margin-bottom:1.75rem">
+    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem;flex-wrap:wrap">
+      <span style="color:var(--muted);font-size:.83rem">Course 2 of 13</span>
+      <span class="badge badge-done"><span class="dot dot-g"></span>Complete</span>
+      <span class="badge badge-pending">10 hours</span>
+    </div>
+    <h1 style="font-size:1.5rem;font-weight:700;letter-spacing:-.02em;margin-bottom:.375rem">
+      Introduction to Deep Learning &amp; Neural Networks with Keras
+    </h1>
+    <p style="color:var(--muted);font-size:.875rem;line-height:1.55">
+      The conceptual bedrock of the programme. Gradient descent, backpropagation, activation functions,
+      loss functions, and the Keras Sequential API. Fuzzy understanding here makes Course 3 feel like quicksand.
+    </p>
+  </div>
+
+  <!-- Revision insight -->
+  <div class="insight ins-info" style="margin-bottom:1.75rem">
+    <strong>This course is complete</strong> — use this page for revision. The activation/loss function matching table
+    and the training curve diagnostics are the most-tested concepts.
+  </div>
+
+  <!-- ═══ FLIPPED CLASSROOM (Looking back framing) ══════════════ -->
+  <div class="flip-card" style="margin-bottom:2rem">
+    <div class="flip-header">
+      <span>🔍</span>
+      Looking Back — Revision Prompts
+    </div>
+
+    <div class="flip-sublabel">Test your recall — answer these before looking at your notes</div>
+    <ul class="flip-questions">
+      <li>
+        <span class="flip-q-num">1</span>
+        <span>You're building a multi-class classifier (10 classes, mutually exclusive). What output activation function do you use, and which of the two crossentropy losses do you pick if your labels are integers rather than one-hot vectors?</span>
+      </li>
+      <li>
+        <span class="flip-q-num">2</span>
+        <span>Your training loss is going down nicely but your validation loss is increasing. Draw this on a mental graph. What is this called, and what are three techniques to address it?</span>
+      </li>
+      <li>
+        <span class="flip-q-num">3</span>
+        <span>Why does dropout need to be turned off during inference? How does Keras handle this automatically, and what must you do if you're running the model manually?</span>
+      </li>
+    </ul>
+
+    <div class="flip-sublabel">Watch for…</div>
+    <div class="watch-for">
+      The vanishing gradient problem — it's why ReLU replaced sigmoid/tanh in hidden layers, and why
+      BatchNorm and residual connections exist. Also: the difference between <code>categorical_crossentropy</code>
+      (needs one-hot labels) and <code>sparse_categorical_crossentropy</code> (needs integer labels).
+    </div>
+  </div>
+
+  <!-- ═══ CORE THEORY ══════════════════════════════════════════ -->
+  <div class="section-head">
+    Core Theory
+    <span class="section-hint">Assessment priority — conceptual understanding over syntax</span>
+  </div>
+
+  <!-- 1. Activation Functions -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">Activation Functions</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">Activation Functions — Which to Use Where</h3>
+    <div style="overflow-x:auto;margin-bottom:.75rem">
+      <table class="decision-table">
+        <thead>
+          <tr><th>Function</th><th>Range</th><th>Use case</th><th>Gotcha</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>ReLU</strong> — max(0,x)</td>
+            <td>[0, ∞)</td>
+            <td>Hidden layers (default choice)</td>
+            <td>Dying ReLU: neurons can become permanently zero</td>
+          </tr>
+          <tr>
+            <td><strong>Leaky ReLU</strong></td>
+            <td>(−∞, ∞)</td>
+            <td>When ReLU neurons die</td>
+            <td>Small negative slope (0.01x) keeps neurons alive</td>
+          </tr>
+          <tr>
+            <td><strong>Sigmoid</strong> — 1/(1+e⁻ˣ)</td>
+            <td>(0, 1) — never 0 or 1</td>
+            <td>Binary output layer only</td>
+            <td>Vanishing gradient — saturates for large |x|</td>
+          </tr>
+          <tr>
+            <td><strong>Softmax</strong></td>
+            <td>Probabilities summing to 1</td>
+            <td>Multi-class output layer only</td>
+            <td>Never use in hidden layers</td>
+          </tr>
+          <tr>
+            <td><strong>Linear / None</strong></td>
+            <td>(−∞, ∞)</td>
+            <td>Regression output</td>
+            <td>No squashing — appropriate for unbounded targets</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="insight ins-info">
+      <strong>Key insight:</strong> Without any activation function, stacking layers is equivalent to a single linear transformation. Activations are what give neural networks their ability to learn non-linear decision boundaries.
+    </div>
+  </div>
+
+  <!-- 2. Loss function matching -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">Loss Functions</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">Loss Function — Activation Matching</h3>
+    <div style="overflow-x:auto;margin-bottom:.75rem">
+      <table class="decision-table">
+        <thead>
+          <tr><th>Task</th><th>Output activation</th><th>Loss function</th><th>Label format</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Binary classification</td>
+            <td>Sigmoid</td>
+            <td><code>binary_crossentropy</code></td>
+            <td>0 or 1</td>
+          </tr>
+          <tr>
+            <td>Multi-class (one-hot labels)</td>
+            <td>Softmax</td>
+            <td><code>categorical_crossentropy</code></td>
+            <td>[0,0,1,0,...]</td>
+          </tr>
+          <tr>
+            <td>Multi-class (integer labels)</td>
+            <td>Softmax</td>
+            <td><code>sparse_categorical_crossentropy</code></td>
+            <td>2, 5, 0...</td>
+          </tr>
+          <tr>
+            <td>Regression</td>
+            <td>Linear (none)</td>
+            <td><code>mse</code> or <code>mae</code></td>
+            <td>Float values</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:.83rem;color:var(--muted)">
+      <code>sparse_categorical_crossentropy</code> is simply more convenient — it accepts integer labels directly
+      and uses less memory. Functionally identical to one-hot + <code>categorical_crossentropy</code>.
+    </p>
+  </div>
+
+  <!-- 3. Vanishing / Exploding Gradients -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">Gradient Flow</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">Vanishing &amp; Exploding Gradients</h3>
+    <p style="font-size:.875rem;line-height:1.6;margin-bottom:.625rem">
+      Backpropagation multiplies gradients through layers via the chain rule.
+      In deep networks this causes two failure modes:
+    </p>
+    <div style="overflow-x:auto;margin-bottom:.625rem">
+      <table class="decision-table">
+        <thead><tr><th>Problem</th><th>Symptom</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Vanishing gradients</td>
+            <td>Early layers don't learn; loss plateaus</td>
+            <td>ReLU activations, BatchNorm, residual connections</td>
+          </tr>
+          <tr>
+            <td>Exploding gradients</td>
+            <td>NaN loss, huge weight updates</td>
+            <td>Gradient clipping (<code>clipnorm=1.0</code>), weight initialisation</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="insight ins-warn">
+      <strong>Why sigmoid causes vanishing gradients:</strong> The sigmoid derivative peaks at 0.25 and approaches 0 for large |x|. Multiply 0.25 through 20 layers: 0.25²⁰ ≈ 9×10⁻¹³. Gradients effectively die before reaching early layers.
+    </div>
+  </div>
+
+  <!-- 4. Gradient Descent Variants -->
+  <div class="card" style="margin-bottom:2rem">
+    <div class="tag tag-blue">Optimisation</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">Gradient Descent Variants &amp; Optimisers</h3>
+    <div style="overflow-x:auto;margin-bottom:.75rem">
+      <table class="decision-table">
+        <thead><tr><th>Variant</th><th>Batch size</th><th>Pros</th><th>Cons</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Batch GD</td>
+            <td>Full dataset</td>
+            <td>Stable gradient estimate</td>
+            <td>Slow per step, needs all data in memory</td>
+          </tr>
+          <tr>
+            <td>Stochastic GD (SGD)</td>
+            <td>1 sample</td>
+            <td>Fast, escapes local minima</td>
+            <td>Very noisy; unstable convergence</td>
+          </tr>
+          <tr>
+            <td>Mini-batch GD</td>
+            <td>32–256</td>
+            <td>Balance of both; GPU-efficient</td>
+            <td>Batch size is a hyperparameter</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:.875rem;line-height:1.6;margin-bottom:.5rem">
+      <strong>Adam</strong> is the default optimiser for most problems — it combines RMSProp (adaptive per-parameter LR) and momentum. It adapts the learning rate per parameter throughout training — it is NOT a fixed learning rate.
+    </p>
+    <p style="font-size:.83rem;color:var(--muted)">
+      <strong>AdaGrad</strong> accumulates all past gradients — learning rate shrinks to near-zero over long training. Generally not recommended for deep learning.
+    </p>
+  </div>
+
+  <!-- ═══ MUST-KNOW CONCEPTS ════════════════════════════════════ -->
+  <div class="section-head">Must-Know Concepts</div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:2rem">
+    <table class="concept-table">
+      <thead><tr><th>Term</th><th>One-liner (assessment vocabulary)</th></tr></thead>
+      <tbody>
+        <tr><td>neuron / perceptron</td><td>Computes: activation(Σ(wᵢ·xᵢ) + b) — weighted sum plus bias, squashed by activation</td></tr>
+        <tr><td>ReLU</td><td>max(0, x) — default hidden-layer activation; avoids vanishing gradients; may suffer dying ReLU</td></tr>
+        <tr><td>Softmax</td><td>Converts logits to probabilities summing to 1; use only at output layer for multi-class tasks</td></tr>
+        <tr><td>backpropagation</td><td>Chain rule applied backward through the network to compute ∂Loss/∂w for every weight</td></tr>
+        <tr><td>Dropout</td><td>Randomly zeros p% of neurons during training only — forces redundancy, reduces overfitting</td></tr>
+        <tr><td>BatchNorm</td><td>Normalises layer inputs per mini-batch; reduces internal covariate shift; allows higher LR</td></tr>
+        <tr><td>epoch</td><td>One complete pass over the entire training set; steps per epoch = ⌈|train| / batch_size⌉</td></tr>
+        <tr><td>learning rate</td><td>Step size in gradient descent; too high = diverge; too low = very slow; Adam default 1e-3</td></tr>
+        <tr><td>early stopping</td><td>Halts training when validation metric stops improving; prevents overfitting</td></tr>
+        <tr><td>sparse_categorical_crossentropy</td><td>Same as categorical_crossentropy but accepts integer labels directly (no one-hot encoding needed)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══ EXAM TRAPS ════════════════════════════════════════════ -->
+  <div class="section-head">Exam Traps</div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 1 — Dropout is training-only</div>
+    <strong>Dropout is active only during training, not inference.</strong>
+    Keras automatically disables it when you call <code>model.predict()</code> or <code>model.evaluate()</code>.
+    If calling the model manually, you must pass <code>training=False</code>.
+    Evaluating with dropout active randomly degrades scores.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 2 — Sigmoid range is open interval</div>
+    <strong>Sigmoid output is in (0, 1) — it never actually reaches 0 or 1.</strong>
+    This matters for numerical stability (log(0) is undefined) and is why the combined
+    <code>BCEWithLogitsLoss</code> / <code>binary_crossentropy</code> is numerically more stable than
+    computing sigmoid separately then log.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 3 — More layers is not always better</div>
+    <strong>Stacking more layers brings diminishing returns</strong> and increases the vanishing gradient problem.
+    Without residual connections, very deep networks often train worse than shallower ones.
+    Depth is not a substitute for the right architecture or sufficient data.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 4 — Adam adapts per parameter</div>
+    <strong>Adam is NOT a fixed learning rate throughout training.</strong>
+    It maintains separate exponentially decaying estimates of gradient (momentum) and squared gradient (RMSProp)
+    per parameter. The effective step size adapts based on each parameter's history.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 5 — Weight initialisation matters</div>
+    <strong>Keras sets correct defaults — He init for ReLU, Glorot/Xavier for tanh/sigmoid.</strong>
+    If you initialise all weights to zero, all neurons compute the same output and the same gradient —
+    they never differentiate. This is called the symmetry problem and prevents learning entirely.
+  </div>
+
+  <!-- ═══ INTERACTIVE VIZ ══════════════════════════════════════ -->
+  <div class="section-head" style="margin-top:2rem">Interactive Visualisations</div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.875rem;margin-bottom:2rem">
+    <a class="viz-card" href="../viz/gradient-descent.html">
+      <div class="viz-card-title">📊 Gradient Descent</div>
+      <div class="viz-card-desc">Visualise learning rate effects. Compare batch vs mini-batch behaviour.</div>
+    </a>
+    <a class="viz-card" href="../viz/activation-functions.html">
+      <div class="viz-card-title">⚡ Activation Functions</div>
+      <div class="viz-card-desc">ReLU, sigmoid, tanh, Leaky ReLU. Saturation zones and derivative behaviour.</div>
+    </a>
+    <a class="viz-card" href="../viz/backprop.html">
+      <div class="viz-card-title">🔁 Backpropagation</div>
+      <div class="viz-card-desc">Step through forward and backward passes. See gradient flow layer by layer.</div>
+    </a>
+  </div>
+
+  <!-- ═══ PRACTICAL NOTES (collapsed) ══════════════════════════ -->
+  <div style="margin-bottom:2rem">
+    <button class="collapse-toggle">
+      <span class="c-arrow">▶</span>
+      Practical Notes &amp; Code Patterns
+      <span style="margin-left:.5rem;font-size:.75rem;color:var(--muted)">(useful for application — not needed to pass the assessment)</span>
+    </button>
+    <div class="collapse-body">
+
+      <div class="card" style="margin-bottom:1rem">
+        <div class="tag tag-blue">Common Gotchas</div>
+        <ul style="font-size:.875rem;line-height:1.7;padding-left:1.25rem;color:var(--text)">
+          <li><strong>Forgetting to normalise inputs</strong> — different-scale features cause some weights to dominate; always scale to [0,1] or z-score</li>
+          <li><strong>Wrong output activation</strong> — Softmax for multi-class, Sigmoid for binary, Linear for regression; using Softmax for regression is a classic error</li>
+          <li><strong>Loss/activation mismatch</strong> — Sigmoid output + <code>categorical_crossentropy</code> is incorrect; match them always</li>
+          <li><strong>Learning rate too high</strong> — loss oscillates or goes NaN; start at 1e-3 (Adam default), reduce if unstable</li>
+          <li><strong>Not plotting validation</strong> — you need <code>validation_split</code> or <code>validation_data</code> to diagnose overfitting</li>
+          <li><strong>Epoch ≠ step</strong> — one epoch = one full pass over training data; steps per epoch = len(X_train) / batch_size</li>
+        </ul>
+      </div>
+
+      <div class="card" style="margin-bottom:1rem">
+        <div class="tag tag-blue">Keras Sequential Pattern</div>
+        <pre><code class="language-python">from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout, BatchNormalization
+
+model = Sequential([
+    Dense(128, activation='relu', input_shape=(n_features,)),
+    BatchNormalization(),
+    Dropout(0.3),
+    Dense(64, activation='relu'),
+    Dense(n_classes, activation='softmax')   # multi-class output
+])
+
+model.compile(
+    optimizer='adam',
+    loss='sparse_categorical_crossentropy',   # integer labels
+    metrics=['accuracy']
+)
+
+history = model.fit(
+    X_train, y_train,
+    epochs=50,
+    batch_size=32,
+    validation_split=0.2
+)</code></pre>
+      </div>
+
+      <div class="card" style="margin-bottom:.5rem">
+        <div class="tag tag-blue">Reading Training Curves</div>
+        <pre><code class="language-python">import matplotlib.pyplot as plt
+
+# Good: both curves go down together
+# Overfitting: val_loss increases while train_loss decreases
+# Underfitting: both stay high (plateau)
+
+fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+axes[0].plot(history.history['loss'],     label='train')
+axes[0].plot(history.history['val_loss'], label='val')
+axes[0].set_title('Loss')
+axes[0].legend()
+
+axes[1].plot(history.history['accuracy'],     label='train')
+axes[1].plot(history.history['val_accuracy'], label='val')
+axes[1].set_title('Accuracy')
+axes[1].legend()</code></pre>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ STUDY GAMES (placeholder) ════════════════════════════ -->
+  <div class="section-head" style="margin-top:1rem">Study Games</div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.875rem;margin-bottom:2rem;opacity:.45">
+    <div class="card" style="cursor:not-allowed">
+      <div class="tag">🎮 Activation Matcher</div>
+      <div style="font-size:.875rem">Match task to activation to loss — coming Phase 4</div>
+    </div>
+    <div class="card" style="cursor:not-allowed">
+      <div class="tag">📈 Curve Diagnostics</div>
+      <div style="font-size:.875rem">Identify overfitting, underfitting, good fit from curves — coming Phase 4</div>
+    </div>
+  </div>
+
+  <!-- ═══ FULL NOTES LINK ══════════════════════════════════════ -->
+  <div class="card" style="margin-bottom:1.5rem;background:var(--surface2)">
+    <div style="font-size:.875rem;color:var(--muted)">
+      Full curated notes (Obsidian):
+      <a href="obsidian://open?vault=IBM%20Courses&file=claude-content%2F02-deep-learning-neural-networks-keras"
+         style="color:var(--blue)">
+        claude-content/02-deep-learning-neural-networks-keras →
+      </a>
+    </div>
+  </div>
+
+  <div class="footer">
+    <a href="../index.html">← VLE Home</a> ·
+    <a href="c01.html">← C1</a> ·
+    <a href="c03.html">C3 →</a> ·
+    <a href="../course-tracker.html" target="_blank">📊 Tracker</a>
+  </div>
+
+</div>
+</body>
+</html>

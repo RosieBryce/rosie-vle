@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>C4 Quiz — Introduction to Neural Networks & PyTorch · VLE</title>
+  <link rel="stylesheet" href="../shared.css">
+  <script src="../shared.js"></script>
+  <style>
+    .game-shell { max-width: 720px; margin: 0 auto; }
+    .intro-card { text-align: center; padding: 2.5rem 2rem; }
+    .intro-badge { display:inline-block; font-size:.75rem; font-weight:700; text-transform:uppercase;
+      letter-spacing:.08em; padding:.3rem .75rem; border-radius:99px;
+      background:var(--blue-bg); color:var(--blue); border:1px solid rgba(88,166,255,.3); margin-bottom:1.25rem; }
+    .intro-title { font-size:1.3rem; font-weight:700; letter-spacing:-.02em; margin-bottom:.5rem; }
+    .intro-meta { color:var(--muted); font-size:.875rem; margin-bottom:1.75rem; line-height:1.6; }
+    .btn-start { display:inline-block; padding:.65rem 2rem; border-radius:8px;
+      background:var(--blue); color:#fff; font-weight:600; font-size:.9rem;
+      border:none; cursor:pointer; transition:opacity .15s; }
+    .btn-start:hover { opacity:.85; }
+    .q-progress { margin-bottom:1.25rem; }
+    .q-progress-label { display:flex; justify-content:space-between; font-size:.78rem;
+      color:var(--muted); margin-bottom:.35rem; }
+    .q-bar { height:4px; background:var(--surface2); border-radius:99px; overflow:hidden; }
+    .q-bar-fill { height:100%; background:var(--blue); border-radius:99px; transition:width .3s ease; }
+    .q-context { background:var(--surface2); border:1px solid var(--border); border-radius:8px;
+      padding:.875rem 1rem; font-size:.82rem; color:var(--muted); line-height:1.55;
+      margin-bottom:1rem; font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace; }
+    .q-context pre { margin:0; white-space:pre-wrap; }
+    .q-text { font-size:.975rem; font-weight:600; line-height:1.55; margin-bottom:1.25rem; }
+    .options { display:flex; flex-direction:column; gap:.625rem; margin-bottom:1.25rem; }
+    .option-btn { display:flex; align-items:flex-start; gap:.75rem; padding:.75rem 1rem;
+      border:1px solid var(--border); border-radius:8px; background:var(--surface);
+      cursor:pointer; text-align:left; font-size:.875rem; line-height:1.5;
+      color:var(--text); transition:border-color .12s, background .12s; }
+    .option-btn:hover:not(:disabled) { border-color:var(--blue); background:var(--blue-bg); }
+    .option-btn:disabled { cursor:default; }
+    .option-letter { flex-shrink:0; width:22px; height:22px; border-radius:50%;
+      background:var(--surface2); border:1px solid var(--border);
+      display:flex; align-items:center; justify-content:center;
+      font-size:.72rem; font-weight:700; color:var(--muted); }
+    .option-btn.correct  { border-color:var(--green); background:var(--green-bg); }
+    .option-btn.correct  .option-letter { background:var(--green); border-color:var(--green); color:#fff; }
+    .option-btn.wrong    { border-color:var(--red); background:rgba(248,81,73,.08); }
+    .option-btn.wrong    .option-letter { background:var(--red); border-color:var(--red); color:#fff; }
+    .option-btn.dimmed   { opacity:.45; }
+    .feedback { border-radius:8px; padding:.875rem 1rem; font-size:.875rem;
+      line-height:1.6; margin-bottom:1rem; display:none; }
+    .feedback.correct { background:var(--green-bg); border:1px solid rgba(63,185,80,.35); }
+    .feedback.wrong   { background:rgba(248,81,73,.08); border:1px solid rgba(248,81,73,.35); }
+    .feedback-head { font-weight:700; margin-bottom:.3rem; }
+    .feedback.correct .feedback-head { color:var(--green); }
+    .feedback.wrong   .feedback-head { color:var(--red); }
+    .btn-next { padding:.55rem 1.5rem; border-radius:8px; border:1px solid var(--border);
+      background:var(--surface2); color:var(--text); font-size:.875rem; font-weight:600;
+      cursor:pointer; display:none; transition:border-color .12s; }
+    .btn-next:hover { border-color:var(--blue); color:var(--blue); }
+    .score-chip { font-size:.78rem; font-weight:600; padding:.2rem .6rem;
+      border-radius:99px; background:var(--surface2); color:var(--muted); }
+    .score-ring { width:100px; height:100px; margin:0 auto 1rem;
+      border-radius:50%; display:flex; align-items:center; justify-content:center;
+      font-size:1.6rem; font-weight:700; }
+    .score-ring.great  { background:var(--green-bg); color:var(--green); border:3px solid var(--green); }
+    .score-ring.ok     { background:var(--yellow-bg); color:var(--yellow); border:3px solid var(--yellow); }
+    .score-ring.retry  { background:rgba(248,81,73,.1); color:var(--red); border:3px solid var(--red); }
+    .results-actions { display:flex; gap:.75rem; justify-content:center; flex-wrap:wrap; margin-top:1.5rem; }
+    .btn-action { padding:.55rem 1.25rem; border-radius:8px; font-size:.875rem; font-weight:600;
+      cursor:pointer; border:1px solid var(--border); background:var(--surface2);
+      color:var(--text); text-decoration:none; transition:border-color .12s; }
+    .btn-action:hover { border-color:var(--blue); color:var(--blue); }
+    .btn-action.primary { background:var(--blue); border-color:var(--blue); color:#fff; }
+    .btn-action.primary:hover { opacity:.85; }
+  </style>
+</head>
+<body>
+<script>initNav('../'); localStorage.setItem('VLE_lastGame', 'C4 Quiz — PyTorch Fundamentals');</script>
+
+<div class="container">
+  <div class="game-shell">
+    <div style="margin-bottom:1.25rem">
+      <div class="tag tag-blue" style="margin-bottom:.4rem">Study Game · Multiple Choice</div>
+      <h1 style="font-size:1.3rem;font-weight:700;letter-spacing:-.02em">C4 Quiz — Introduction to Neural Networks &amp; PyTorch</h1>
+    </div>
+    <div id="game-root"></div>
+  </div>
+</div>
+
+<script>
+const QUESTIONS = [
+  {
+    question: "What is wrong with this PyTorch training loop?",
+    context: `for X, y in loader:
+    outputs = model(X)
+    loss    = criterion(outputs, y)
+    loss.backward()
+    optimizer.step()`,
+    options: [
+      "criterion should be called with (y, outputs) — targets must come first or the loss maps predictions against the wrong class assignments",
+      "optimizer.zero_grad() is missing — gradients accumulate across batches, corrupting the gradient signal",
+      "loss.backward() must be called before the forward pass so PyTorch can pre-allocate gradient buffers for each parameter",
+      "model.train() must be called at the start of each batch or Dropout and BatchNorm silently revert to eval-mode behaviour"
+    ],
+    correct: 1,
+    explanation: "PyTorch accumulates gradients by default — they are ADDED to existing .grad values on each .backward() call. Without zero_grad() at the start of each batch, gradients from all previous batches pile up. This is the #1 PyTorch training-loop mistake."
+  },
+  {
+    question: "Your 10-class classifier's forward() ends with `return F.softmax(self.fc(x), dim=1)`, and you use `nn.CrossEntropyLoss()`. What is wrong?",
+    context: null,
+    options: [
+      "CrossEntropyLoss requires one-hot encoded targets — passing integer class indices causes a shape mismatch error during loss computation",
+      "The dim=1 argument is incorrect — F.softmax for multi-class classification must normalise over dim=0, not the class axis",
+      "CrossEntropyLoss already applies softmax — doing it again squashes gradients and corrupts training silently",
+      "F.softmax is deprecated in modern PyTorch — replace it with an nn.Softmax(dim=1) layer at the end of forward()"
+    ],
+    correct: 2,
+    explanation: "nn.CrossEntropyLoss = LogSoftmax + NLLLoss. It expects raw logits and applies softmax internally. If your model applies softmax first, the loss receives softmax(softmax(logits)) — a near-uniform distribution — and gradients are wrong. Training appears to proceed but barely learns. Always output raw logits."
+  },
+  {
+    question: "You're accumulating the training loss. What is the problem?",
+    context: `total_loss = 0
+for X, y in loader:
+    ...
+    loss = criterion(outputs, y)
+    total_loss += loss    # <- problem?`,
+    options: [
+      "You cannot use += to add a Python integer and a PyTorch Tensor — the mixed-type operation raises a TypeError at runtime",
+      "criterion() already sums the loss across the batch internally — accumulating total_loss doubles the count and distorts the epoch mean",
+      "total_loss += loss keeps the computation graph for every batch alive, growing memory each step. Use loss.item()",
+      "The raw loss must be divided by len(X_batch) before accumulating — variable-sized final batches are otherwise weighted unequally"
+    ],
+    correct: 2,
+    explanation: "Every Tensor holds a reference to its computation graph. Accumulating via += keeps all N batch graphs in memory simultaneously. After 100 batches, 100 graphs sit in RAM. loss.item() extracts only the float value and releases the graph. Always use .item() for logging."
+  },
+  {
+    question: "Which combination is correct for a validation pass after training?",
+    context: null,
+    options: [
+      "model.eval() is sufficient — it sets a deterministic flag that also disables gradient graph construction for the entire forward pass",
+      "torch.no_grad() is sufficient — it disables all sources of stochasticity including Dropout unit dropping and BatchNorm recalculation",
+      "Neither is needed — PyTorch only builds the computation graph and allocates gradient memory when .backward() is explicitly called",
+      "Both: model.eval() fixes Dropout and BatchNorm; torch.no_grad() stops gradient tracking — they do different things"
+    ],
+    correct: 3,
+    explanation: "model.eval() and torch.no_grad() are orthogonal. model.eval() disables Dropout and switches BatchNorm to use accumulated running statistics. torch.no_grad() stops PyTorch building the computation graph, saving memory and compute. You need both for correct, efficient evaluation."
+  },
+  {
+    question: "You're training a binary logistic regression. Your model outputs a single raw logit. Which loss and target dtype are correct?",
+    context: null,
+    options: [
+      "nn.CrossEntropyLoss() with integer class indices as targets of dtype torch.long",
+      "nn.BCELoss() applied directly to the raw logit with float targets of dtype torch.float",
+      "nn.BCEWithLogitsLoss() with raw logits and targets as torch.float",
+      "nn.MSELoss() with sigmoid activation on the output and float targets of 0.0 or 1.0"
+    ],
+    correct: 2,
+    explanation: "BCEWithLogitsLoss fuses sigmoid + binary cross-entropy in a numerically stable way using the log-sum-exp trick. BCELoss requires you to apply sigmoid first, which is less stable (log(0) = -∞ for extreme logits). Targets must be float (0.0/1.0). CrossEntropyLoss is for multi-class with multiple output units."
+  },
+  {
+    question: "What is the difference between `x.view(64, -1)` and `x.reshape(64, -1)` on a tensor of shape (64, 3, 32, 32)?",
+    context: null,
+    options: [
+      "They are identical — view is an alias for reshape introduced in PyTorch 1.5 to unify the API for contiguous tensors",
+      "view() modifies the tensor's data in-place for efficiency; reshape() always returns a new copy with separate backing storage",
+      "view requires contiguous memory and raises an error if the tensor isn't; reshape always works, copying data if needed",
+      "reshape() only operates on 2D tensors due to its matrix-layout assumption; view() generalises to any number of dimensions"
+    ],
+    correct: 2,
+    explanation: "view requires the tensor data to be laid out contiguously in memory. If it's not (e.g. after permute() or transpose()), view raises RuntimeError. reshape always succeeds — it calls contiguous() internally and copies the data if needed. Use reshape unless you specifically need the guarantee that no copy is made."
+  },
+  {
+    question: "You define a custom nn.Module but forget `super().__init__()`. What happens?",
+    context: `class MyNet(nn.Module):
+    def __init__(self):
+        # super().__init__() omitted
+        self.fc = nn.Linear(784, 10)`,
+    options: [
+      "The model trains normally but about 10% slower — PyTorch fills in the missing _parameters dict with empty defaults on first use",
+      "It raises an AttributeError immediately — nn.Module.__init__() sets up the parameter tracking machinery",
+      "model.parameters() silently returns an empty iterator, but forward() still runs and training proceeds without weight updates",
+      "The model bypasses self.fc registration and initialises weights to zero, producing near-zero outputs on every forward call"
+    ],
+    correct: 1,
+    explanation: "nn.Module.__init__() initialises internal dicts (_parameters, _modules, _buffers). Without it, when you try to assign self.fc = nn.Linear(...), PyTorch's __setattr__ tries to access _modules — which doesn't exist yet — and raises AttributeError immediately. Always call super().__init__() as the very first line of __init__."
+  },
+  {
+    question: "You want predictions without storing gradients. Is this code correct?",
+    context: `with torch.no_grad():
+    logits = model(X_test)
+
+probs = torch.softmax(logits, dim=1)
+preds = torch.argmax(probs, dim=1)`,
+    options: [
+      "Correct — logits computed inside no_grad() carry no gradient info; applying softmax outside is fine",
+      "Wrong — torch.softmax called outside no_grad() creates a new differentiable node, rebuilding a partial graph anchored to the detached logits",
+      "Wrong — torch.no_grad() does not disable Dropout or fix BatchNorm; only model.eval() puts the model in deterministic inference mode",
+      "Wrong — tensors returned from inside a no_grad() block still have requires_grad=True and must be .detach()ed before use outside"
+    ],
+    correct: 0,
+    explanation: "This is correct. logits was computed inside no_grad(), so it carries no gradient information. Operations on it outside the block also produce non-differentiable tensors. Using no_grad() before the expensive forward pass is what matters — softmax and argmax can live anywhere after that."
+  },
+  {
+    question: "Should the test DataLoader use shuffle=True?",
+    context: `test_loader = DataLoader(test_dataset, batch_size=32, shuffle=???)`,
+    options: [
+      "Yes — shuffling prevents the model from exploiting position-based patterns if test samples are sorted by class or timestamp",
+      "Yes — DataLoader requires shuffle=True to correctly reset its internal sampler index between calls, ensuring all samples are visited",
+      "No — shuffling misaligns the prediction array (batch order) with ground-truth labels (original order), breaking metrics",
+      "It makes no difference — accuracy and loss are computed per-sample and then averaged, so iteration order cannot affect the final numbers"
+    ],
+    correct: 2,
+    explanation: "During evaluation, predictions are collected in batch-arrival order, then compared to ground-truth labels. Shuffling the test set randomises that order, so y_pred and y_true end up out of sync — metrics are completely wrong. Always shuffle=False for validation and test loaders. Only training loaders shuffle."
+  },
+  {
+    question: "You're training a linear regression model to predict house prices. Which loss and output activation are correct?",
+    context: null,
+    options: [
+      "nn.CrossEntropyLoss() — it handles any regression or classification task",
+      "nn.BCEWithLogitsLoss() with sigmoid activation on the output",
+      "nn.MSELoss() with a raw linear output and no activation",
+      "nn.NLLLoss() with log-softmax on the output"
+    ],
+    correct: 2,
+    explanation: "Regression predicts a continuous value — MSELoss measures the average squared difference between predicted and actual values. No activation: the raw linear output IS the prediction. CrossEntropyLoss, BCE, and NLLLoss are all classification losses that assume discrete categories or probabilities."
+  },
+  {
+    question: "You store `self.W = torch.randn(10, 5)` in `__init__`. The weight is never updated during training. Why?",
+    context: null,
+    options: [
+      "Tensors must have dtype=torch.float64 to be tracked by the Adam and SGD optimizers during parameter collection",
+      "A plain tensor bypasses nn.Module's registration — optimizer can't see it. Wrap with nn.Parameter",
+      "self.W needs requires_grad=True reset explicitly before each forward pass — parameter tensors default to requires_grad=False",
+      "torch.randn always uses the same internal seed unless set explicitly, causing gradient updates to cancel out symmetrically"
+    ],
+    correct: 1,
+    explanation: "nn.Module's __setattr__ only registers nn.Parameter and nn.Module objects in _parameters/_modules. A plain torch.Tensor stored as a Python attribute is invisible to model.parameters() and the optimizer. Wrap it: self.W = nn.Parameter(torch.randn(10, 5))."
+  },
+  {
+    question: "You store layers in `self.layers = [nn.Linear(64,64) for _ in range(5)]`. What breaks?",
+    context: null,
+    options: [
+      "Python lists are not iterable inside forward() — you must convert self.layers to a tuple before calling each layer sequentially",
+      "All 5 Linear layers in the list comprehension share the same weight tensor — list comprehension doesn't allocate separate objects per layer",
+      "nn.Module ignores Python lists — layers miss model.parameters(), state_dict(), and .cuda()",
+      "Integer indexing self.layers[i](x) inside forward() raises AttributeError — PyTorch only supports attribute access, not item access on modules"
+    ],
+    correct: 2,
+    explanation: "nn.Module only registers objects stored as nn.Parameter, nn.Module attributes, nn.ModuleList, or nn.ModuleDict. A plain Python list bypasses the registration hook — the 5 layers are invisible to model.parameters(), won't appear in state_dict(), and .cuda() won't move them to GPU. Use nn.ModuleList instead."
+  },
+  {
+    question: "Your training step raises 'RuntimeError: one of the variables needed for gradient computation has been modified by an inplace operation'. What is the cause?",
+    context: null,
+    options: [
+      "backward() was called twice without zeroing gradients, causing them to double and eventually overflow to NaN on repeated accumulation",
+      "An in-place op (e.g. x += noise, x.fill_(0)) overwrote a tensor still needed for backprop",
+      "Mixed float32 and float16 tensors were used in the same graph, causing a dtype mismatch when PyTorch unifies gradients during backprop",
+      "The model is too deep — beyond 50 layers, autograd cannot store all intermediate activations and raises RuntimeError when graph memory is exceeded"
+    ],
+    correct: 1,
+    explanation: "Autograd saves intermediate tensor values for gradient computation. An in-place operation (+=, fill_, relu_) overwrites those saved values before backprop can use them. PyTorch detects this mismatch and raises RuntimeError. Fix: use out-of-place operations (x = x + noise, F.relu(x)) on tensors inside the computation graph."
+  },
+  {
+    question: "Two tensors of shape (3, 4). What does `torch.stack([a, b], dim=0)` return versus `torch.cat([a, b], dim=0)`?",
+    context: null,
+    options: [
+      "stack: (6, 4) by doubling rows along the existing axis; cat: (2, 3, 4) by wrapping both tensors in a new outer container dimension",
+      "Both produce (6, 4) — stack and cat both extend along dim=0 for equal-shape tensors, differing only in which end data is appended",
+      "stack → (2, 3, 4) by inserting a new dimension; cat → (6, 4) by extending the existing axis",
+      "stack: (3, 8) by joining along the column axis as dim=0 maps to columns; cat: (6, 4) by extending the row axis as expected"
+    ],
+    correct: 2,
+    explanation: "torch.stack creates a NEW dimension at the specified position — output shape is (2, 3, 4). torch.cat joins along an EXISTING dimension — output shape is (6, 4). Both require identical input shapes. Use stack to build a batch dimension; use cat to extend an existing axis."
+  },
+  {
+    question: "Training an RNN, the loss occasionally explodes to NaN after stable epochs. What is the most targeted fix?",
+    context: null,
+    options: [
+      "Switch to Adam — its per-parameter adaptive rate compresses large gradient magnitudes, automatically preventing numeric overflow in recurrent layers",
+      "Add Dropout after each recurrent layer — randomly zeroing 50% of activations caps the maximum gradient that can flow through any single path",
+      "Call torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0) after backward() and before step()",
+      "Reduce batch size to 1 or 2 — large batches aggregate gradients across many unrolled time steps simultaneously, amplifying the explosion"
+    ],
+    correct: 2,
+    explanation: "RNNs are prone to gradient explosion because gradients compound through unrolled time steps. clip_grad_norm_ rescales all gradients so their total L2 norm ≤ max_norm, capping the update magnitude without zeroing small gradients. Call it after backward() and before optimizer.step(). Adam's adaptive rate helps general stability but does not prevent explosion."
+  },
+  {
+    question: "Where in the training loop should `scheduler.step()` be called for StepLR and CosineAnnealingLR?",
+    context: null,
+    options: [
+      "Before optimizer.step() on each batch — the scheduler must update param_groups with the new LR before the gradient step overwrites weight values",
+      "Inside torch.no_grad() to prevent the LR adjustment from accidentally creating a gradient node through the optimizer's param_groups",
+      "After each batch's optimizer.step() — StepLR and CosineAnnealingLR are step-based schedulers that decay LR proportionally with each gradient update",
+      "Once per epoch after the validation loop — these schedulers decay LR per epoch"
+    ],
+    correct: 3,
+    explanation: "StepLR, CosineAnnealingLR, and ExponentialLR all decay LR once per epoch. Calling per-batch decays far too fast. ReduceLROnPlateau also calls once per epoch but requires a metric: scheduler.step(val_loss). Full order: zero_grad → forward → backward → optimizer.step() → [end of epoch] → scheduler.step()."
+  },
+  {
+    question: "What is the key difference between `tensor.detach()` and the `torch.no_grad()` context?",
+    context: null,
+    options: [
+      "detach() works on CUDA tensors only — it removes them from GPU graph tracking; no_grad() is the CPU equivalent for disabling gradient computation",
+      "detach() removes one specific tensor from the graph; no_grad() stops tracking all operations in the block",
+      "They are functionally identical — both permanently sever all downstream gradient paths, making any subsequent operations non-differentiable",
+      "detach() disables gradient tracking globally for the rest of the session; no_grad() creates a temporary block that re-enables tracking on exit"
+    ],
+    correct: 1,
+    explanation: "detach() creates a new tensor sharing data but detached from the graph — precise, affects only that one tensor. torch.no_grad() disables tracking for all operations inside the context, but doesn't retroactively detach existing tensors. Use detach() for targeted removal (e.g. RL target values); use no_grad() for full inference blocks."
+  },
+  {
+    question: "You run `model.cuda()` then `loss = criterion(model(X), y)`. What error occurs?",
+    context: null,
+    options: [
+      "No error — PyTorch silently moves input tensors to the model's current device before every forward call to avoid device mismatch exceptions",
+      "CUDA out-of-memory — model parameters and input data cannot coexist in the same GPU memory pool and trigger an OOM error",
+      "RuntimeError: all tensors must be on the same device — X and y are still on CPU",
+      "The model silently falls back to CPU by automatically migrating all parameters from GPU to CPU when inputs are detected on the host"
+    ],
+    correct: 2,
+    explanation: "PyTorch does not move tensors between devices automatically. Model parameters on CUDA + inputs on CPU causes a device mismatch RuntimeError. Fix: X, y = X.to(device), y.to(device) where device = torch.device('cuda' if torch.cuda.is_available() else 'cpu'). This is one of the most common beginner PyTorch mistakes."
+  },
+  {
+    question: "An image can have multiple labels simultaneously from a set of 10 classes. Should the output layer use sigmoid or softmax?",
+    context: null,
+    options: [
+      "Softmax — it's the standard activation when there are more than 2 output classes, producing a valid probability distribution over all 10 labels",
+      "Sigmoid applied independently to each of the 10 outputs — labels are not mutually exclusive",
+      "Sigmoid applied once to the scalar sum of all 10 logits — this single probability represents confidence that any label is active",
+      "Softmax with BCEWithLogitsLoss — softmax routes probability toward active labels and BCE computes the per-label loss weighted by that distribution"
+    ],
+    correct: 1,
+    explanation: "Softmax forces all 10 outputs to sum to 1 — modelling mutually exclusive classes. Multi-label classification allows multiple correct labels simultaneously. Sigmoid applied to each logit gives 10 independent probabilities, one per label. Pair with BCEWithLogitsLoss applied across all outputs. Softmax would incorrectly force competition between labels."
+  },
+  {
+    question: "You initialise all weights to zero with `nn.init.zeros_(layer.weight)`. Why will the layer fail to learn meaningful representations?",
+    context: null,
+    options: [
+      "Zero weights cause NaN on the first forward pass because batch normalisation divides by the standard deviation, which is zero for constant inputs",
+      "Zero initialisation creates a flat loss surface that requires a 10× larger learning rate — small updates cannot break the symmetry of zero gradients",
+      "Gradients cannot flow through zero-valued matrices — the chain rule multiplies each gradient by the weights, so zero weights produce zero gradients everywhere",
+      "All neurons compute identical outputs and receive identical gradients — they never diverge from each other"
+    ],
+    correct: 3,
+    explanation: "The symmetry problem: with identical weights, every neuron in a layer computes the same output and the same gradient. Every update moves all neurons in lockstep — they remain clones forever. The layer behaves as a single neuron no matter how wide it is. Random initialisation (Kaiming, Xavier) breaks symmetry so neurons can specialise."
+  },
+  {
+    question: "After `x = x.permute(0, 2, 1)`, calling `x = x.view(-1, 128)` raises RuntimeError. What is the cause and fix?",
+    context: null,
+    options: [
+      "permute() changes the tensor's internal dtype as a side effect, making view() raise a dtype incompatibility error on the backing storage",
+      "view() cannot resolve the -1 dimension after permute() because stride metadata is inconsistent — you must pass the exact shape like view(N, 128)",
+      "permute() may leave the tensor non-contiguous; view() requires contiguous data. Fix: x.contiguous().view(-1, 128) or x.reshape(-1, 128)",
+      "view() must be called before permute() — view() only operates on the original dimension order and cannot handle transposed layouts"
+    ],
+    correct: 2,
+    explanation: "permute() changes stride metadata without moving data — the result may be non-contiguous in memory. view() requires contiguous layout and raises RuntimeError otherwise. reshape() handles both cases — it calls contiguous() internally if needed. Both x.contiguous().view(-1, 128) and x.reshape(-1, 128) are valid fixes."
+  },
+  {
+    question: "Which is the correct order of operations in a single PyTorch training step?",
+    context: null,
+    options: [
+      "forward → backward → zero_grad → step",
+      "zero_grad → forward → step → backward",
+      "forward → zero_grad → backward → step",
+      "zero_grad → forward → backward → step"
+    ],
+    correct: 3,
+    explanation: "The canonical order: (1) zero_grad — clear previous gradients. (2) forward — compute predictions and loss. (3) backward — compute gradients. (4) step — update parameters. Omitting zero_grad causes gradient accumulation. backward must precede step because step reads the .grad values that backward populated."
+  },
+  {
+    question: "What should `Dataset.__getitem__(idx)` return, and what should it NOT do?",
+    context: null,
+    options: [
+      "It should return a pre-assembled batch so DataLoader can skip collation and iterate over already-stacked tensors directly",
+      "It should return one sample (e.g. a (tensor, label) tuple) — batching is DataLoader's responsibility",
+      "It should return the raw file path string — DataLoader handles all disk I/O, normalisation, and tensor conversion via its built-in transform pipeline",
+      "It should return all samples from idx onward as a list — DataLoader uses this to prefetch and cache the entire next batch before it's needed"
+    ],
+    correct: 1,
+    explanation: "__getitem__ returns exactly one sample by index. Batching, shuffling, and parallel loading are DataLoader's job. If you batch inside __getitem__, DataLoader stacks already-batched tensors and produces an extra unwanted dimension. Division of labour: Dataset gets one item; DataLoader assembles many items into batches efficiently."
+  },
+  {
+    question: "Validation accuracy fluctuates significantly between identical runs on the same data. The model has Dropout(p=0.5). What is the cause?",
+    context: null,
+    options: [
+      "The validation dataset is too small — with fewer than 500 samples, per-class accuracy estimates have enough variance to fluctuate significantly",
+      "model.eval() was not called — Dropout still randomly drops units on each forward pass",
+      "p=0.5 is too aggressive — reducing to p=0.1 eliminates enough randomness for validation metrics to become near-reproducible",
+      "torch.no_grad() disables Dropout by suppressing the random masking operation — it should not be used during validation passes"
+    ],
+    correct: 1,
+    explanation: "model.eval() switches Dropout to pass-through mode (no dropping) and fixes BatchNorm statistics. Without it, every forward pass drops a different random 50% of activations — the model's output is stochastic, making validation metrics non-reproducible and artificially degraded. Always call model.eval() before the validation loop."
+  },
+  {
+    question: "Why must data augmentation (RandomHorizontalFlip, RandomCrop) be applied to training data only, not validation?",
+    context: null,
+    options: [
+      "Augmentation transforms like RandomCrop add 30–50% per-epoch latency — applying them to the validation set makes evaluation unacceptably slow",
+      "Random augmentation alters the pixel content that generated the ground-truth label — a flipped image may no longer match its original class annotation",
+      "Random transforms make validation metrics non-reproducible and measure augmented data, not real-world performance",
+      "DataLoader's transform parameter is only supported for training datasets — passing transforms to a validation DataLoader raises a TypeError at runtime"
+    ],
+    correct: 2,
+    explanation: "Augmentation is a training regularisation technique — it artificially expands the training distribution. Validation should measure performance on real, unmodified data. Random augmentation also makes validation metrics non-reproducible (different result each run). Standard split: training set gets augmentation + normalisation; val/test gets normalisation only."
+  }
+];
+
+const GAME_SIZE = 10;
+
+let queue = [];
+let currentIdx = 0;
+let missedIndices = [];
+let score = 0;
+let isReplay = false;
+let answered = false;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function buildQueue(indices) {
+  return indices.map(qi => {
+    const q = QUESTIONS[qi];
+    const correctText = q.options[q.correct];
+    const shuffled = shuffle([...q.options]);
+    return { ...q, options: shuffled, correct: shuffled.indexOf(correctText), _qi: qi };
+  });
+}
+
+const root = document.getElementById('game-root');
+
+function showIntro() {
+  root.innerHTML = `
+    <div class="card intro-card">
+      <div class="intro-badge">Multiple Choice Quiz</div>
+      <div class="intro-title">Course 4 — Introduction to Neural Networks &amp; PyTorch</div>
+      <div class="intro-meta">
+        10 questions per session · 25-question pool · ~5 minutes<br>
+        Covers: training loop, autograd, loss functions, modules, DataLoaders, common pitfalls.<br>
+        <strong>Shuffled options · Immediate feedback</strong> after every question.
+      </div>
+      <button class="btn-start" onclick="startQuiz()">Start Quiz →</button>
+    </div>`;
+}
+
+function startQuiz() {
+  const pool = shuffle(QUESTIONS.map((_, i) => i)).slice(0, GAME_SIZE);
+  queue = buildQueue(pool);
+  currentIdx = 0; missedIndices = []; score = 0; isReplay = false;
+  showQuestion();
+}
+
+function showQuestion() {
+  answered = false;
+  const q = queue[currentIdx];
+  const total = queue.length;
+  const pct = Math.round((currentIdx / total) * 100);
+  const letters = ['A','B','C','D'];
+
+  const contextHtml = q.context
+    ? `<div class="q-context"><pre><code>${escHtml(q.context)}</code></pre></div>`
+    : '';
+
+  const optionsHtml = q.options.map((opt, i) => `
+    <button class="option-btn" id="opt-${i}" onclick="selectOption(${i})">
+      <span class="option-letter">${letters[i]}</span>
+      <span>${escHtml(opt)}</span>
+    </button>`).join('');
+
+  root.innerHTML = `
+    <div class="q-progress">
+      <div class="q-progress-label">
+        <span>${isReplay ? 'Replay — ' : ''}Question ${currentIdx + 1} of ${total}</span>
+        <span class="score-chip">✓ ${score}</span>
+      </div>
+      <div class="q-bar"><div class="q-bar-fill" style="width:${pct}%"></div></div>
+    </div>
+    <div class="card" style="margin-bottom:1rem">
+      ${contextHtml}
+      <div class="q-text">${escHtml(q.question)}</div>
+      <div class="options">${optionsHtml}</div>
+      <div class="feedback" id="feedback"></div>
+      <button class="btn-next" id="btn-next" onclick="nextQuestion()">Next →</button>
+    </div>`;
+}
+
+function selectOption(chosen) {
+  if (answered) return;
+  answered = true;
+  const q = queue[currentIdx];
+  const isCorrect = chosen === q.correct;
+
+  document.querySelectorAll('.option-btn').forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === q.correct) btn.classList.add('correct');
+    else if (i === chosen && !isCorrect) btn.classList.add('wrong');
+    else btn.classList.add('dimmed');
+  });
+
+  if (isCorrect) score++;
+  else if (!isReplay) missedIndices.push(q._qi);
+
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback ' + (isCorrect ? 'correct' : 'wrong');
+  fb.style.display = 'block';
+  fb.innerHTML = `<div class="feedback-head">${isCorrect ? '✓ Correct' : '✗ Incorrect'}</div>${escHtml(q.explanation)}`;
+  document.getElementById('btn-next').style.display = 'inline-block';
+}
+
+function nextQuestion() {
+  currentIdx++;
+  if (currentIdx >= queue.length) showResults();
+  else showQuestion();
+}
+
+function showResults() {
+  const total = queue.length;
+  const pct = Math.round((score / total) * 100);
+  const ringClass = pct >= 80 ? 'great' : pct >= 60 ? 'ok' : 'retry';
+  const msg = pct >= 80
+    ? 'The PyTorch fundamentals are solid.'
+    : pct >= 60
+    ? 'Getting there — review the explanations for what you missed.'
+    : 'The training loop details need more work. Review Core Theory in C4 notes.';
+
+  let histHtml = '';
+  if (!isReplay) {
+    const histKey = 'VLE_scores_c04_quiz';
+    let hist = JSON.parse(localStorage.getItem(histKey) || '[]');
+    hist.unshift({score: score, total: total});
+    if (hist.length > 3) hist = hist.slice(0, 3);
+    localStorage.setItem(histKey, JSON.stringify(hist));
+    if (hist.length > 1) {
+      histHtml = '<div style="font-size:.8rem;color:var(--muted);margin-top:.5rem">Previous: '
+        + hist.slice(1).map(function(h) { return h.score + '/' + h.total; }).join(' · ')
+        + '</div>';
+    }
+  }
+
+  const replayBtn = missedIndices.length > 0
+    ? `<button class="btn-action primary" onclick="startReplay()">Replay ${missedIndices.length} missed</button>` : '';
+
+  root.innerHTML = `
+    <div class="card intro-card">
+      <div class="score-ring ${ringClass}">${score}/${total}</div>
+      <div class="intro-title" style="margin-bottom:.5rem">${pct}%</div>
+      <div class="intro-meta">${msg}${histHtml}</div>
+      <div class="results-actions">
+        ${replayBtn}
+        <button class="btn-action" onclick="startQuiz()">New session</button>
+        <a class="btn-action" href="index.html">← Games Hub</a>
+        <a class="btn-action" href="../courses/c04.html">← Back to C4</a>
+      </div>
+    </div>`;
+}
+
+function startReplay() {
+  queue = buildQueue([...missedIndices]);
+  currentIdx = 0; missedIndices = []; score = 0; isReplay = true;
+  showQuestion();
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+showIntro();
+</script>
+</body>
+</html>

@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>C3 Quiz — Deep Learning with Keras & TF · VLE</title>
+  <link rel="stylesheet" href="../shared.css">
+  <script src="../shared.js"></script>
+  <style>
+    .game-shell { max-width: 720px; margin: 0 auto; }
+
+    /* ── Intro screen ── */
+    .intro-card { text-align: center; padding: 2.5rem 2rem; }
+    .intro-badge { display:inline-block; font-size:.75rem; font-weight:700; text-transform:uppercase;
+      letter-spacing:.08em; padding:.3rem .75rem; border-radius:99px;
+      background:var(--blue-bg); color:var(--blue); border:1px solid rgba(88,166,255,.3); margin-bottom:1.25rem; }
+    .intro-title { font-size:1.3rem; font-weight:700; letter-spacing:-.02em; margin-bottom:.5rem; }
+    .intro-meta { color:var(--muted); font-size:.875rem; margin-bottom:1.75rem; line-height:1.6; }
+    .btn-start { display:inline-block; padding:.65rem 2rem; border-radius:8px;
+      background:var(--blue); color:#fff; font-weight:600; font-size:.9rem;
+      border:none; cursor:pointer; transition:opacity .15s; }
+    .btn-start:hover { opacity:.85; }
+
+    /* ── Progress bar ── */
+    .q-progress { margin-bottom:1.25rem; }
+    .q-progress-label { display:flex; justify-content:space-between; font-size:.78rem;
+      color:var(--muted); margin-bottom:.35rem; }
+    .q-bar { height:4px; background:var(--surface2); border-radius:99px; overflow:hidden; }
+    .q-bar-fill { height:100%; background:var(--blue); border-radius:99px; transition:width .3s ease; }
+
+    /* ── Question card ── */
+    .q-context { background:var(--surface2); border:1px solid var(--border); border-radius:8px;
+      padding:.875rem 1rem; font-size:.82rem; color:var(--muted); line-height:1.55;
+      margin-bottom:1rem; font-family: "SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace; }
+    .q-context code { color:var(--blue); }
+    .q-context pre { margin:0; white-space:pre-wrap; }
+    .q-text { font-size:.975rem; font-weight:600; line-height:1.55; margin-bottom:1.25rem; }
+
+    /* ── Options ── */
+    .options { display:flex; flex-direction:column; gap:.625rem; margin-bottom:1.25rem; }
+    .option-btn { display:flex; align-items:flex-start; gap:.75rem; padding:.75rem 1rem;
+      border:1px solid var(--border); border-radius:8px; background:var(--surface);
+      cursor:pointer; text-align:left; font-size:.875rem; line-height:1.5;
+      color:var(--text); transition:border-color .12s, background .12s; }
+    .option-btn:hover:not(:disabled) { border-color:var(--blue); background:var(--blue-bg); }
+    .option-btn:disabled { cursor:default; }
+    .option-letter { flex-shrink:0; width:22px; height:22px; border-radius:50%;
+      background:var(--surface2); border:1px solid var(--border);
+      display:flex; align-items:center; justify-content:center;
+      font-size:.72rem; font-weight:700; color:var(--muted); }
+    .option-btn.correct  { border-color:var(--green); background:var(--green-bg); }
+    .option-btn.correct  .option-letter { background:var(--green); border-color:var(--green); color:#fff; }
+    .option-btn.wrong    { border-color:var(--red); background:rgba(248,81,73,.08); }
+    .option-btn.wrong    .option-letter { background:var(--red); border-color:var(--red); color:#fff; }
+    .option-btn.dimmed   { opacity:.45; }
+
+    /* ── Feedback ── */
+    .feedback { border-radius:8px; padding:.875rem 1rem; font-size:.875rem;
+      line-height:1.6; margin-bottom:1rem; display:none; }
+    .feedback.correct { background:var(--green-bg); border:1px solid rgba(63,185,80,.35); }
+    .feedback.wrong   { background:rgba(248,81,73,.08); border:1px solid rgba(248,81,73,.35); }
+    .feedback-head { font-weight:700; margin-bottom:.3rem; }
+    .feedback.correct .feedback-head { color:var(--green); }
+    .feedback.wrong   .feedback-head { color:var(--red); }
+    .btn-next { padding:.55rem 1.5rem; border-radius:8px; border:1px solid var(--border);
+      background:var(--surface2); color:var(--text); font-size:.875rem; font-weight:600;
+      cursor:pointer; display:none; transition:border-color .12s; }
+    .btn-next:hover { border-color:var(--blue); color:var(--blue); }
+
+    /* ── Score ── */
+    .score-ring { width:100px; height:100px; margin:0 auto 1rem;
+      border-radius:50%; display:flex; align-items:center; justify-content:center;
+      font-size:1.6rem; font-weight:700; }
+    .score-ring.great  { background:var(--green-bg); color:var(--green); border:3px solid var(--green); }
+    .score-ring.ok     { background:var(--yellow-bg); color:var(--yellow); border:3px solid var(--yellow); }
+    .score-ring.retry  { background:rgba(248,81,73,.1); color:var(--red); border:3px solid var(--red); }
+    .results-actions { display:flex; gap:.75rem; justify-content:center; flex-wrap:wrap; margin-top:1.5rem; }
+    .btn-action { padding:.55rem 1.25rem; border-radius:8px; font-size:.875rem; font-weight:600;
+      cursor:pointer; border:1px solid var(--border); background:var(--surface2);
+      color:var(--text); text-decoration:none; transition:border-color .12s; }
+    .btn-action:hover { border-color:var(--blue); color:var(--blue); }
+    .btn-action.primary { background:var(--blue); border-color:var(--blue); color:#fff; }
+    .btn-action.primary:hover { opacity:.85; }
+
+    /* ── Live score chip ── */
+    .score-chip { font-size:.78rem; font-weight:600; padding:.2rem .6rem;
+      border-radius:99px; background:var(--surface2); color:var(--muted); }
+  </style>
+</head>
+<body>
+<script>initNav('../'); localStorage.setItem('VLE_lastGame', 'C3 Quiz — Keras & TF');</script>
+
+<div class="container">
+  <div class="game-shell">
+
+    <div style="margin-bottom:1.25rem">
+      <div class="tag tag-blue" style="margin-bottom:.4rem">Study Game · Multiple Choice</div>
+      <h1 style="font-size:1.3rem;font-weight:700;letter-spacing:-.02em">C3 Quiz — Keras &amp; TensorFlow</h1>
+    </div>
+
+    <div id="game-root"></div>
+
+  </div>
+</div>
+
+<script>
+// ── Question bank (25 questions — 10 drawn per session) ───────────────────────
+const QUESTIONS = [
+  {
+    question: "What does setting `include_top=False` do when loading a pretrained model like MobileNetV2?",
+    context: null,
+    options: [
+      "Skips loading pretrained weights, keeping the architecture but initialising all parameters randomly",
+      "Removes the final Dense classification head (ImageNet's 1000-class softmax layer)",
+      "Freezes all base layers from updating, while still allowing head layers added on top to train normally",
+      "Disables any preprocessing or data augmentation layers embedded inside the model's base"
+    ],
+    correct: 1,
+    explanation: "include_top=False removes only the final Dense classification head — the part trained for ImageNet's 1000 classes. The convolutional base (the useful feature extractor) is kept. It does NOT freeze anything or affect weight loading."
+  },
+  {
+    question: "You call a frozen MobileNetV2 base without passing a training flag: `x = base(inputs)`. What is the risk?",
+    context: null,
+    options: [
+      "BatchNorm layers in the base will update their running statistics on your dataset, corrupting the pretrained calibration",
+      "The model raises a TypeError at runtime — without an explicit training=True or training=False, Keras rejects the call",
+      "The frozen weights become accidentally unfrozen — Keras interprets a call without training=False as intent to update base weights",
+      "The model reverts to eager execution on every call instead of using the compiled graph, making training significantly slower"
+    ],
+    correct: 0,
+    explanation: "Even with base.trainable=False, BatchNorm layers update their running statistics by default unless you explicitly pass training=False. This corrupts the carefully calibrated ImageNet statistics, degrading performance. Always: base(inputs, training=False)."
+  },
+  {
+    question: "What is wrong with this fine-tuning code?",
+    context: `base.trainable = True
+for layer in base.layers[:-20]:
+    layer.trainable = False
+
+model.fit(dataset, epochs=5)   # <- problem here?`,
+    options: [
+      "You cannot re-enable trainable=True on a frozen layer — once set to False it must be replaced with a freshly created layer",
+      "The slice [:-20] freezes in reverse order — Keras requires a forward slice like [20:] to freeze the bottom layers",
+      "model.compile() must be called after changing trainable — the optimiser's parameter list is set at compile time",
+      "Fine-tuning requires a separate model instance — modifying trainable in place causes a parameter graph inconsistency"
+    ],
+    correct: 2,
+    explanation: "Changing layer.trainable has no effect until you call model.compile() again. The optimiser's list of parameters to update is frozen at compile time. Without recompiling, it continues optimising the same set of parameters as before — the trainability change is silently ignored."
+  },
+  {
+    question: "Why must the learning rate be reduced (typically to 1e-5) when fine-tuning a pretrained backbone?",
+    context: null,
+    options: [
+      "Higher learning rates cause VRAM overflow during fine-tuning — backpropagating through the full unfrozen base exceeds GPU memory limits",
+      "Fine-tuning only applies to small datasets — for large datasets the gradient diversity allows the normal learning rate to be used",
+      "A high LR causes BatchNorm statistics to update faster than the weights, creating normalisation that no longer matches current activations",
+      "Large weight updates would destroy the pretrained feature representations — the entire value of the pretrained model"
+    ],
+    correct: 3,
+    explanation: "Pretrained weights encode rich, general features learned from ImageNet. A high learning rate makes large updates that overwrite these features (catastrophic forgetting). Fine-tuning uses 1e-5 instead of 1e-3 to nudge the weights toward the new task without destroying what they already know."
+  },
+  {
+    question: "Which tf.data pipeline order is correct?",
+    context: null,
+    options: [
+      ".batch() → .shuffle() → .prefetch()",
+      ".shuffle() → .batch() → .prefetch()",
+      ".prefetch() → .shuffle() → .batch()",
+      ".shuffle() → .prefetch() → .batch()"
+    ],
+    correct: 1,
+    explanation: "Shuffle BEFORE batch — otherwise you shuffle entire batches (not individual examples), so batches always contain the same samples together. Prefetch LAST — it overlaps CPU data preparation with GPU training, eliminating GPU idle time. batch() must come before prefetch() because the model expects batches."
+  },
+  {
+    question: "The CNN base outputs feature maps of shape (7, 7, 2048). Why is GlobalAveragePooling2D preferred over Flatten for transfer learning?",
+    context: null,
+    options: [
+      "GlobalAveragePooling2D skips the memory reallocation step that Flatten requires, making it significantly faster at inference time",
+      "Flatten raises a shape error for tensors with 3 or more spatial dimensions — a pooling operation is required to reduce them first",
+      "GAP applies implicit per-channel normalisation during pooling, making the resulting feature vector more robust to spatial shifts",
+      "For (7,7,2048) maps: GAP → 2,048 values; Flatten → 100,352. The Dense head after GAP has 49× fewer parameters — critical when fine-tuning on a small dataset"
+    ],
+    correct: 3,
+    explanation: "Flatten keeps every spatial location, creating 100,352 parameters per output unit. GAP averages each feature map to a single number, producing just 2048 features — far fewer parameters. This reduces overfitting risk, which matters when your fine-tuning dataset is small."
+  },
+  {
+    question: "You want to generate new handwritten digit images. Why choose a VAE over a regular autoencoder?",
+    context: null,
+    options: [
+      "VAEs use a narrower bottleneck than plain autoencoders, forcing them to learn more compact and generalisable representations",
+      "Regular autoencoders have unstructured latent spaces — random samples decode to noise. VAEs add a KL divergence term that regularises the space toward N(0,1), so sampled points decode to valid outputs",
+      "Plain autoencoders treat each pixel independently during encoding, losing the spatial relationships required for coherent image reconstruction",
+      "VAEs converge faster because the reparameterisation trick computes deterministic gradients, unlike the stochastic updates in a plain autoencoder"
+    ],
+    correct: 1,
+    explanation: "A regular autoencoder learns a compressed encoding but imposes no structure on the latent space. Points you didn't encode from training data decode to garbage. The VAE's KL divergence term regularises the latent space to be approximately Gaussian — so sampling z ~ N(0,1) and decoding produces valid-looking outputs."
+  },
+  {
+    question: "Why is the reparameterisation trick necessary in a VAE?",
+    context: `# VAE encoder outputs μ and log σ²
+# We need to sample z from N(μ, σ²)
+# Option A: z = sample_from(N(μ, σ²))   ← direct sampling
+# Option B: z = μ + ε·σ, where ε ~ N(0,1)  ← reparameterisation`,
+    options: [
+      "It lets the VAE handle variable-length image sequences by projecting each latent sample to a fixed-size embedding the decoder can expand",
+      "It prevents the posterior from collapsing to a single point — the injected ε noise forces the encoder to maintain a diverse spread across latent values",
+      "Sampling from N(μ, σ²) is stochastic and not differentiable. Writing z = μ + ε·σ (ε ~ N(0,1) sampled externally) moves randomness outside the graph so gradients flow through μ and σ normally",
+      "It scales sampled z by log σ² before decoding, preventing the decoder from saturating on very large or very small latent values during early training"
+    ],
+    correct: 2,
+    explanation: "Backpropagation requires all operations to be differentiable. Sampling is a stochastic operation — you can't take its derivative. The trick is to write z = μ + ε·σ where ε is just noise sampled externally. Now the network only needs to learn μ and σ, which are differentiable. The randomness is 'outside' the computation graph."
+  },
+  {
+    question: "After 50 GAN training epochs, the generator produces high-quality flowers — but they all look like roses, despite training on 10 different flower types. What has happened?",
+    context: null,
+    options: [
+      "The discriminator memorised all real training images and its accuracy reached 100% — gradient flow to the generator stopped entirely",
+      "Mode collapse — the generator learned that one output type consistently fools the discriminator, so it stopped exploring other outputs",
+      "Gradient explosion — the generator's weights grew very large, collapsing the output distribution to the highest-probability sample",
+      "Data imbalance — augmentation was applied unevenly across flower types, making roses the dominant class in the generator's training signal"
+    ],
+    correct: 1,
+    explanation: "Mode collapse: the generator discovers that producing one convincing output reliably fools the discriminator. Since the training signal only cares about fooling D (not about diversity), the generator has no incentive to produce variety. It gets stuck in a local optimum."
+  },
+  {
+    question: "In a DQN, what problem arises from using the same network for both selecting actions AND computing training targets?",
+    context: `# Bellman target computed with the same θ that's being updated:
+Q_target = r + γ × max Q(s', a'; θ)   # θ changes every step`,
+    options: [
+      "Computing Q-values over all possible actions simultaneously makes the forward pass O(|A|) — for large action spaces this becomes a bottleneck",
+      "The same network cannot simultaneously parameterise a policy over discrete actions and a value function over continuous states",
+      "Both predictions and targets depend on θ, so every weight update shifts the targets too — the network chases a moving goal, causing oscillation and often divergence",
+      "Using the same network fills the replay buffer with correlated (state, Q-value) pairs, making the sampled training batches non-i.i.d."
+    ],
+    correct: 2,
+    explanation: "Both the predictions and the targets depend on θ. When you update θ, the targets immediately change too. This creates a feedback loop where the network chases a moving target, causing the loss to oscillate and often diverge. The solution (target network) keeps a frozen copy of θ that is only updated every N steps, providing stable targets."
+  },
+  {
+    question: "You're building a Keras transformer with embed_dim=512 and 8 heads. What value should key_dim be?",
+    context: `mha = tf.keras.layers.MultiHeadAttention(num_heads=8, key_dim=???)`,
+    options: [
+      "512 — key_dim must match the total embedding dimension for the output to align with the residual connection",
+      "4096 — key_dim should scale proportionally with num_heads so each head receives a full-resolution projection",
+      "128 — a conservative default that balances memory and expressiveness for any model with embed_dim above 256",
+      "64 — key_dim is per head; total attention dim = num_heads × key_dim = 8 × 64 = 512"
+    ],
+    correct: 3,
+    explanation: "In Keras, key_dim is the dimension PER HEAD — not the total model dimension. With 8 heads and key_dim=64, the total output is 8×64=512, matching the embedding dimension. Setting key_dim=512 would give a total of 4096 — an 8× larger attention computation than intended."
+  },
+  {
+    question: "This function is decorated with @tf.function. During a 10-epoch training run, how many times does the print statement execute?",
+    context: `@tf.function
+def train_step(X, y):
+    with tf.GradientTape() as tape:
+        loss = compute_loss(X, y)
+    print(f"Loss: {loss.numpy()}")   # debug line
+    grads = tape.gradient(loss, model.trainable_variables)
+    optimizer.apply_gradients(zip(grads, model.trainable_variables))`,
+    options: [
+      "Once per batch — @tf.function traces each unique input signature, so print runs every time a new batch shape is encountered",
+      "Never — Python's print() raises a TypeError inside @tf.function because it is not a TensorFlow graph operation",
+      "Once — only during the first trace; Python side-effects don't re-execute on cached graph calls",
+      "Once per epoch — @tf.function aggregates calls at epoch boundaries and batches Python side-effects together"
+    ],
+    correct: 2,
+    explanation: "@tf.function traces the Python function once and compiles it into a static TF graph. On the first trace, Python code (including print) runs. On every subsequent call, TF executes the compiled graph directly — Python side-effects are gone. This is why print, list.append, and counters inside @tf.function only work on the first call."
+  },
+  {
+    question: "You need to build a model with two input branches that merge before a Dense head. Which Keras API must you use?",
+    context: null,
+    options: [
+      "Sequential — multiple input branches can be defined using model.add(branch=True), which accepts branching layer configurations",
+      "Functional — Sequential supports only a single linear chain; multi-input architectures require the Functional API",
+      "Model subclassing is the only supported option — the Functional API builds a static graph and cannot represent multi-input structures",
+      "Sequential with a Concatenate layer — model.add(Concatenate()) accepts multiple inputs and merges them into the linear forward chain"
+    ],
+    correct: 1,
+    explanation: "Sequential is strictly linear: one tensor in, each layer feeding the next, one tensor out. Any deviation — multiple inputs, multiple outputs, skip connections, branching — requires the Functional API. Model subclassing can also handle this, but the Functional API is simpler for fixed-graph architectures."
+  },
+  {
+    question: "What does `tape.gradient(loss, variables)` compute inside a tf.GradientTape context?",
+    context: `with tf.GradientTape() as tape:
+    predictions = model(X, training=True)
+    loss = loss_fn(y, predictions)
+grads = tape.gradient(loss, model.trainable_variables)`,
+    options: [
+      "The scalar training loss averaged across all samples and regularisation terms accumulated inside the tape context",
+      "The partial derivative of loss with respect to each variable, using the recorded computation graph",
+      "A new TensorFlow graph optimised for the current batch's shape, retracing the forward pass with updated compilation settings",
+      "The exponential moving average of gradients across all previous tape calls within the current training epoch"
+    ],
+    correct: 1,
+    explanation: "tf.GradientTape records every operation on watched tensors during the forward pass. tape.gradient(loss, variables) traverses this graph in reverse (backpropagation) and returns ∂loss/∂var for each variable — the same gradients that model.fit() computes internally. This is how you implement custom training logic."
+  },
+  {
+    question: "What problem do ResNet's skip connections directly solve?",
+    context: null,
+    options: [
+      "Overfitting — skip connections allow the model to bypass unreliable layers, acting as implicit ensemble of shallower sub-networks",
+      "Slow inference — bypassed layers execute in parallel rather than sequentially, halving the number of serial forward-pass operations",
+      "Vanishing gradients — the identity shortcut in y = F(x) + x always contributes a gradient of 1 backward regardless of depth, enabling reliable training of 50–150+ layer networks",
+      "Parameter redundancy — when F(x) can be zero, the block is effectively skipped, so residual blocks require fewer unique parameters per layer"
+    ],
+    correct: 2,
+    explanation: "In very deep networks, gradients shrink exponentially as they backpropagate (vanishing gradient problem). ResNet's key insight: output = F(x) + x. The gradient of this sum always has a component of 1 (from the identity shortcut), so even if F(x)'s gradient vanishes, the gradient signal can still flow through unchanged. This made 50-, 100-, 152-layer networks trainable."
+  },
+  {
+    question: "In a custom Keras layer, what is the purpose of `build(input_shape)`, and why is it separate from `__init__`?",
+    context: null,
+    options: [
+      "build() is called before every forward pass to verify the input shape hasn't changed — it raises ValueError if shape is inconsistent with the layer's weights",
+      "build() creates weights that depend on input shape — called automatically on first use, so you can construct the layer before the data dimensions are known",
+      "build() compiles the layer with a fixed learning rate and optimiser configuration, keeping those settings separate from the layer's functional logic in __init__",
+      "build() and __init__ are interchangeable — Keras calls whichever is defined, defaulting to __init__ if build() is not explicitly overridden"
+    ],
+    correct: 1,
+    explanation: "Layer weights often depend on input shape (e.g. a Dense layer's weight matrix is [input_features, output_features]). __init__ runs at construction time — before the input shape is known. build() runs the first time the layer is called, when the shape is finally available. This deferred weight creation is what lets you add a layer to a model before specifying input shapes."
+  },
+  {
+    question: "Transpose convolution is used for upsampling in VAE decoders. What artefact does it commonly produce, and what causes it?",
+    context: null,
+    options: [
+      "Blurring artefacts — the learnable upsampling kernel applies a weighted average across neighbouring output positions, creating a low-pass spatial smoothing effect",
+      "Checkerboard artefacts — caused by uneven overlap between kernel and output grid when kernel size is not divisible by stride",
+      "Colour channel bleeding — the transposed kernel shares weights across RGB channels, allowing high-intensity activations to cross channel boundaries",
+      "Border artefacts — zero-padding during the transpose operation creates visible edges where padded zeros mix with real activations"
+    ],
+    correct: 1,
+    explanation: "When kernel_size is not divisible by stride (e.g. kernel=3, stride=2), some output pixels receive contributions from more kernel elements than others. This uneven overlap creates a regular grid of darker/lighter pixels — the checkerboard artefact. Solutions: use kernel sizes divisible by stride (e.g. 4,2), or replace with bilinear upsampling + regular convolution."
+  },
+  {
+    question: "Vision Transformer (ViT) splits an image into fixed-size patches before processing. Why patches rather than individual pixels?",
+    context: null,
+    options: [
+      "Patches let the model generalise to different resolutions at inference time — patch count varies but patch size and embedding dimension stay fixed",
+      "224² pixels = 50,176 tokens; self-attention's O(n²) cost makes that infeasible. 16×16 patches give 196 tokens — the same image at 256× shorter sequence length",
+      "Each patch passes through a convolutional projection that captures multi-scale local structure — raw pixel embeddings lack the spatial context needed for attention",
+      "Individual pixels carry insufficient local context for the embedding layer — each token requires at minimum one patch of spatial information to be meaningful"
+    ],
+    correct: 1,
+    explanation: "Self-attention has O(n²) memory and compute w.r.t. sequence length. A 224×224 image as pixels = 50,176 tokens — infeasible. With 16×16 patches: 196 tokens. Each patch is flattened and linearly projected to an embedding. The model gets a manageable sequence while each token captures a meaningful local region."
+  },
+  {
+    question: "What is the practical difference between feature extraction and fine-tuning in transfer learning?",
+    context: null,
+    options: [
+      "Feature extraction: train only the new head, base frozen. Fine-tuning: after the head converges, unfreeze part of the base and train at a much lower LR (e.g. 1e-5)",
+      "Feature extraction uses the pretrained model as a fixed encoder for all tasks; fine-tuning creates a separate adapted copy per task without modifying a shared base",
+      "Feature extraction updates the pretrained base weights to match the new domain; fine-tuning adds a frozen classification head without modifying the base at all",
+      "They are the same technique — both industry and research documentation use the terms interchangeably for adapting pretrained models to new tasks"
+    ],
+    correct: 0,
+    explanation: "Feature extraction: freeze the entire pretrained base, use it as a fixed feature extractor, only train the new head. Fast and safe for small datasets. Fine-tuning: first do feature extraction until the head converges, then unfreeze some/all of the base and train everything together with a very small LR (e.g. 1e-5). Allows task-specific adaptation but risks catastrophic forgetting if LR is too high."
+  },
+  {
+    question: "EarlyStopping with `patience=5, restore_best_weights=True` fires. Best val_loss was at epoch 12; training ended at epoch 17. Which weights are restored?",
+    context: null,
+    options: [
+      "Epoch 17's weights — model.fit() always retains the most recently trained weights, overwriting any earlier internal snapshots",
+      "Epoch 12's weights — restore_best_weights rewinds to the epoch with the best monitored metric",
+      "The average of weights across epochs 12–17 — the callback exponentially smooths weights over the patience window to reduce noise",
+      "Epoch 13's weights — the callback takes a snapshot one epoch after the best metric, assuming the model needs one step to stabilise"
+    ],
+    correct: 1,
+    explanation: "restore_best_weights=True means Keras keeps an internal snapshot of the weights at the epoch with the best monitored metric (epoch 12 here). When early stopping fires at epoch 17, it automatically restores this snapshot. Without this flag, you'd keep the degraded epoch-17 weights and would need to manually revert."
+  },
+  {
+    question: "In self-attention, what do the Query (Q), Key (K), and Value (V) vectors represent conceptually?",
+    context: null,
+    options: [
+      "Q=input embedding, K=output activation, V=residual — the three tensor flows through the feedforward sublayer inside each transformer block",
+      "Q = 'what am I seeking?', K = 'what do I offer for matching?', V = 'what do I contribute?' — weights from Q·K similarity gate how much of each V passes through",
+      "Q, K, V are three identical copies of the input used to improve numerical stability by averaging dot-product scores across three independent views",
+      "Q=query token position, K=key sentence embedding, V=value document context — they operate at different granularities of the input hierarchy simultaneously"
+    ],
+    correct: 1,
+    explanation: "Each token produces Q, K, V via learned linear projections. Q represents what the token seeks; K represents what it offers for matching; V is the content it contributes. Attention weight between tokens i and j = softmax(Qᵢ·Kⱼᵀ/√d_k). The output is a weighted sum of all Value vectors, where weights reflect Query-Key similarity."
+  },
+  {
+    question: "GPT uses decoder-only; translation models use encoder-decoder. What distinguishes cross-attention from self-attention?",
+    context: null,
+    options: [
+      "Self-attention uses fixed sinusoidal position encodings that cannot be learned; cross-attention uses trainable embeddings to capture relative distance between sequences",
+      "Self-attention: Q, K, V all from the same sequence. Cross-attention: Q from the decoder's state, K and V from the encoder — letting the decoder query the encoded source",
+      "Cross-attention processes source and target sequences simultaneously in a single fused matrix operation; self-attention handles each sequence in two separate steps",
+      "Self-attention normalises dot-product scores by √d_k before softmax; cross-attention uses raw unnormalised scores for direct relevance matching between sequences"
+    ],
+    correct: 1,
+    explanation: "Self-attention: the decoder attends to itself — Q, K, V derived from the same sequence. Cross-attention: Q comes from the decoder's current state; K and V come from the encoder's output. This lets the decoder 'look at' the source when generating each target token — the mechanism behind neural machine translation."
+  },
+  {
+    question: "In the Functional API, `inputs = tf.keras.Input(shape=(224,224,3))` is called first. What does this create?",
+    context: null,
+    options: [
+      "A dense tensor pre-filled with zeros of the specified shape, used to verify the model's output dimensions before real data is loaded",
+      "A symbolic tensor — it represents the shape and dtype of data that will flow through the model, but contains no actual values",
+      "A tf.data.Dataset node that pre-fetches and streams real batches into the model during model.fit() and model.predict() calls",
+      "A trainable weight variable of the specified shape, initialised with glorot_uniform and registered in model.trainable_variables"
+    ],
+    correct: 1,
+    explanation: "tf.keras.Input() creates a symbolic tensor (KerasTensor) — it carries shape and dtype metadata but contains no data. It's the start node of the computation graph. When you pass data to model.predict() or model.fit(), real tensors flow through this graph. Symbolic tensors allow Keras to build and validate the full graph before any data exists."
+  },
+  {
+    question: "A model with BatchNorm has consistently high validation loss despite good training loss. Training and validation distributions are similar. The most likely cause?",
+    context: null,
+    options: [
+      "Training batch size is too small — BatchNorm statistics become highly variable for batches under 16 samples, causing noisy per-batch normalisation",
+      "BatchNorm is memorising per-batch statistics from training and replaying them during validation, causing the model to overfit the normalisation values",
+      "model.eval() was not called — BatchNorm normalised each validation batch by its own mean/variance instead of the stable running statistics built up during training",
+      "The learning rate is too high for a model with BatchNorm — fast weight updates destabilise the running statistics and cause the validation loss to diverge"
+    ],
+    correct: 2,
+    explanation: "During training, BatchNorm normalises using the current mini-batch's mean and variance. During validation you must set training=False so BatchNorm switches to accumulated running statistics. If you validate in training mode, each validation batch is normalised by its own statistics — inconsistent and stochastic, especially for small batches."
+  },
+  {
+    question: "After `base.trainable = True` and unfreezing layers, why must you call `model.compile()` before fitting?",
+    context: null,
+    options: [
+      "model.compile() must always be called immediately before model.fit() — it resets the optimiser state regardless of any trainable changes made",
+      "The optimiser's parameter list is fixed at compile time — without recompiling, newly unfrozen layers are silently ignored and the old parameter set continues to be updated",
+      "Recompiling with a lower learning rate applies the new LR to the existing parameter set but does not refresh which layers the optimiser is tracking",
+      "Keras internally detects trainable changes and triggers an automatic recompile before fit() — the explicit compile() call is redundant but harmless"
+    ],
+    correct: 1,
+    explanation: "At compile time, Keras asks the optimiser to build its state for the set of trainable parameters at that moment. If you change base.trainable after compile, the optimiser still trains only the original set — newly unfrozen layers are silently ignored. Recompiling forces the optimiser to rebuild over the new (larger) parameter set."
+  }
+];
+
+// ── Config ────────────────────────────────────────────────────────────────────
+const GAME_SIZE = 10;
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let queue = [];
+let currentIdx = 0;
+let missedIndices = [];
+let score = 0;
+let isReplay = false;
+let answered = false;
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function buildQueue(indices) {
+  return indices.map(qi => {
+    const q = QUESTIONS[qi];
+    const correctText = q.options[q.correct];
+    const shuffled = shuffle([...q.options]);
+    return { ...q, options: shuffled, correct: shuffled.indexOf(correctText), _qi: qi };
+  });
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+const root = document.getElementById('game-root');
+
+function showIntro() {
+  root.innerHTML = `
+    <div class="card intro-card">
+      <div class="intro-badge">Multiple Choice Quiz</div>
+      <div class="intro-title">Course 3 — Keras &amp; TensorFlow</div>
+      <div class="intro-meta">
+        10 questions per session · 25-question pool · ~5 minutes<br>
+        Covers: Functional API, transfer learning, tf.data, transformers, VAEs, GANs, RL &amp; DQN.<br>
+        <strong>Shuffled options · Immediate feedback</strong> after every question.
+      </div>
+      <button class="btn-start" onclick="startQuiz()">Start Quiz →</button>
+    </div>`;
+}
+
+function startQuiz() {
+  const pool = shuffle(QUESTIONS.map((_, i) => i)).slice(0, GAME_SIZE);
+  queue = buildQueue(pool);
+  currentIdx = 0; missedIndices = []; score = 0; isReplay = false;
+  showQuestion();
+}
+
+function showQuestion() {
+  answered = false;
+  const q = queue[currentIdx];
+  const total = queue.length;
+  const pct   = Math.round((currentIdx / total) * 100);
+  const letters = ['A', 'B', 'C', 'D'];
+
+  const contextHtml = q.context
+    ? `<div class="q-context"><pre><code>${escHtml(q.context)}</code></pre></div>`
+    : '';
+
+  const optionsHtml = q.options.map((opt, i) => `
+    <button class="option-btn" id="opt-${i}" onclick="selectOption(${i})">
+      <span class="option-letter">${letters[i]}</span>
+      <span>${escHtml(opt)}</span>
+    </button>`).join('');
+
+  root.innerHTML = `
+    <div class="q-progress">
+      <div class="q-progress-label">
+        <span>${isReplay ? 'Replay — ' : ''}Question ${currentIdx + 1} of ${total}</span>
+        <span class="score-chip">✓ ${score}</span>
+      </div>
+      <div class="q-bar"><div class="q-bar-fill" style="width:${pct}%"></div></div>
+    </div>
+
+    <div class="card" style="margin-bottom:1rem">
+      ${contextHtml}
+      <div class="q-text">${escHtml(q.question)}</div>
+      <div class="options">${optionsHtml}</div>
+      <div class="feedback" id="feedback"></div>
+      <button class="btn-next" id="btn-next" onclick="nextQuestion()">Next →</button>
+    </div>`;
+}
+
+function selectOption(chosen) {
+  if (answered) return;
+  answered = true;
+  const q = queue[currentIdx];
+  const isCorrect = chosen === q.correct;
+
+  document.querySelectorAll('.option-btn').forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === q.correct) btn.classList.add('correct');
+    else if (i === chosen && !isCorrect) btn.classList.add('wrong');
+    else btn.classList.add('dimmed');
+  });
+
+  if (isCorrect) {
+    score++;
+  } else {
+    if (!isReplay) missedIndices.push(q._qi);
+  }
+
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback ' + (isCorrect ? 'correct' : 'wrong');
+  fb.style.display = 'block';
+  fb.innerHTML = `<div class="feedback-head">${isCorrect ? '✓ Correct' : '✗ Incorrect'}</div>${escHtml(q.explanation)}`;
+
+  document.getElementById('btn-next').style.display = 'inline-block';
+}
+
+function nextQuestion() {
+  currentIdx++;
+  if (currentIdx >= queue.length) {
+    showResults();
+  } else {
+    showQuestion();
+  }
+}
+
+function showResults() {
+  const total = queue.length;
+  const pct = Math.round((score / total) * 100);
+  const ringClass = pct >= 80 ? 'great' : pct >= 60 ? 'ok' : 'retry';
+  const msg = pct >= 80
+    ? 'Strong. The core concepts are solid.'
+    : pct >= 60
+    ? 'Getting there — review the explanations for what you missed.'
+    : 'More practice needed. Try the flashcard game to reinforce the concepts.';
+
+  let histHtml = '';
+  if (!isReplay) {
+    const histKey = 'VLE_scores_c03_quiz';
+    let hist = JSON.parse(localStorage.getItem(histKey) || '[]');
+    hist.unshift({score: score, total: total});
+    if (hist.length > 3) hist = hist.slice(0, 3);
+    localStorage.setItem(histKey, JSON.stringify(hist));
+    if (hist.length > 1) {
+      histHtml = '<div style="font-size:.8rem;color:var(--muted);margin-top:.5rem">Previous: '
+        + hist.slice(1).map(function(h) { return h.score + '/' + h.total; }).join(' · ')
+        + '</div>';
+    }
+  }
+
+  const replayBtn = missedIndices.length > 0
+    ? `<button class="btn-action primary" onclick="startReplay()">Replay ${missedIndices.length} missed</button>`
+    : '';
+
+  root.innerHTML = `
+    <div class="card intro-card">
+      <div class="score-ring ${ringClass}">${score}/${total}</div>
+      <div class="intro-title" style="margin-bottom:.5rem">${pct}%</div>
+      <div class="intro-meta">${msg}${histHtml}</div>
+      <div class="results-actions">
+        ${replayBtn}
+        <button class="btn-action" onclick="startQuiz()">New session</button>
+        <a class="btn-action" href="index.html">← Games Hub</a>
+        <a class="btn-action" href="../courses/c03.html">← Back to C3</a>
+      </div>
+    </div>`;
+}
+
+function startReplay() {
+  queue = buildQueue([...missedIndices]);
+  currentIdx = 0; missedIndices = []; score = 0; isReplay = true;
+  showQuestion();
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+showIntro();
+</script>
+</body>
+</html>

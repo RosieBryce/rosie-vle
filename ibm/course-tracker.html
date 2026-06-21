@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IBM AI Engineering — Speedrun Tracker</title>
+<!-- shared.css first so local overrides win -->
+<link rel="stylesheet" href="shared.css">
+<script src="shared.js"></script>
+<style>
+/* ── Tracker-specific styles ───────────────────────────── */
+
+/* Override shared.css container padding */
+.container { padding: 2.5rem 1.25rem 4rem; }
+
+/* Header */
+.header{text-align:center;margin-bottom:2.5rem}
+.header h1{font-size:1.75rem;font-weight:700;letter-spacing:-.02em}
+.header p{color:var(--muted);margin-top:.375rem;font-size:.875rem}
+
+/* Prize grid */
+.prize-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem}
+@media(max-width:580px){.prize-grid{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.25rem}
+.card-main{border-color:var(--yellow);background:linear-gradient(140deg,var(--surface) 60%,#1d1a10)}
+
+.tag{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem}
+.tag-gold{color:var(--yellow)}
+.tag-silver{color:var(--muted)}
+.prize-name{font-size:1.3rem;font-weight:700;margin-bottom:.2rem}
+.prize-meta{font-size:.85rem;color:var(--muted)}
+.prize-meta strong{color:var(--text)}
+
+/* Countdown */
+.countdown{display:flex;align-items:center;gap:.5rem;margin-top:1.125rem}
+.cd-unit{text-align:center;min-width:44px}
+.cd-val{font-size:1.75rem;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+.cd-lbl{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-top:.15rem}
+.cd-sep{font-size:1.375rem;font-weight:700;color:var(--border);padding-bottom:.9rem}
+
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.875rem;margin-bottom:1.5rem}
+@media(max-width:580px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem;text-align:center}
+.stat-val{font-size:1.3rem;font-weight:700;line-height:1.2}
+.stat-sub{font-size:.8rem;color:var(--muted);font-weight:400}
+.stat-lbl{font-size:.73rem;color:var(--muted);margin-top:.3rem}
+
+/* Progress */
+.progress-section{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.25rem;margin-bottom:1.5rem}
+.prog-row{margin-bottom:.875rem}
+.prog-row:last-child{margin-bottom:0}
+.prog-header{display:flex;justify-content:space-between;font-size:.83rem;margin-bottom:.4rem}
+.prog-header span:last-child{color:var(--muted)}
+.prog-track{background:var(--surface2);border-radius:99px;height:8px;overflow:hidden}
+.prog-fill{height:100%;background:var(--green);border-radius:99px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+
+/* Section heading */
+.section-head{font-size:.95rem;font-weight:600;margin-bottom:.875rem;display:flex;justify-content:space-between;align-items:center}
+.section-hint{font-size:.75rem;color:var(--muted);font-weight:400}
+
+/* Table */
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:1.5rem}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:.6rem .875rem;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);background:var(--surface2);border-bottom:1px solid var(--border)}
+td{padding:.7rem .875rem;font-size:.875rem;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+.th-num,.td-num{width:32px;color:var(--muted);font-size:.78rem}
+.th-h,.td-h{width:52px;text-align:center;color:var(--muted)}
+.th-target,.td-target{width:96px;font-size:.8rem}
+.th-status,.td-status{width:130px}
+tr.r-done td{opacity:.5}
+tr.r-active{background:var(--blue-bg)}
+tr.r-done:hover,tr.r-active:hover,tr.r-pending:hover{background:var(--surface2);cursor:pointer}
+.divider-row td{background:var(--surface2);font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--purple);padding:.3rem .875rem;border-bottom:1px solid var(--border)}
+
+/* Expand button */
+.exp-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.65rem;padding:1px 5px;border-radius:3px;vertical-align:middle;margin-right:.3rem;line-height:1;transition:color .1s,background .1s}
+.exp-btn:hover{color:var(--text);background:var(--surface2)}
+
+/* Module sub-rows */
+tr.mod-row td{background:#131820;padding:.45rem .875rem .45rem 2.75rem;font-size:.8rem;color:var(--muted);border-bottom:1px solid #1c2128}
+tr.mod-row:last-child td{border-bottom:none}
+.mod-check{display:inline-flex;align-items:center;justify-content:center;width:13px;height:13px;border-radius:50%;border:1.5px solid var(--border);cursor:pointer;margin-right:.5rem;font-size:.55rem;vertical-align:middle;flex-shrink:0;transition:background .15s,border-color .15s}
+.mod-check.done{background:var(--green);border-color:var(--green);color:#fff}
+.mod-check:hover{border-color:var(--muted)}
+.mod-name.done{text-decoration:line-through;color:#555d68}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;gap:.3rem;padding:.18rem .55rem;border-radius:99px;font-size:.7rem;font-weight:600;white-space:nowrap}
+.badge-done{background:var(--green-bg);color:var(--green)}
+.badge-active{background:var(--blue-bg);color:var(--blue)}
+.badge-pending{background:var(--surface2);color:var(--muted)}
+.dot{width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0}
+.dot-g{background:var(--green)}
+.dot-b{background:var(--blue)}
+.dot-m{background:var(--muted);opacity:.5}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.pulsing{animation:pulse 1.8s ease-in-out infinite}
+
+/* Pace card */
+.pace-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.25rem;margin-bottom:1.5rem}
+.insight{margin-top:1rem;padding:.875rem 1rem;border-radius:6px;font-size:.875rem;line-height:1.6}
+.ins-good{background:var(--green-bg);border:1px solid rgba(63,185,80,.3)}
+.ins-warn{background:var(--yellow-bg);border:1px solid rgba(210,153,34,.3)}
+.ins-bad{background:var(--red-bg);border:1px solid rgba(248,81,73,.3)}
+.ins-done{background:var(--green-bg);border:2px solid var(--green);text-align:center;font-size:1rem}
+
+/* Footer */
+.footer{text-align:center;color:var(--muted);font-size:.76rem;padding-top:1.25rem;border-top:1px solid var(--border)}
+</style>
+</head>
+<body>
+<script>initNav('');</script>
+<div class="container" id="app"></div>
+
+<script>
+const COURSES = [
+  {id:1,  name:"Machine Learning with Python",                                      hours:20, genai:false},
+  {id:2,  name:"Introduction to Deep Learning & Neural Networks with Keras",        hours:10, genai:false},
+  {id:3,  name:"Deep Learning with Keras and Tensorflow",                           hours:23, genai:false},
+  {id:4,  name:"Introduction to Neural Networks and PyTorch",                       hours:18, genai:false},
+  {id:5,  name:"Deep Learning with PyTorch",                                        hours:19, genai:false},
+  {id:6,  name:"AI Capstone Project with Deep Learning",                            hours:15, genai:false},
+  {id:7,  name:"Generative AI and LLMs: Architecture and Data Preparation",         hours:6,  genai:true},
+  {id:8,  name:"Gen AI Foundational Models for NLP & Language Understanding",       hours:10, genai:true},
+  {id:9,  name:"Generative AI Language Modeling with Transformers",                 hours:9,  genai:true},
+  {id:10, name:"Generative AI Engineering and Fine-Tuning Transformers",            hours:8,  genai:true},
+  {id:11, name:"Generative AI Advance Fine-Tuning for LLMs",                       hours:9,  genai:true},
+  {id:12, name:"Fundamentals of AI Agents Using RAG and LangChain",                hours:9,  genai:true},
+  {id:13, name:"Project: Generative AI Applications with RAG and LangChain",       hours:9,  genai:true},
+];
+
+const MODULES = {
+  1:  ["Introduction to Machine Learning","Linear and Logistic Regression","Building Supervised Learning Models","Building Unsupervised Learning Models","Evaluating and Validating Machine Learning Models","Final Project and Exam"],
+  2:  ["Introduction to Deep Learning and Neural Networks","Basics of Deep Learning","Keras and Deep Learning Libraries","Deep Learning Models","Final Project and Course Wrap-Up"],
+  3:  ["Advanced Keras Functionalities","Advanced CNNs in Keras","Transformers in Keras","Unsupervised Learning and Generative Models in Keras","Advanced Keras Techniques","Introduction to Reinforcement Learning with Keras","Final Project Submission"],
+  4:  ["Tensor and Datasets","Linear Regression","Linear Regression PyTorch Way","Multiple Input/Output Linear Regression","Logistic Regression for Classification","Practice Project and Final Project"],
+  5:  ["Logistic Regression & Cross Entropy Loss","Softmax Regression","Shallow Neural Networks","Deep Networks","Convolutional Neural Networks","Final Project"],
+  6:  ["Data Handling","CNN Model Development","CNN – Vision Transformer Integration","Final Project Submission and Course Wrap-Up"],
+  7:  ["Generative AI Architecture","Data Preparation for LLMs"],
+  8:  ["Fundamentals of Language Understanding","Word2Vec and Sequence-to-Sequence Models"],
+  9:  ["Fundamental Concepts of Transformer Architecture","Advanced Concepts of Transformer Architecture"],
+  10: ["Transformers and Fine-Tuning","Parameter Efficient Fine-Tuning (PEFT)"],
+  11: ["Different Approaches to Fine-Tuning","Fine-Tuning Causal LLMs with Human Feedback and Direct Preference"],
+  12: ["Fundamentals of AI Agents","RAG Framework","Prompt Engineering and LangChain"],
+  13: ["Document Loader Using LangChain","RAG Using LangChain","Create a QA Bot to Read Your Document"],
+};
+
+const TOTAL_HOURS   = 165;
+const COURSE3_START = new Date('2026-02-28T00:00:00');
+// NOTE: PRIZE_DL is declared in shared.js — do not re-declare here
+const RUNNERUP_DL   = new Date('2026-08-31T23:59:59');
+const STATE_KEY     = 'ibm-ai-speedrun-v1';
+const MOD_KEY       = 'ibm-ai-speedrun-mods-v1';
+const COURSERA_URL  = 'https://www.coursera.org/professional-certificates/ai-engineer';
+const SWITCH_URL    = 'https://www.nintendo.com/en-gb/Nintendo-Switch-2/Nintendo-Switch-2-2982885.html';
+
+// Expand state (session-only — resets on reload, that's fine)
+const expanded = new Set();
+
+// ── Course state ────────────────────────────────────────────────────────────
+function defaultState() { return new Set([1, 2]); }
+
+function load() {
+  try {
+    const s = localStorage.getItem(STATE_KEY);
+    if (s) return new Set(JSON.parse(s));
+  } catch(e) {}
+  return defaultState();
+}
+
+function save(set) {
+  localStorage.setItem(STATE_KEY, JSON.stringify([...set]));
+}
+
+// ── Module state ────────────────────────────────────────────────────────────
+function defaultMods() {
+  const s = new Set();
+  [1, 2].forEach(cid => (MODULES[cid] || []).forEach((_, i) => s.add(`${cid}-${i}`)));
+  return s;
+}
+
+function loadMods() {
+  try {
+    const s = localStorage.getItem(MOD_KEY);
+    if (s) return new Set(JSON.parse(s));
+  } catch(e) {}
+  return defaultMods();
+}
+
+function saveMods(set) {
+  localStorage.setItem(MOD_KEY, JSON.stringify([...set]));
+}
+
+// ── Toggles ─────────────────────────────────────────────────────────────────
+function toggle(id) {
+  const done = load();
+  const mods = loadMods();
+  if (done.has(id)) {
+    // Uncheck this and everything after, clear their modules
+    for (let i = id; i <= 13; i++) {
+      done.delete(i);
+      (MODULES[i] || []).forEach((_, m) => mods.delete(`${i}-${m}`));
+    }
+  } else {
+    // Check this and everything before, fill their modules
+    for (let i = 1; i <= id; i++) {
+      done.add(i);
+      (MODULES[i] || []).forEach((_, m) => mods.add(`${i}-${m}`));
+    }
+  }
+  save(done); saveMods(mods); render();
+}
+
+function toggleMod(courseId, modIdx) {
+  const done = load();
+  const mods = loadMods();
+  const key  = `${courseId}-${modIdx}`;
+  if (mods.has(key)) {
+    mods.delete(key);
+    done.delete(courseId);           // uncheck course when any module unchecked
+  } else {
+    mods.add(key);
+    // Auto-complete course when all its modules are checked
+    const total = (MODULES[courseId] || []).length;
+    let allDone = true;
+    for (let i = 0; i < total; i++) {
+      if (!mods.has(`${courseId}-${i}`)) { allDone = false; break; }
+    }
+    if (allDone) done.add(courseId);
+  }
+  save(done); saveMods(mods); render();
+}
+
+function toggleExpand(id) {
+  expanded.has(id) ? expanded.delete(id) : expanded.add(id);
+  render();
+}
+
+// ── Dates ────────────────────────────────────────────────────────────────────
+function targetDate(id) {
+  const targets = {
+    4:  new Date('2026-05-18'),
+    5:  new Date('2026-06-08'),
+    6:  new Date('2026-06-29'),
+    7:  new Date('2026-07-12'),
+    8:  new Date('2026-07-26'),
+    9:  new Date('2026-08-09'),
+    10: new Date('2026-08-16'),
+    11: new Date('2026-08-23'),
+    12: new Date('2026-08-30'),
+    13: new Date('2026-08-31'),
+  };
+  return targets[id] || null;
+}
+
+function projectedFinish(done, modDone) {
+  // Hours-based projection at 6h/week pace
+  const DAYS_PER_HOUR = 7 / 6;
+  let remainingDays = 0;
+  for (const c of COURSES) {
+    if (done.has(c.id)) continue;
+    const mods  = MODULES[c.id] || [];
+    const total = mods.length || 1;
+    const nDone = mods.reduce((n, _, i) => n + (modDone.has(`${c.id}-${i}`) ? 1 : 0), 0);
+    remainingDays += ((total - nDone) / total) * c.hours * DAYS_PER_HOUR;
+  }
+  if (remainingDays === 0) return new Date();
+  const d = new Date();
+  d.setDate(d.getDate() + Math.round(remainingDays));
+  return d;
+}
+
+function fmt(d, short) {
+  if (!d) return '—';
+  return d.toLocaleDateString('en-GB', short
+    ? {day:'numeric', month:'short'}
+    : {day:'numeric', month:'short', year:'numeric'});
+}
+
+function daysBetween(a, b) { return Math.round((b - a) / 86400000); }
+
+// ── Countdown HTML ───────────────────────────────────────────────────────────
+function cdHTML() {
+  const diff = PRIZE_DL - new Date();   // PRIZE_DL from shared.js
+  if (diff <= 0) return `<span style="color:var(--red);font-weight:700">Deadline passed</span>`;
+  const d  = Math.floor(diff / 86400000);
+  const h  = Math.floor((diff % 86400000) / 3600000);
+  const m  = Math.floor((diff % 3600000)  / 60000);
+  const s  = Math.floor((diff % 60000)    / 1000);
+  const p  = n => String(n).padStart(2,'0');
+  const unit = (v, l) =>
+    `<div class="cd-unit"><div class="cd-val">${v}</div><div class="cd-lbl">${l}</div></div>`;
+  return unit(d,'days') + '<div class="cd-sep">:</div>' +
+         unit(p(h),'hrs') + '<div class="cd-sep">:</div>' +
+         unit(p(m),'min') + '<div class="cd-sep">:</div>' +
+         unit(p(s),'sec');
+}
+
+// ── Main render ──────────────────────────────────────────────────────────────
+function render() {
+  const done           = load();
+  const modDone        = loadMods();
+  const completedCount = done.size;
+  const remaining      = 13 - completedCount;
+
+  // Partial credit: incomplete courses contribute (modulesDone / totalModules) × hours
+  let completedHours = 0, completedCountFrac = completedCount;
+  for (const c of COURSES) {
+    if (done.has(c.id)) {
+      completedHours += c.hours;
+    } else {
+      const mods = MODULES[c.id] || [];
+      if (mods.length) {
+        const nDone = mods.reduce((n, _, i) => n + (modDone.has(`${c.id}-${i}`) ? 1 : 0), 0);
+        const frac  = nDone / mods.length;
+        completedHours     += c.hours * frac;
+        completedCountFrac += frac;
+      }
+    }
+  }
+  const hoursDisplay = Number.isInteger(completedHours) ? completedHours : completedHours.toFixed(1);
+  const coursesPct   = Math.round(completedCountFrac / 13 * 100);
+  const hoursPct     = Math.round(completedHours / TOTAL_HOURS * 100);
+  const projected    = projectedFinish(done, modDone);
+  const daysToDeadline = daysBetween(new Date(), PRIZE_DL);
+  const onTrack        = projected <= PRIZE_DL;
+  const runnerUp       = !onTrack && projected <= RUNNERUP_DL;
+  const allDone        = completedCount === 13;
+
+  let activeId = null;
+  for (let i = 1; i <= 13; i++) { if (!done.has(i)) { activeId = i; break; } }
+
+  let prizeLabel, prizeColor;
+  if (allDone)       { prizeLabel = '🎉 Complete!'; prizeColor = 'var(--green)'; }
+  else if (onTrack)  { prizeLabel = '✓ On Track';  prizeColor = 'var(--green)'; }
+  else if (runnerUp) { prizeLabel = '⚡ At Risk';   prizeColor = 'var(--yellow)'; }
+  else               { prizeLabel = '✗ Off Track'; prizeColor = 'var(--red)'; }
+
+  // ── Course + module rows ────────────────────────────────────────────────
+  let rows = '';
+  let prevGenai = false;
+  for (const c of COURSES) {
+    const isDone   = done.has(c.id);
+    const isActive = !isDone && c.id === activeId;
+    const isExp    = expanded.has(c.id);
+    const target   = targetDate(c.id);
+    const overdue  = target && !isDone && new Date() > target;
+
+    if (c.genai && !prevGenai) {
+      rows += `<tr class="divider-row"><td colspan="5">✦ Generative AI &amp; LLMs Block</td></tr>`;
+    }
+    prevGenai = c.genai;
+
+    const badge = isDone
+      ? `<span class="badge badge-done"><span class="dot dot-g"></span>Complete</span>`
+      : isActive
+        ? `<span class="badge badge-active"><span class="dot dot-b pulsing"></span>In Progress</span>`
+        : `<span class="badge badge-pending"><span class="dot dot-m"></span>Not Started</span>`;
+
+    const targetHTML = target
+      ? `<span style="${overdue ? 'color:var(--red)' : 'color:var(--muted)'}">${fmt(target, true)}</span>`
+      : `<span style="color:var(--border)">—</span>`;
+
+    const rowClass = isDone ? 'r-done' : isActive ? 'r-active' : 'r-pending';
+    const tip      = isDone ? 'Click to uncheck (clears this and all after)' : 'Click to mark complete';
+    const expBtn   = `<button class="exp-btn" onclick="event.stopPropagation();toggleExpand(${c.id})" title="${isExp ? 'Collapse' : 'Expand'} modules">${isExp ? '▼' : '▶'}</button>`;
+
+    rows += `<tr class="${rowClass}" onclick="toggle(${c.id})" title="${tip}">
+      <td class="td-num">${c.id}</td>
+      <td>${expBtn}${c.name}</td>
+      <td class="td-h">${c.hours}h</td>
+      <td class="td-target">${targetHTML}</td>
+      <td class="td-status">${badge}</td>
+    </tr>`;
+
+    if (isExp) {
+      (MODULES[c.id] || []).forEach((modName, mi) => {
+        const mk = `${c.id}-${mi}`;
+        const md = modDone.has(mk);
+        rows += `<tr class="mod-row">
+          <td></td>
+          <td colspan="4">
+            <span class="mod-check${md ? ' done' : ''}" onclick="toggleMod(${c.id},${mi})" title="${md ? 'Uncheck module' : 'Mark module done'}">${md ? '✓' : ''}</span><span class="mod-name${md ? ' done' : ''}">${modName}</span>
+          </td>
+        </tr>`;
+      });
+    }
+  }
+
+  // ── Pace insight ────────────────────────────────────────────────────────
+  const neededDays = remaining > 0 ? (daysToDeadline / remaining).toFixed(1) : '—';
+  let insight = '';
+  if (allDone) {
+    insight = `<div class="insight ins-done">
+      🎉 All 13 courses complete! Certificate earned. Time to buy that Switch 2 + Pokopia.<br>
+      <a href="${SWITCH_URL}" target="_blank" style="color:var(--green)">Nintendo Switch 2 →</a>
+    </div>`;
+  } else if (onTrack) {
+    insight = `<div class="insight ins-good">
+      ✓ On track for the Switch 2 + Pokopia. You need <strong>${neededDays} days/course</strong> on average.
+      The Gen AI block (courses 7–13, 6–10h each) will naturally go faster — you have built-in buffer there.
+    </div>`;
+  } else if (runnerUp) {
+    insight = `<div class="insight ins-warn">
+      ⚡ Switch 2 is at risk. You need <strong>${neededDays} days/course</strong> to still win —
+      that's tighter than your current pace. Push hard on the short Gen AI courses.
+      Runner-up deadline (Aug 31) is still reachable.
+    </div>`;
+  } else {
+    insight = `<div class="insight ins-bad">
+      ✗ Both deadlines are very tight at current pace. Significant speed-up needed.
+    </div>`;
+  }
+
+  const quickMath = remaining > 0
+      ? `<p style="margin-top:.875rem;font-size:.83rem;color:var(--muted)">
+          <strong style="color:var(--text)">Quick maths:</strong>
+          ${remaining} courses left × 14 days = ${remaining * 14} days →
+          projected <strong style="color:var(--text)">${fmt(projected)}</strong>.
+          Prize deadline is <strong style="color:var(--text)">${daysToDeadline > 0 ? daysToDeadline + ' days away' : 'today'}</strong>.
+         </p>`
+      : '';
+
+  document.getElementById('app').innerHTML = `
+    <div class="header">
+      <h1>IBM AI Engineering Professional Certificate</h1>
+      <p>Speedrun · 13 courses · 165 hours ·
+        <a href="${COURSERA_URL}" target="_blank">coursera.org</a>
+      </p>
+    </div>
+
+    <div class="prize-grid">
+      <div class="card card-main">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div class="tag tag-gold">🏆 Grand Prize</div>
+            <div class="prize-name">
+              <a href="${SWITCH_URL}" target="_blank" style="color:var(--text);text-decoration:none">Nintendo Switch 2 + Pokopia</a>
+            </div>
+            <div class="prize-meta">Deadline: <strong>31 July 2026</strong></div>
+          </div>
+          <span style="font-size:2.5rem;line-height:1;margin-left:1rem">🎮</span>
+        </div>
+        <div class="countdown" id="cd"></div>
+      </div>
+
+      <div class="card">
+        <div class="tag tag-silver">🥈 Runner-up Prize</div>
+        <div class="prize-name" style="font-size:1.1rem">Prize TBD</div>
+        <div class="prize-meta">Deadline: <strong>31 August 2026</strong></div>
+        <div style="margin-top:1rem;padding:.75rem;background:var(--surface2);border-radius:6px;
+                    font-size:.82rem;color:var(--muted);font-style:italic;line-height:1.5">
+          Don't settle for this.<br>Go get the Switch 2. 🎮
+        </div>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat">
+        <div class="stat-val">${completedCount}<span class="stat-sub"> / 13</span></div>
+        <div class="stat-lbl">Courses Done</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val">${hoursDisplay}<span class="stat-sub">h / 165h</span></div>
+        <div class="stat-lbl">Hours Done</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val" style="font-size:1.05rem">${fmt(projected)}</div>
+        <div class="stat-lbl">Projected Finish</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val" style="color:${prizeColor};font-size:1rem">${prizeLabel}</div>
+        <div class="stat-lbl">Prize Status</div>
+      </div>
+    </div>
+
+    <div class="progress-section">
+      <div class="prog-row">
+        <div class="prog-header"><span>Courses</span><span>${completedCount} / 13 · ${coursesPct}%</span></div>
+        <div class="prog-track"><div class="prog-fill" style="width:${coursesPct}%"></div></div>
+      </div>
+      <div class="prog-row">
+        <div class="prog-header"><span>Hours</span><span>${hoursDisplay}h / 165h · ${hoursPct}%</span></div>
+        <div class="prog-track"><div class="prog-fill" style="width:${hoursPct}%"></div></div>
+      </div>
+    </div>
+
+    <div class="section-head">
+      Course Schedule
+      <span class="section-hint">Click row to toggle · ▶ to expand modules</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="th-num">#</th>
+            <th>Course</th>
+            <th class="th-h">Hrs</th>
+            <th class="th-target">Target</th>
+            <th class="th-status">Status</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+
+    <div class="pace-card">
+      <div class="section-head" style="margin-bottom:.5rem">Pace Analysis</div>
+      <p style="font-size:.875rem;color:var(--muted)">
+        At 2 weeks/course (adjusted for completed modules), ${remaining} courses left finish on
+        <strong style="color:var(--text)">${fmt(projected)}</strong>.
+        The prize deadline is
+        <strong style="color:var(--text)">${daysToDeadline > 0 ? daysToDeadline + ' days away' : 'today'}</strong>.
+      </p>
+      ${insight}
+      ${quickMath}
+    </div>
+
+    <div class="footer">
+      Rendered ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})} ·
+      Progress saved in browser localStorage ·
+      <a href="${COURSERA_URL}" target="_blank">IBM AI Engineering Certificate</a>
+    </div>
+  `;
+
+  tick();
+}
+
+// ── Countdown ticker ──────────────────────────────────────────────────────────
+let _timer = null;
+function tick() {
+  const el = document.getElementById('cd');
+  if (el) el.innerHTML = cdHTML();
+}
+function startTimer() {
+  clearInterval(_timer);
+  _timer = setInterval(tick, 1000);
+}
+
+render();
+startTimer();
+</script>
+</body>
+</html>

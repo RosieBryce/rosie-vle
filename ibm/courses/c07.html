@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>C7 — Generative AI and LLMs: Architecture and Data Preparation · VLE</title>
+  <link rel="stylesheet" href="../shared.css">
+  <script src="../shared.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</head>
+<body>
+<script>initNav('../');</script>
+
+<div class="container">
+
+  <!-- ═══ HEADER ══════════════════════════════════════════════ -->
+  <div style="margin-bottom:1.75rem">
+    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem;flex-wrap:wrap">
+      <span style="color:var(--muted);font-size:.83rem">Course 7 of 13</span>
+      <span class="badge badge-pending"><span class="dot dot-m"></span>Not Started</span>
+      <span class="badge badge-pending">6 hours</span>
+    </div>
+    <h1 style="font-size:1.5rem;font-weight:700;letter-spacing:-.02em;margin-bottom:.375rem">
+      Generative AI and LLMs: Architecture and Data Preparation
+    </h1>
+    <p style="color:var(--muted);font-size:.875rem;line-height:1.55">
+      The shortest course and the pivot point from discriminative deep learning to generative AI.
+      Core concepts: what makes a model generative, tokenisation, pretraining objectives, and data preparation at scale.
+    </p>
+  </div>
+
+  <!-- ═══ FLIPPED CLASSROOM ════════════════════════════════════ -->
+  <div class="flip-card" style="margin-bottom:2rem">
+    <div class="flip-header">
+      <span>📖</span>
+      Flipped Classroom — Before You Watch
+    </div>
+
+    <div class="flip-sublabel">Prime your thinking — bring these questions into the lectures</div>
+    <ul class="flip-questions">
+      <li>
+        <span class="flip-q-num">1</span>
+        <span>BERT and GPT both use transformer architecture. What is the fundamental difference in how they are trained? Why does this make BERT better at understanding and GPT better at generation?</span>
+      </li>
+      <li>
+        <span class="flip-q-num">2</span>
+        <span>The word "bank" appears in "I went to the bank" and "The river bank was muddy." If you tokenise both sentences with BPE, how many tokens does "bank" become — and why is this a problem that transformers solve but Word2Vec cannot?</span>
+      </li>
+      <li>
+        <span class="flip-q-num">3</span>
+        <span>LLM pretraining is described as "self-supervised." What does that mean exactly? Where do the training labels come from, and why is this different from supervised learning on a labelled dataset?</span>
+      </li>
+    </ul>
+
+    <div class="flip-sublabel">Watch for…</div>
+    <div class="watch-for">
+      The three-way distinction between encoder-only (BERT), decoder-only (GPT), and encoder-decoder (T5) models —
+      each has a specific pretraining objective and use case. Also: tokenisation is NOT just word-splitting;
+      BPE starts with characters and merges pairs. The context window is measured in tokens, not words.
+    </div>
+  </div>
+
+  <!-- ═══ CORE THEORY ══════════════════════════════════════════ -->
+  <div class="section-head">
+    Core Theory
+    <span class="section-hint">Assessment priority — conceptual understanding over syntax</span>
+  </div>
+
+  <!-- 1. Discriminative vs Generative -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">Generative vs Discriminative</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">Generative vs Discriminative Models</h3>
+    <div style="overflow-x:auto;margin-bottom:.75rem">
+      <table class="decision-table">
+        <thead><tr><th></th><th>Discriminative</th><th>Generative</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Goal</strong></td>
+            <td>P(y|x) — classify input</td>
+            <td>P(x) or P(x|y) — model the data distribution</td>
+          </tr>
+          <tr>
+            <td><strong>Examples</strong></td>
+            <td>CNN classifier, logistic regression</td>
+            <td>GPT, VAE, diffusion models</td>
+          </tr>
+          <tr>
+            <td><strong>Can generate new data?</strong></td>
+            <td style="color:var(--red)">No</td>
+            <td style="color:var(--green)">Yes</td>
+          </tr>
+          <tr>
+            <td><strong>Training data</strong></td>
+            <td>Labelled</td>
+            <td>Unlabelled (self-supervised)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="insight ins-info">
+      <strong>LLMs are generative</strong> because they learn a distribution over token sequences and can sample from it. Generating text = sampling from that distribution one token at a time.
+    </div>
+  </div>
+
+  <!-- 2. LLM Family Tree -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">Architecture</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">The LLM Family Tree</h3>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:.75rem">
+      <div style="background:var(--surface2);border-radius:8px;padding:.875rem;border-left:3px solid var(--blue)">
+        <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--blue);margin-bottom:.4rem">Encoder-Only</div>
+        <div style="font-size:.83rem;font-weight:600;margin-bottom:.3rem">BERT, RoBERTa, DistilBERT</div>
+        <div style="font-size:.78rem;color:var(--muted);line-height:1.4">Bidirectional context. Best for understanding: classification, NER, embeddings. NOT generative.</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:8px;padding:.875rem;border-left:3px solid var(--green)">
+        <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--green);margin-bottom:.4rem">Decoder-Only</div>
+        <div style="font-size:.83rem;font-weight:600;margin-bottom:.3rem">GPT-2/3/4, LLaMA, Mistral</div>
+        <div style="font-size:.78rem;color:var(--muted);line-height:1.4">Autoregressive: predicts next token from previous. Dominant architecture for text generation.</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:8px;padding:.875rem;border-left:3px solid var(--yellow)">
+        <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--yellow);margin-bottom:.4rem">Encoder-Decoder</div>
+        <div style="font-size:.83rem;font-weight:600;margin-bottom:.3rem">T5, BART, Flan-T5</div>
+        <div style="font-size:.78rem;color:var(--muted);line-height:1.4">Encoder reads input, decoder generates output. Best for translation, summarisation, Q&A.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Tokenisation -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">Tokenisation</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">Tokenisation — The Most Underestimated Concept</h3>
+    <p style="font-size:.875rem;line-height:1.6;margin-bottom:.75rem">
+      Tokenisation converts raw text to integer IDs. It is NOT simple word-splitting.
+    </p>
+    <div style="overflow-x:auto;margin-bottom:.75rem">
+      <table class="concept-table">
+        <thead><tr><th>Method</th><th>Used by</th><th>Key property</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>BPE</strong> (Byte-Pair Encoding)</td>
+            <td>GPT-2, GPT-3, LLaMA, Falcon</td>
+            <td>Starts with characters, merges most frequent adjacent pairs iteratively</td>
+          </tr>
+          <tr>
+            <td><strong>WordPiece</strong></td>
+            <td>BERT</td>
+            <td>Similar to BPE; subwords prefixed with <code>##</code> if not at word start</td>
+          </tr>
+          <tr>
+            <td><strong>SentencePiece</strong></td>
+            <td>T5, LLaMA (some)</td>
+            <td>Language-agnostic; works directly on Unicode</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="insight ins-info">
+      <strong>Key facts:</strong> 1 token ≈ ¾ word (English). Context window is measured in tokens. Different models have different vocabularies — tokens are NOT interchangeable. Tokenisation is not just space-splitting: <code>"don't"</code> → <code>["don", "'t"]</code>.
+    </div>
+  </div>
+
+  <!-- 4. Pretraining Objectives -->
+  <div class="card" style="margin-bottom:2rem">
+    <div class="tag tag-blue">Pretraining</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">Pretraining Objectives — CLM vs MLM</h3>
+    <div style="overflow-x:auto;margin-bottom:.75rem">
+      <table class="decision-table">
+        <thead><tr><th>Objective</th><th>Architecture</th><th>How it works</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Causal LM (CLM)</strong></td>
+            <td>Decoder-only (GPT)</td>
+            <td>Predict next token given all previous tokens — autoregressive, unidirectional</td>
+          </tr>
+          <tr>
+            <td><strong>Masked LM (MLM)</strong></td>
+            <td>Encoder-only (BERT)</td>
+            <td>Predict ~15% masked tokens using full bidirectional context</td>
+          </tr>
+          <tr>
+            <td><strong>Span corruption</strong></td>
+            <td>Encoder-decoder (T5)</td>
+            <td>Mask spans of tokens with sentinels; decoder reconstructs them</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="insight ins-warn">
+      <strong>CLM vs MLM explains the BERT/GPT capability split:</strong> GPT-style models cannot look at future tokens during training (causal masking) — good for generation. BERT looks in both directions — good for understanding but cannot autoregressively generate text.
+    </div>
+  </div>
+
+  <!-- ═══ MUST-KNOW CONCEPTS ════════════════════════════════════ -->
+  <div class="section-head">Must-Know Concepts</div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:2rem">
+    <table class="concept-table">
+      <thead><tr><th>Term</th><th>One-liner (assessment vocabulary)</th></tr></thead>
+      <tbody>
+        <tr><td>generative model</td><td>Models the data distribution P(x); can sample new data — contrasted with discriminative P(y|x)</td></tr>
+        <tr><td>BPE</td><td>Byte-Pair Encoding — starts with characters, iteratively merges most frequent adjacent pairs; creates subword vocabulary</td></tr>
+        <tr><td>context window</td><td>Maximum token sequence the model can process; measured in tokens (not words); GPT-4: 128k, LLaMA-2: 4096</td></tr>
+        <tr><td>CLM</td><td>Causal Language Modelling — predict next token from previous; decoder-only models; naturally generative</td></tr>
+        <tr><td>MLM</td><td>Masked Language Modelling — predict ~15% masked tokens with bidirectional context; encoder-only (BERT)</td></tr>
+        <tr><td>self-supervised learning</td><td>Labels derived automatically from the data itself (next token); no human annotation needed</td></tr>
+        <tr><td>SFT</td><td>Supervised Fine-Tuning — trains base model on instruction-response pairs to make it follow instructions</td></tr>
+        <tr><td>RLHF</td><td>Reinforcement Learning from Human Feedback — adds human preference signal to align model outputs; comes after SFT</td></tr>
+        <tr><td>few-shot prompting</td><td>Provide a few examples in the prompt to guide model behaviour — no weight updates</td></tr>
+        <tr><td>KV cache</td><td>Caches key/value attention pairs from previous tokens to avoid recomputation during generation; memory-bound</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══ EXAM TRAPS ════════════════════════════════════════════ -->
+  <div class="section-head">Exam Traps</div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 1 — Encoder-only models are NOT generative</div>
+    <strong>BERT, RoBERTa, DistilBERT cannot autoregressively generate text.</strong>
+    They are encoder-only — no mechanism for producing sequences token-by-token.
+    For generation you need a decoder (GPT) or encoder-decoder (T5/BART).
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 2 — BPE starts with characters, not words</div>
+    <strong>BPE does not split on spaces first.</strong>
+    It begins with individual characters (or bytes) and iteratively merges the most frequent adjacent pair.
+    Common words become single tokens; rare words are split into subword units.
+    This is why "tokenisation" might become <code>["token", "isation"]</code> in some models.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 3 — Context window is in tokens, not words</div>
+    <strong>The context window limit is measured in tokens, not words or characters.</strong>
+    1 English word ≈ 1.3 tokens. A 4096-token context window holds roughly 3000 words.
+    Estimate token count with <code>len(tokenizer(text)['input_ids'])</code>, not <code>len(text.split())</code>.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 4 — Pretraining is self-supervised, not unsupervised</div>
+    <strong>LLM pretraining is self-supervised</strong> — labels are derived automatically from the data (next token, masked token). This is more precise than calling it "unsupervised" — there ARE targets, they're just constructed from the input itself, requiring no human annotation.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 5 — Fine-tuning updates weights; prompting does not</div>
+    <strong>Fine-tuning modifies model parameters.</strong>
+    Few-shot prompting, zero-shot prompting, and RAG do NOT update any weights.
+    Temperature, top-k, and top-p are inference-time parameters — they also do not affect weights.
+  </div>
+
+  <!-- ═══ INTERACTIVE VIZ ══════════════════════════════════════ -->
+  <div class="section-head" style="margin-top:2rem">Interactive Visualisations</div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.875rem;margin-bottom:2rem">
+    <a class="viz-card" href="../viz/tokenisation.html">
+      <div class="viz-card-title">🔤 Tokenisation Explorer</div>
+      <div class="viz-card-desc">See how BPE tokenises different words. Count tokens before you count words.</div>
+    </a>
+    <a class="viz-card" href="../viz/temperature-sampling.html">
+      <div class="viz-card-title">🌡 Temperature Sampling</div>
+      <div class="viz-card-desc">See how temperature shapes the output distribution — preview for Course 9.</div>
+    </a>
+  </div>
+
+  <!-- ═══ PRACTICAL NOTES (collapsed) ══════════════════════════ -->
+  <div style="margin-bottom:2rem">
+    <button class="collapse-toggle">
+      <span class="c-arrow">▶</span>
+      Practical Notes &amp; Code Patterns
+      <span style="margin-left:.5rem;font-size:.75rem;color:var(--muted)">(useful for application — not needed to pass the assessment)</span>
+    </button>
+    <div class="collapse-body">
+
+      <div class="card" style="margin-bottom:1rem">
+        <div class="tag tag-blue">Common Gotchas</div>
+        <ul style="font-size:.875rem;line-height:1.7;padding-left:1.25rem;color:var(--text)">
+          <li><strong>Tokens ≠ words</strong> — always use tokeniser to count tokens, not <code>len(text.split())</code> for cost or context estimates</li>
+          <li><strong>Tokenisers are not interchangeable</strong> — GPT-2 weights with LLaMA tokeniser = gibberish; each model's vocabulary is trained with its weights</li>
+          <li><strong>Special tokens matter</strong> — BERT needs [CLS] and [SEP]; GPT uses &lt;|endoftext|&gt;; chat models need role tags. Missing them degrades performance</li>
+          <li><strong>Context window ≠ memory</strong> — the model has no persistent memory between conversations; it "remembers" only what's in the current context window</li>
+          <li><strong>Benchmark contamination</strong> — if test benchmarks appeared in pretraining data, scores are inflated. This is a real problem in LLM evaluation</li>
+        </ul>
+      </div>
+
+      <div class="card" style="margin-bottom:.5rem">
+        <div class="tag tag-blue">Tokenisation Example</div>
+        <pre><code class="language-python">from transformers import AutoTokenizer
+
+tokenizer = AutoTokenizer.from_pretrained('gpt2')
+text = "Hello, world! Tokenisation isn't just word-splitting."
+tokens = tokenizer(text)
+print(tokens['input_ids'])           # list of integer IDs
+print(len(tokens['input_ids']))      # token count (more than word count)
+
+# Decode back
+for token_id in tokens['input_ids']:
+    print(repr(tokenizer.decode([token_id])))  # see each piece</code></pre>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ STUDY GAMES (placeholder) ════════════════════════════ -->
+  <div class="section-head" style="margin-top:1rem">Study Games</div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.875rem;margin-bottom:2rem;opacity:.45">
+    <div class="card" style="cursor:not-allowed">
+      <div class="tag">🎮 Architecture Sorter</div>
+      <div style="font-size:.875rem">Sort models into encoder-only, decoder-only, encoder-decoder — coming Phase 4</div>
+    </div>
+    <div class="card" style="cursor:not-allowed">
+      <div class="tag">🔤 Token Counter</div>
+      <div style="font-size:.875rem">Estimate token counts without running the tokeniser — coming Phase 4</div>
+    </div>
+  </div>
+
+  <!-- ═══ FULL NOTES LINK ══════════════════════════════════════ -->
+  <div class="card" style="margin-bottom:1.5rem;background:var(--surface2)">
+    <div style="font-size:.875rem;color:var(--muted)">
+      Full curated notes (Obsidian):
+      <a href="obsidian://open?vault=IBM%20Courses&file=claude-content%2F07-genai-llms-architecture-data-prep"
+         style="color:var(--blue)">
+        claude-content/07-genai-llms-architecture-data-prep →
+      </a>
+    </div>
+  </div>
+
+  <div class="footer">
+    <a href="../index.html">← VLE Home</a> ·
+    <a href="c06.html">← C6</a> ·
+    <a href="c08.html">C8 →</a> ·
+    <a href="../course-tracker.html" target="_blank">📊 Tracker</a>
+  </div>
+
+</div>
+</body>
+</html>

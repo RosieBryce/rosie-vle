@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Study Games · VLE</title>
+  <link rel="stylesheet" href="../shared.css">
+  <script src="../shared.js"></script>
+  <style>
+    /* ── Module selector grid ────────────────────────────────── */
+    .module-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: .6rem;
+      margin-bottom: 2rem;
+    }
+
+    .module-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .35rem;
+      padding: .75rem .5rem;
+      border-radius: 10px;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+      text-align: center;
+    }
+    .module-btn:hover {
+      border-color: var(--blue);
+      background: var(--surface2);
+    }
+    .module-btn.active {
+      border-color: var(--blue);
+      background: var(--blue-bg);
+    }
+    .module-btn.coming {
+      opacity: .4;
+      cursor: not-allowed;
+    }
+
+    .module-num {
+      font-size: 1.4rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .module-label {
+      font-size: .68rem;
+      font-weight: 600;
+      color: var(--muted);
+      line-height: 1.3;
+    }
+    .module-game-count {
+      font-size: .65rem;
+      font-weight: 700;
+      padding: .15rem .45rem;
+      border-radius: 99px;
+      background: var(--surface2);
+      color: var(--muted);
+    }
+    .module-btn.active .module-game-count {
+      background: rgba(88,166,255,.2);
+      color: var(--blue);
+    }
+
+    /* ── Game cards panel ────────────────────────────────────── */
+    .games-panel { display: none; }
+    .games-panel.visible { display: block; }
+
+    .panel-header {
+      margin-bottom: 1.25rem;
+      padding-bottom: .75rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .panel-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: -.01em;
+      margin-bottom: .2rem;
+    }
+    .panel-meta {
+      font-size: .8rem;
+      color: var(--muted);
+    }
+
+    .games-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1rem;
+    }
+
+    .game-card {
+      display: block;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem 1.5rem;
+      text-decoration: none;
+      color: var(--text);
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .game-card:hover {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(88,166,255,.12);
+    }
+    .game-card.dim {
+      opacity: .4;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    .game-card-top {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      margin-bottom: .6rem;
+    }
+    .game-type-icon { font-size: 1.3rem; }
+    .game-type-label {
+      font-size: .7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      padding: .2rem .55rem;
+      border-radius: 99px;
+    }
+    .type-quiz    { background: var(--blue-bg);   color: var(--blue);   border: 1px solid rgba(88,166,255,.3); }
+    .type-cards   { background: var(--green-bg);  color: var(--green);  border: 1px solid rgba(63,185,80,.3);  }
+    .type-odd     { background: rgba(163,113,247,.1); color: #a371f7;   border: 1px solid rgba(163,113,247,.3); }
+    .type-tf      { background: var(--yellow-bg); color: var(--yellow); border: 1px solid rgba(210,153,34,.3); }
+    .type-coming  { background: var(--surface2);  color: var(--muted);  border: 1px solid var(--border); }
+
+    .game-card-title { font-weight: 700; font-size: .975rem; margin-bottom: .3rem; }
+    .game-card-meta  { font-size: .8rem; color: var(--muted); line-height: 1.5; }
+  </style>
+</head>
+<body>
+<script>initNav('../');</script>
+
+<div class="container">
+
+  <div style="margin-bottom:1.5rem">
+    <h1 style="font-size:1.4rem;font-weight:700;letter-spacing:-.02em;margin-bottom:.3rem">Study Games</h1>
+    <p style="color:var(--muted);font-size:.875rem">
+      70% theory discrimination · 30% code comprehension · All code questions are read-only
+    </p>
+  </div>
+
+  <!-- ── Module selector ──────────────────────────────────────── -->
+  <div class="section-head">Select a module</div>
+  <div class="module-grid" id="module-grid">
+
+    <button class="module-btn active" data-module="c03" onclick="selectModule('c03', this)">
+      <span class="module-num">C3</span>
+      <span class="module-label">Keras &amp;<br>TensorFlow</span>
+      <span class="module-game-count">4 games</span>
+    </button>
+
+    <button class="module-btn" data-module="c04" onclick="selectModule('c04', this)">
+      <span class="module-num">C4</span>
+      <span class="module-label">Neural Nets<br>&amp; PyTorch</span>
+      <span class="module-game-count">4 games</span>
+    </button>
+
+    <button class="module-btn coming" disabled title="Build when starting C5">
+      <span class="module-num">C5</span>
+      <span class="module-label">Deep Learning<br>PyTorch</span>
+      <span class="module-game-count">coming</span>
+    </button>
+
+    <button class="module-btn coming" disabled title="Build when starting C6">
+      <span class="module-num">C6</span>
+      <span class="module-label">AI Capstone</span>
+      <span class="module-game-count">coming</span>
+    </button>
+
+    <button class="module-btn coming" disabled title="Build when starting C7">
+      <span class="module-num">C7</span>
+      <span class="module-label">GenAI &amp;<br>LLMs</span>
+      <span class="module-game-count">coming</span>
+    </button>
+
+    <button class="module-btn coming" disabled title="Build when starting C8">
+      <span class="module-num">C8</span>
+      <span class="module-label">Foundational<br>NLP</span>
+      <span class="module-game-count">coming</span>
+    </button>
+
+    <button class="module-btn coming" disabled title="Build when starting C9">
+      <span class="module-num">C9</span>
+      <span class="module-label">Transformers</span>
+      <span class="module-game-count">coming</span>
+    </button>
+
+    <button class="module-btn coming" disabled title="Build when starting C10">
+      <span class="module-num">C10</span>
+      <span class="module-label">Fine-Tuning</span>
+      <span class="module-game-count">coming</span>
+    </button>
+
+    <button class="module-btn coming" disabled title="Build when starting C11">
+      <span class="module-num">C11</span>
+      <span class="module-label">Adv.<br>Fine-Tuning</span>
+      <span class="module-game-count">coming</span>
+    </button>
+
+    <button class="module-btn coming" disabled title="Build when starting C12">
+      <span class="module-num">C12</span>
+      <span class="module-label">RAG &amp;<br>LangChain</span>
+      <span class="module-game-count">coming</span>
+    </button>
+
+    <button class="module-btn coming" disabled title="Build when starting C13">
+      <span class="module-num">C13</span>
+      <span class="module-label">GenAI<br>Project</span>
+      <span class="module-game-count">coming</span>
+    </button>
+
+  </div>
+
+  <!-- ── C3 panel ──────────────────────────────────────────────── -->
+  <div class="games-panel visible" id="panel-c03">
+    <div class="panel-header">
+      <div class="panel-title">Course 3 — Deep Learning with Keras &amp; TensorFlow</div>
+      <div class="panel-meta">4 games · Transfer learning, VAEs, GANs, Transformers, RL, custom training</div>
+    </div>
+    <div class="games-grid">
+
+      <a class="game-card" href="c03-quiz.html">
+        <div class="game-card-top">
+          <span class="game-type-icon">❓</span>
+          <span class="game-type-label type-quiz">Quiz</span>
+        </div>
+        <div class="game-card-title">C3 Quiz — Keras &amp; TF</div>
+        <div class="game-card-meta">12 questions · ~10 min · 4-option MCQ with full explanations</div>
+      </a>
+
+      <a class="game-card" href="c03-flashcards.html">
+        <div class="game-card-top">
+          <span class="game-type-icon">🃏</span>
+          <span class="game-type-label type-cards">Flashcards</span>
+        </div>
+        <div class="game-card-title">C3 Flashcards — Keras &amp; TF</div>
+        <div class="game-card-meta">12 cards · ~8 min · Front/back reveal, self-assess, replay missed</div>
+      </a>
+
+      <a class="game-card" href="c03-odd-one-out.html">
+        <div class="game-card-top">
+          <span class="game-type-icon">🔍</span>
+          <span class="game-type-label type-odd">Odd One Out</span>
+        </div>
+        <div class="game-card-title">C3 Odd One Out — Keras &amp; TF</div>
+        <div class="game-card-meta">10 questions · ~6 min · Pick the concept that doesn't belong</div>
+      </a>
+
+      <a class="game-card" href="c03-true-false.html">
+        <div class="game-card-top">
+          <span class="game-type-icon">⚡</span>
+          <span class="game-type-label type-tf">True/False</span>
+        </div>
+        <div class="game-card-title">C3 True/False Sprint — Keras &amp; TF</div>
+        <div class="game-card-meta">20 statements · timed · ~8 min · 10 true, 10 plausible traps</div>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- ── C4 panel ──────────────────────────────────────────────── -->
+  <div class="games-panel" id="panel-c04">
+    <div class="panel-header">
+      <div class="panel-title">Course 4 — Intro to Neural Networks &amp; PyTorch</div>
+      <div class="panel-meta">4 games · Autograd, training loop, loss functions, DataLoader, model saving</div>
+    </div>
+    <div class="games-grid">
+
+      <a class="game-card" href="c04-quiz.html">
+        <div class="game-card-top">
+          <span class="game-type-icon">❓</span>
+          <span class="game-type-label type-quiz">Quiz</span>
+        </div>
+        <div class="game-card-title">C4 Quiz — PyTorch Fundamentals</div>
+        <div class="game-card-meta">10 questions · ~8 min · Training loop, autograd, model patterns</div>
+      </a>
+
+      <a class="game-card" href="c04-flashcards.html">
+        <div class="game-card-top">
+          <span class="game-type-icon">🃏</span>
+          <span class="game-type-label type-cards">Flashcards</span>
+        </div>
+        <div class="game-card-title">C4 Flashcards — PyTorch</div>
+        <div class="game-card-meta">12 cards · ~8 min · Training loop, autograd, loss functions, model patterns</div>
+      </a>
+
+      <a class="game-card" href="c04-odd-one-out.html">
+        <div class="game-card-top">
+          <span class="game-type-icon">🔍</span>
+          <span class="game-type-label type-odd">Odd One Out</span>
+        </div>
+        <div class="game-card-title">C4 Odd One Out — PyTorch</div>
+        <div class="game-card-meta">10 questions · ~6 min · Pick the concept that doesn't belong</div>
+      </a>
+
+      <a class="game-card" href="c04-true-false.html">
+        <div class="game-card-top">
+          <span class="game-type-icon">⚡</span>
+          <span class="game-type-label type-tf">True/False</span>
+        </div>
+        <div class="game-card-title">C4 True/False Sprint — PyTorch</div>
+        <div class="game-card-meta">20 statements · timed · ~8 min · 10 true, 10 plausible traps</div>
+      </a>
+
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+function selectModule(id, btn) {
+  // Deactivate all module buttons
+  document.querySelectorAll('.module-btn').forEach(b => b.classList.remove('active'));
+  // Activate clicked button
+  btn.classList.add('active');
+
+  // Hide all panels
+  document.querySelectorAll('.games-panel').forEach(p => p.classList.remove('visible'));
+  // Show the matching panel
+  const panel = document.getElementById('panel-' + id);
+  if (panel) panel.classList.add('visible');
+}
+</script>
+</body>
+</html>

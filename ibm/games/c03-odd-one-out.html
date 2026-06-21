@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>C3 Odd One Out — Deep Learning with Keras & TF · VLE</title>
+  <link rel="stylesheet" href="../shared.css">
+  <script src="../shared.js"></script>
+  <style>
+    .game-shell { max-width: 680px; margin: 0 auto; }
+
+    .intro-card { text-align:center; padding:2.5rem 2rem; }
+    .intro-badge { display:inline-block; font-size:.75rem; font-weight:700; text-transform:uppercase;
+      letter-spacing:.08em; padding:.3rem .75rem; border-radius:99px;
+      background:var(--purple-bg,rgba(163,113,247,.1)); color:var(--purple,#a371f7);
+      border:1px solid rgba(163,113,247,.3); margin-bottom:1.25rem; }
+    .intro-title { font-size:1.3rem; font-weight:700; letter-spacing:-.02em; margin-bottom:.5rem; }
+    .intro-meta { color:var(--muted); font-size:.875rem; margin-bottom:1.75rem; line-height:1.6; }
+    .btn-start { padding:.65rem 2rem; border-radius:8px;
+      background:var(--purple,#a371f7); color:#fff; font-weight:600; font-size:.9rem;
+      border:none; cursor:pointer; transition:opacity .15s; }
+    .btn-start:hover { opacity:.85; }
+
+    .q-progress { margin-bottom:1.25rem; }
+    .q-progress-label { display:flex; justify-content:space-between; font-size:.78rem;
+      color:var(--muted); margin-bottom:.35rem; }
+    .q-bar { height:4px; background:var(--surface2); border-radius:99px; overflow:hidden; }
+    .q-bar-fill { height:100%; background:var(--purple,#a371f7); border-radius:99px; transition:width .3s ease; }
+    .score-chips { display:flex; gap:.5rem; }
+    .chip { font-size:.75rem; font-weight:700; padding:.15rem .55rem; border-radius:99px; }
+    .chip-g { background:var(--green-bg); color:var(--green); }
+    .chip-r { background:rgba(248,81,73,.1); color:var(--red); }
+
+    .q-card { background:var(--surface); border:1px solid var(--border); border-radius:12px;
+      padding:1.75rem; margin-bottom:1rem; }
+    .q-label { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em;
+      color:var(--purple,#a371f7); margin-bottom:.75rem; }
+    .q-text { font-size:1rem; font-weight:600; line-height:1.5; margin-bottom:1.25rem; }
+
+    .options-grid { display:grid; grid-template-columns:1fr 1fr; gap:.625rem; }
+    .opt-btn { padding:.9rem 1rem; border-radius:8px; font-size:.9rem; font-weight:500;
+      border:1.5px solid var(--border); background:var(--surface2); color:var(--text);
+      cursor:pointer; text-align:left; line-height:1.4; transition:border-color .12s, background .12s; }
+    .opt-btn:hover:not(:disabled) { border-color:var(--purple,#a371f7); background:rgba(163,113,247,.07); }
+    .opt-btn.correct  { border-color:var(--green)!important; background:var(--green-bg)!important; color:var(--green)!important; font-weight:700; }
+    .opt-btn.wrong    { border-color:var(--red)!important;   background:rgba(248,81,73,.08)!important; color:var(--red)!important; }
+    .opt-btn.dimmed   { opacity:.35; }
+    .opt-btn:disabled { cursor:default; }
+
+    .explanation { margin-top:1rem; padding:1rem 1.25rem; border-radius:8px;
+      background:var(--surface2); border-left:3px solid var(--purple,#a371f7);
+      font-size:.875rem; line-height:1.6; color:var(--text); display:none; }
+    .explanation code { background:var(--surface); padding:.1em .35em; border-radius:4px;
+      font-size:.85em; color:var(--blue); font-family:"SFMono-Regular",Consolas,monospace; }
+
+    .btn-next { margin-top:1rem; padding:.6rem 1.5rem; border-radius:8px;
+      background:var(--purple,#a371f7); color:#fff; font-weight:600; font-size:.875rem;
+      border:none; cursor:pointer; transition:opacity .15s; display:none; }
+    .btn-next:hover { opacity:.85; }
+
+    .result-row { display:flex; gap:.75rem; justify-content:center; flex-wrap:wrap; margin-bottom:1.5rem; }
+    .result-badge { text-align:center; padding:1rem 1.5rem; border-radius:10px; min-width:90px; }
+    .result-badge .rnum { font-size:2rem; font-weight:700; }
+    .result-badge .rlbl { font-size:.75rem; font-weight:600; text-transform:uppercase;
+      letter-spacing:.06em; margin-top:.2rem; }
+    .result-badge.g { background:var(--green-bg); color:var(--green); }
+    .result-badge.r { background:rgba(248,81,73,.08); color:var(--red); }
+    .results-actions { display:flex; gap:.75rem; justify-content:center; flex-wrap:wrap; margin-top:1.25rem; }
+    .btn-action { padding:.55rem 1.25rem; border-radius:8px; font-size:.875rem; font-weight:600;
+      cursor:pointer; border:1px solid var(--border); background:var(--surface2);
+      color:var(--text); text-decoration:none; transition:border-color .12s; }
+    .btn-action:hover { border-color:var(--purple,#a371f7); color:var(--purple,#a371f7); }
+    .btn-action.primary { background:var(--purple,#a371f7); border-color:var(--purple,#a371f7); color:#fff; }
+    .btn-action.primary:hover { opacity:.85; }
+  </style>
+</head>
+<body>
+<script>initNav('../'); localStorage.setItem('VLE_lastGame', 'C3 Odd One Out — Keras & TF');</script>
+
+<div class="container">
+  <div class="game-shell">
+
+    <div style="margin-bottom:1.25rem">
+      <div class="tag" style="background:rgba(163,113,247,.1);color:#a371f7;border:1px solid rgba(163,113,247,.3);margin-bottom:.4rem">
+        Study Game · Odd One Out
+      </div>
+      <h1 style="font-size:1.3rem;font-weight:700;letter-spacing:-.02em">C3 Odd One Out — Keras &amp; TensorFlow</h1>
+    </div>
+
+    <div id="game-root"></div>
+
+  </div>
+</div>
+
+<script>
+const QUESTIONS = [
+  {
+    prompt: "Which of these is NOT a Keras callback?",
+    options: ["EarlyStopping", "ModelCheckpoint", "ReduceLROnPlateau", "Dropout"],
+    oddIndex: 3,
+    explanation: "Dropout is a regularisation layer added to the model architecture — it randomly zeroes activations during training. The other three are callbacks passed to model.fit() that monitor training events and take action (stopping, saving, adjusting learning rate)."
+  },
+  {
+    prompt: "Which of these does NOT belong to a standard GAN?",
+    options: ["Generator", "Discriminator", "Adversarial loss", "Encoder"],
+    oddIndex: 3,
+    explanation: "The encoder is a component of autoencoders and VAEs, not GANs. A GAN has two networks: a generator (maps noise to fake samples) and a discriminator (classifies real vs fake). There is no encoder — the generator takes random noise directly, not a compressed real input."
+  },
+  {
+    prompt: "Which of these does NOT belong in the VAE loss function?",
+    options: ["Reconstruction loss", "KL divergence", "ELBO", "Wasserstein distance"],
+    oddIndex: 3,
+    explanation: "Wasserstein distance is used in Wasserstein GANs (WGAN) as an alternative to the standard GAN loss. The VAE loss has two terms: reconstruction loss (how well the decoder recreates the input) and KL divergence (how close the latent distribution is to N(0,1)). ELBO = reconstruction − KL, so it's not a separate term."
+  },
+  {
+    prompt: "Which of these is NOT a tf.data.Dataset method?",
+    options: [".shuffle()", ".batch()", ".prefetch()", ".compile()"],
+    oddIndex: 3,
+    explanation: ".compile() is a method on a Keras Model — it configures the model for training (optimizer, loss, metrics). tf.data.Dataset methods transform the data pipeline: .shuffle() randomises order, .batch() groups samples, .prefetch() loads the next batch while the GPU processes the current one."
+  },
+  {
+    prompt: "Which of these is NOT a core RL concept?",
+    options: ["Policy", "Reward signal", "Q-value", "Learning rate"],
+    oddIndex: 3,
+    explanation: "Learning rate is a general ML optimisation hyperparameter — it controls the step size when updating weights. It belongs to the optimiser, not to RL theory. Policy (what action to take), reward signal (scalar feedback), and Q-value (expected cumulative return) are all fundamental RL concepts."
+  },
+  {
+    prompt: "Which of these is NOT a standard DQN training technique?",
+    options: ["Experience replay", "Target network", "Epsilon decay", "KL divergence penalty"],
+    oddIndex: 3,
+    explanation: "KL divergence penalty is used in VAEs (to regularise the latent space) and in PPO (a policy gradient RL algorithm), not in standard DQN. DQN's three key techniques are: experience replay (break temporal correlation), target network (stable training targets), and epsilon decay (exploration → exploitation)."
+  },
+  {
+    prompt: "Which of these is NOT a typical use case for a plain autoencoder?",
+    options: ["Dimensionality reduction", "Anomaly detection", "Denoising", "Generating new samples"],
+    oddIndex: 3,
+    explanation: "Generating new samples requires a structured latent space — which only the VAE provides (via the KL divergence term). A plain autoencoder's latent space is unstructured; decoding a randomly sampled point produces noise, not a plausible output. Autoencoders are suited to reconstruction tasks: compression, anomaly detection (high reconstruction error = anomaly), denoising."
+  },
+  {
+    prompt: "Which of these describes a residual connection — NOT an autoencoder bottleneck?",
+    options: ["Adds input back to the sublayer output", "Prevents vanishing gradients", "Preserves information across layers", "Forces the model to learn a compressed representation"],
+    oddIndex: 3,
+    explanation: "Forcing the model to learn a compressed representation is the autoencoder bottleneck's purpose — the narrow latent layer means the model must discard redundant information. A residual connection does the opposite: it adds the original signal back (output = x + sublayer(x)), explicitly preserving information and ensuring gradients can flow unchanged through the addition."
+  },
+  {
+    prompt: "Which of these is NOT true of self-attention?",
+    options: [
+      "Any token can attend to any other token directly",
+      "Positional information must be added separately",
+      "Attention weights depend on query and key similarity",
+      "A hidden state is passed from one token to the next"
+    ],
+    oddIndex: 3,
+    explanation: "Passing a hidden state between tokens is how RNNs work — each step receives the previous hidden state, forcing sequential processing. Self-attention computes all token relationships in parallel from a single matrix multiply: every token attends to every other in one step. There is no sequential state. This is why transformers parallelise so well."
+  },
+  {
+    prompt: "Which of these does NOT belong in a transfer learning setup?",
+    options: ["include_top=False", "weights='imagenet'", "Freeze base layers", "weights=None"],
+    oddIndex: 3,
+    explanation: "weights=None initialises the model with random weights — the opposite of transfer learning. Transfer learning reuses a pretrained model: include_top=False drops the task-specific classification head, weights='imagenet' loads the pretrained feature extractor weights, and freezing the base preserves those weights while training only the new head."
+  }
+];
+
+let currentIdx = 0;
+let correct = 0;
+let wrong = 0;
+let answered = false;
+let activeQuestions = []; // shuffled copies with randomised option order
+
+const root = document.getElementById('game-root');
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// Build a shuffled copy of QUESTIONS where options are randomly ordered
+// and oddIndex updated to match the new position.
+function buildActiveQuestions() {
+  return shuffle(QUESTIONS).map(q => {
+    const oddOption = q.options[q.oddIndex];
+    const shuffledOptions = shuffle(q.options);
+    return {
+      ...q,
+      options: shuffledOptions,
+      oddIndex: shuffledOptions.indexOf(oddOption)
+    };
+  });
+}
+
+function showIntro() {
+  root.innerHTML = `
+    <div class="card intro-card">
+      <div class="intro-badge">Odd One Out</div>
+      <div class="intro-title">Course 3 — Keras &amp; TensorFlow</div>
+      <div class="intro-meta">
+        ${QUESTIONS.length} questions · ~6 minutes<br>
+        Four items — pick the one that doesn't belong.<br>
+        Tests category discrimination, not recall. Immediate explanation after each pick.
+      </div>
+      <button class="btn-start" onclick="startGame()">Start →</button>
+    </div>`;
+}
+
+function startGame() {
+  currentIdx = 0; correct = 0; wrong = 0;
+  activeQuestions = buildActiveQuestions();
+  showQuestion();
+}
+
+function showQuestion() {
+  answered = false;
+  const q = activeQuestions[currentIdx];
+  const pct = Math.round((currentIdx / activeQuestions.length) * 100);
+
+  root.innerHTML = `
+    <div class="q-progress">
+      <div class="q-progress-label">
+        <span>Question ${currentIdx + 1} of ${activeQuestions.length}</span>
+        <div class="score-chips">
+          <span class="chip chip-g">✓ ${correct}</span>
+          <span class="chip chip-r">✗ ${wrong}</span>
+        </div>
+      </div>
+      <div class="q-bar"><div class="q-bar-fill" style="width:${pct}%"></div></div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-label">Odd One Out</div>
+      <div class="q-text">${escHtml(q.prompt)}</div>
+      <div class="options-grid" id="options">
+        ${q.options.map((opt, i) =>
+          `<button class="opt-btn" id="opt-${i}" onclick="pick(${i})">${escHtml(opt)}</button>`
+        ).join('')}
+      </div>
+      <div class="explanation" id="explanation">${q.explanation}</div>
+    </div>
+
+    <button class="btn-next" id="btn-next" onclick="nextQuestion()">Next →</button>`;
+}
+
+function pick(idx) {
+  if (answered) return;
+  answered = true;
+
+  const q = activeQuestions[currentIdx];
+  const isCorrect = idx === q.oddIndex;
+  if (isCorrect) correct++; else wrong++;
+
+  // Style all buttons
+  q.options.forEach((_, i) => {
+    const btn = document.getElementById(`opt-${i}`);
+    btn.disabled = true;
+    if (i === q.oddIndex) {
+      btn.classList.add('correct');
+    } else if (i === idx && !isCorrect) {
+      btn.classList.add('wrong');
+    } else {
+      btn.classList.add('dimmed');
+    }
+  });
+
+  document.getElementById('explanation').style.display = 'block';
+  document.getElementById('btn-next').style.display = 'inline-block';
+}
+
+function nextQuestion() {
+  currentIdx++;
+  if (currentIdx >= activeQuestions.length) showResults();
+  else showQuestion();
+}
+
+function showResults() {
+  const total = activeQuestions.length;
+  const pct = correct / total;
+  let msg;
+  if (pct >= 0.9) msg = "Sharp — you can reliably separate concepts. Assessment-ready for this material.";
+  else if (pct >= 0.7) msg = "Good discrimination. Review the explanations for the ones you missed.";
+  else msg = "These category distinctions need more work — replay and read each explanation carefully.";
+
+  const histKey = 'VLE_scores_c03_ooo';
+  let hist = JSON.parse(localStorage.getItem(histKey) || '[]');
+  hist.unshift({score: correct, total: total});
+  if (hist.length > 3) hist = hist.slice(0, 3);
+  localStorage.setItem(histKey, JSON.stringify(hist));
+  const histHtml = hist.length > 1
+    ? '<div style="font-size:.8rem;color:var(--muted);margin-top:.5rem">Previous: '
+      + hist.slice(1).map(function(h) { return h.score + '/' + h.total; }).join(' · ')
+      + '</div>'
+    : '';
+
+  root.innerHTML = `
+    <div class="card intro-card">
+      <div class="intro-title" style="margin-bottom:1rem">Session complete</div>
+      <div class="result-row">
+        <div class="result-badge g"><div class="rnum">${correct}</div><div class="rlbl">Correct</div></div>
+        <div class="result-badge r"><div class="rnum">${wrong}</div><div class="rlbl">Wrong</div></div>
+      </div>
+      <div class="intro-meta">${msg}${histHtml}</div>
+      <div class="results-actions">
+        <button class="btn-action primary" onclick="startGame()">Play again</button>
+        <a class="btn-action" href="index.html">← Games Hub</a>
+        <a class="btn-action" href="../courses/c03.html">← Back to C3</a>
+        <a class="btn-action" href="c03-true-false.html">True/False sprint →</a>
+      </div>
+    </div>`;
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+showIntro();
+</script>
+</body>
+</html>

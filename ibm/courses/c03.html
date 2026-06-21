@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>C3 — Deep Learning with Keras and TensorFlow · VLE</title>
+  <link rel="stylesheet" href="../shared.css">
+  <script src="../shared.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</head>
+<body>
+<script>initNav('../'); localStorage.setItem('VLE_lastCourse', 'C3 — Keras & TF');</script>
+
+<div class="container">
+
+  <!-- ═══ HEADER ══════════════════════════════════════════════ -->
+  <div style="margin-bottom:1.75rem">
+    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem;flex-wrap:wrap">
+      <span style="color:var(--muted);font-size:.83rem">Course 3 of 13</span>
+      <span class="badge badge-done"><span class="dot dot-g"></span>Complete</span>
+      <span class="badge badge-pending">23 hours</span>
+    </div>
+    <h1 style="font-size:1.5rem;font-weight:700;letter-spacing:-.02em;margin-bottom:.375rem">
+      Deep Learning with Keras and TensorFlow
+    </h1>
+    <p style="color:var(--muted);font-size:.875rem;line-height:1.55">
+      A broad advanced Keras course. Six content modules: (1) Advanced Keras functionalities — Functional API,
+      <code>tf.data</code>, callbacks; (2) Advanced CNNs and transfer learning; (3) <strong>Transformers in Keras</strong>
+      — <code>MultiHeadAttention</code>, building encoder blocks; (4) <strong>Generative models</strong> — autoencoders,
+      VAEs, GANs; (5) Advanced techniques; (6) <strong>Intro to RL with Keras</strong> — Q-learning, DQN.
+    </p>
+  </div>
+
+  <!-- Section jump nav -->
+  <nav class="page-jump-nav">
+    <a href="#section-flipped">📖 Flip</a>
+    <a href="#section-theory">Theory</a>
+    <a href="#section-concepts">Concepts</a>
+    <a href="#section-traps">Traps</a>
+    <a href="#section-viz">Viz</a>
+    <a href="#section-games">Games</a>
+  </nav>
+
+  <!-- ═══ FLIPPED CLASSROOM ════════════════════════════════════ -->
+  <div class="flip-card pjn-target" id="section-flipped" style="margin-bottom:2rem">
+    <div class="flip-header">
+      <span>📖</span>
+      Flipped Classroom — Before You Watch
+    </div>
+
+    <div class="flip-sublabel">Prime your thinking — bring these questions into the lectures</div>
+    <ul class="flip-questions">
+      <li>
+        <span class="flip-q-num">1</span>
+        <span>What does <code>tf.data</code> do that passing a NumPy array to <code>model.fit()</code> doesn't? What problem is it solving when data doesn't fit in memory?</span>
+      </li>
+      <li>
+        <span class="flip-q-num">2</span>
+        <span>When you set <code>base.trainable = False</code> to freeze a pre-trained model, why do you need to call <code>model.compile()</code> again before training? What breaks if you skip it?</span>
+      </li>
+      <li>
+        <span class="flip-q-num">3</span>
+        <span>The Functional API and Sequential can both build a basic classifier. Describe a model architecture where Sequential simply <em>cannot</em> be used.</span>
+      </li>
+      <li>
+        <span class="flip-q-num">4</span>
+        <span>Transformers use self-attention. What problem with RNN-based sequence models does self-attention specifically solve? (Think: what does an RNN <em>lose</em> for very long sequences?)</span>
+      </li>
+      <li>
+        <span class="flip-q-num">5</span>
+        <span>An autoencoder and a VAE both have encoder-decoder structure. What does the VAE encoder output that a regular autoencoder doesn't — and why does that difference matter for generation?</span>
+      </li>
+      <li>
+        <span class="flip-q-num">6</span>
+        <span>In reinforcement learning, what is a "policy" and what is the "reward signal"? How does a DQN use a neural network to relate these two things?</span>
+      </li>
+    </ul>
+
+    <div class="flip-sublabel">Watch for…</div>
+    <div class="watch-for">
+      <strong>Modules 1–2:</strong> Every time <code>training=False</code> is passed to a frozen base — the reason is BatchNorm-specific and easy to miss. Which pooling layer (GAP vs Flatten) the lectures prefer for transfer learning, and why.
+      <br><strong>Module 3:</strong> The <code>key_dim</code> argument in <code>MultiHeadAttention</code> — it's per head, not total. How the residual connections are written explicitly in Keras transformer blocks.
+      <br><strong>Module 4:</strong> What the "reparameterisation trick" is and why it's needed in VAEs. The GAN training instability problems (mode collapse, oscillation).
+      <br><strong>Module 6:</strong> Why DQN needs a target network (a second frozen copy) and an experience replay buffer — what goes wrong without each.
+    </div>
+  </div>
+
+  <!-- ═══ CORE THEORY ══════════════════════════════════════════ -->
+  <div class="section-head pjn-target" id="section-theory">
+    Core Theory
+    <span class="section-hint">Assessment priority — conceptual understanding over syntax</span>
+  </div>
+
+  <!-- 1. TF2 Execution Model -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">Execution Model</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">TF2 Eager vs Graph Execution</h3>
+    <p style="font-size:.875rem;line-height:1.6;margin-bottom:.75rem">
+      TF2 runs in <strong>eager mode by default</strong> — operations execute immediately, like NumPy.
+      This makes debugging straightforward: you can inspect tensors, use Python control flow, and step through code normally.
+    </p>
+    <p style="font-size:.875rem;line-height:1.6;margin-bottom:.75rem">
+      <code>@tf.function</code> converts a Python function into a <strong>static computation graph</strong>,
+      compiled once and reused. This is faster for production because TF can optimise the graph —
+      but it breaks Python-side effects (print statements, list appends) that should run every call,
+      because they only execute on the first trace.
+    </p>
+    <div class="insight ins-info" style="margin-top:.5rem">
+      <strong>Key distinction:</strong> Eager = Pythonic, debuggable, slower at scale.
+      @tf.function = compiled graph, fast, but traces once — don't rely on Python side effects inside it.
+    </div>
+  </div>
+
+  <!-- 2. Functional API -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">Architecture</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">Functional API vs Sequential — When Each Applies</h3>
+    <div style="overflow-x:auto;margin-bottom:.75rem">
+      <table class="decision-table">
+        <thead>
+          <tr>
+            <th>Situation</th>
+            <th>Use</th>
+            <th>Why</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Simple linear stack, one input, one output</td>
+            <td style="color:var(--green)">Sequential</td>
+            <td>Clean, minimal code</td>
+          </tr>
+          <tr>
+            <td>Multiple inputs (e.g. image + text combined)</td>
+            <td style="color:var(--blue)">Functional</td>
+            <td>Sequential has exactly one input tensor</td>
+          </tr>
+          <tr>
+            <td>Multiple outputs (e.g. classification + bounding box)</td>
+            <td style="color:var(--blue)">Functional</td>
+            <td>Sequential has exactly one output tensor</td>
+          </tr>
+          <tr>
+            <td>Skip connections (ResNet-style)</td>
+            <td style="color:var(--blue)">Functional</td>
+            <td>Layer outputs are just tensors — can be added, concatenated freely</td>
+          </tr>
+          <tr>
+            <td>Shared layers (same layer used twice)</td>
+            <td style="color:var(--blue)">Functional</td>
+            <td>Call the same layer object on different inputs</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:.875rem;color:var(--muted);line-height:1.5">
+      In the Functional API, each layer is <em>called</em> like a function: <code>x = Dense(256)(inp)</code>.
+      The result is a tensor. The model is defined by which tensors are inputs and outputs.
+    </p>
+  </div>
+
+  <!-- 3. Transfer Learning -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">Transfer Learning</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">The Three-Stage Transfer Learning Pattern</h3>
+    <p style="font-size:.875rem;line-height:1.6;margin-bottom:.75rem">
+      Transfer learning reuses a model trained on a large dataset (usually ImageNet) as a feature extractor
+      for a new task. The pretrained weights encode rich, general visual features; only the final classification
+      head needs learning from scratch.
+    </p>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:.75rem">
+      <div style="background:var(--surface2);border-radius:8px;padding:.875rem;border-left:3px solid var(--blue)">
+        <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--blue);margin-bottom:.4rem">Stage 1</div>
+        <div style="font-size:.875rem;font-weight:600;margin-bottom:.3rem">Load &amp; Freeze</div>
+        <div style="font-size:.78rem;color:var(--muted);line-height:1.4">Load pretrained base with <code>include_top=False</code>. Set <code>base.trainable = False</code>. Attach new head.</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:8px;padding:.875rem;border-left:3px solid var(--green)">
+        <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--green);margin-bottom:.4rem">Stage 2</div>
+        <div style="font-size:.875rem;font-weight:600;margin-bottom:.3rem">Train Head Only</div>
+        <div style="font-size:.78rem;color:var(--muted);line-height:1.4">Compile and train with normal LR. Only the new Dense layers learn. Base weights unchanged.</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:8px;padding:.875rem;border-left:3px solid var(--yellow)">
+        <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--yellow);margin-bottom:.4rem">Stage 3 (optional)</div>
+        <div style="font-size:.875rem;font-weight:600;margin-bottom:.3rem">Fine-tune</div>
+        <div style="font-size:.78rem;color:var(--muted);line-height:1.4">Unfreeze top N layers. Recompile with very small LR (1e-5). Avoid destroying pretrained features.</div>
+      </div>
+    </div>
+
+    <div class="insight ins-warn" style="margin-top:.5rem">
+      <strong>Critical:</strong> When calling a frozen base model, always pass <code>training=False</code>
+      explicitly: <code>x = base(inputs, training=False)</code>.
+      Without this, BatchNorm layers inside the base update their running statistics on your (small) dataset,
+      corrupting the pretrained statistics.
+    </div>
+  </div>
+
+  <!-- 4. tf.data vs NumPy -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">Data Pipeline</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">tf.data: Why It Exists</h3>
+    <p style="font-size:.875rem;line-height:1.6;margin-bottom:.625rem">
+      Passing NumPy arrays to <code>model.fit()</code> loads everything into memory at once. <code>tf.data</code>
+      is a streaming pipeline that feeds data to the GPU in parallel with training.
+    </p>
+    <div style="overflow-x:auto;margin-bottom:.625rem">
+      <table class="concept-table">
+        <thead><tr><th>Capability</th><th>tf.data approach</th></tr></thead>
+        <tbody>
+          <tr><td>Parallelism</td><td><code>.prefetch(AUTOTUNE)</code> — CPU loads next batch while GPU trains on current one</td></tr>
+          <tr><td>Shuffling</td><td><code>.shuffle(buffer_size)</code> — randomises order without loading full dataset</td></tr>
+          <tr><td>Batching</td><td><code>.batch(32)</code> — always required before <code>model.fit()</code></td></tr>
+          <tr><td>Large datasets</td><td>Reads from files (images, TFRecords) without loading all into RAM</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:.83rem;color:var(--muted)">
+      The canonical pipeline order: <code>.shuffle() → .batch() → .prefetch()</code>. Shuffle before batch
+      (otherwise you shuffle entire batches, not individual examples).
+    </p>
+  </div>
+
+  <!-- 5. BatchNorm -->
+  <div class="card" style="margin-bottom:2rem">
+    <div class="tag tag-blue">Regularisation</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">BatchNorm: Training vs Inference Behaviour</h3>
+    <p style="font-size:.875rem;line-height:1.6;margin-bottom:.625rem">
+      BatchNorm normalises each feature across the batch. It behaves <strong>differently at training vs inference</strong>:
+    </p>
+    <div style="overflow-x:auto;margin-bottom:.625rem">
+      <table class="decision-table">
+        <thead><tr><th>Mode</th><th>Normalisation uses</th><th>Updates running stats?</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><code>training=True</code></td>
+            <td>Current batch mean/variance</td>
+            <td>Yes — accumulates running mean/var</td>
+          </tr>
+          <tr>
+            <td><code>training=False</code></td>
+            <td>Stored running mean/variance</td>
+            <td>No</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:.83rem;color:var(--muted);line-height:1.5">
+      BatchNorm has 4 parameters per feature: γ (scale) and β (shift) are <em>learned</em>;
+      running mean and running variance are <em>tracked statistics</em> (not gradient-updated).
+    </p>
+  </div>
+
+  <!-- 6. Transformers in Keras -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">Module 3 — Transformers</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">Building Transformer Blocks in Keras</h3>
+    <p style="font-size:.875rem;line-height:1.6;margin-bottom:.75rem">
+      Keras provides <code>tf.keras.layers.MultiHeadAttention</code> as a built-in layer.
+      You compose it with residual connections and LayerNorm to build a transformer encoder block.
+    </p>
+    <div style="overflow-x:auto;margin-bottom:.75rem">
+      <table class="decision-table">
+        <thead><tr><th>Concept</th><th>In Keras</th><th>Key detail</th></tr></thead>
+        <tbody>
+          <tr><td>Multi-head attention</td><td><code>MultiHeadAttention(num_heads, key_dim)</code></td><td><code>key_dim</code> is per head — total = num_heads × key_dim</td></tr>
+          <tr><td>Self-attention</td><td><code>mha(query=x, value=x)</code></td><td>Same tensor as query and value; key defaults to value</td></tr>
+          <tr><td>Residual + Norm</td><td><code>LayerNormalization()(x + attn_output)</code></td><td>Written explicitly in custom blocks</td></tr>
+          <tr><td>Positional encoding</td><td>Custom layer (sinusoidal or learned)</td><td>Added to token embeddings — not concatenated</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="insight ins-warn">
+      <strong>Assessment trap:</strong> <code>key_dim</code> in Keras ≠ model dimension.
+      A model with <code>embed_dim=512</code> and <code>num_heads=8</code> should use <code>key_dim=64</code> (512/8).
+    </div>
+  </div>
+
+  <!-- 7. Generative Models -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">Module 4 — Generative Models</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">Autoencoders, VAEs, and GANs</h3>
+    <div style="overflow-x:auto;margin-bottom:.75rem">
+      <table class="concept-table">
+        <thead><tr><th>Model</th><th>What the encoder outputs</th><th>Can generate new samples?</th><th>Key mechanism</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Autoencoder</strong></td>
+            <td>Deterministic latent vector z</td>
+            <td>Poorly — latent space is unstructured</td>
+            <td>Reconstruction loss (MSE or BCE)</td>
+          </tr>
+          <tr>
+            <td><strong>VAE</strong></td>
+            <td>Distribution: mean μ + log σ²</td>
+            <td>Yes — sample z ~ N(0,1), decode</td>
+            <td>Reparameterisation trick + KL divergence</td>
+          </tr>
+          <tr>
+            <td><strong>GAN</strong></td>
+            <td>Generator takes noise z directly</td>
+            <td>Yes — G(z) → new sample</td>
+            <td>Adversarial: G vs D training loop</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="insight ins-warn">
+      <strong>Reparameterisation trick (VAE):</strong> instead of sampling z ~ N(μ, σ²) directly (not differentiable), compute z = μ + ε·σ where ε ~ N(0,1). Now gradients can flow through μ and σ.
+    </div>
+    <div class="insight ins-info" style="margin-top:.5rem">
+      <strong>GAN failure modes:</strong> mode collapse (generator produces limited variety) and training instability (G and D must stay balanced). Evaluated with FID score — lower is better.
+    </div>
+  </div>
+
+  <!-- 8. Reinforcement Learning -->
+  <div class="card" style="margin-bottom:2rem">
+    <div class="tag tag-blue">Module 6 — Reinforcement Learning</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">Deep Q-Networks (DQN) with Keras</h3>
+    <p style="font-size:.875rem;line-height:1.6;margin-bottom:.75rem">
+      RL trains an agent to maximise cumulative reward by interacting with an environment.
+      DQN uses a neural network to approximate Q(s, a) — the expected future reward for taking action a in state s.
+    </p>
+    <div style="overflow-x:auto;margin-bottom:.75rem">
+      <table class="concept-table">
+        <thead><tr><th>RL term</th><th>Definition</th></tr></thead>
+        <tbody>
+          <tr><td>State (s)</td><td>Current observation of the environment</td></tr>
+          <tr><td>Action (a)</td><td>Choice made by the agent</td></tr>
+          <tr><td>Reward (r)</td><td>Scalar feedback from environment after taking action</td></tr>
+          <tr><td>Policy (π)</td><td>Mapping from states to actions (what the agent learns)</td></tr>
+          <tr><td>Q-value Q(s,a)</td><td>Expected cumulative reward from state s, taking action a, then following π</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="decision-table">
+        <thead><tr><th>DQN component</th><th>Why it's needed</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Target network</strong> (frozen copy of Q-net)</td><td>Training targets shift every update without it → oscillation and divergence</td></tr>
+          <tr><td><strong>Experience replay buffer</strong></td><td>Consecutive frames are correlated; random mini-batch sampling gives i.i.d.-like training</td></tr>
+          <tr><td><strong>Epsilon-greedy decay</strong></td><td>Start high ε (explore) → decay toward small ε (exploit) as agent learns</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══ MUST-KNOW CONCEPTS ════════════════════════════════════ -->
+  <div class="section-head pjn-target" id="section-concepts">Must-Know Concepts</div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:2rem">
+    <table class="concept-table">
+      <thead><tr><th>Term</th><th>One-liner (assessment vocabulary)</th></tr></thead>
+      <tbody>
+        <tr><td>eager mode</td><td>TF2 default — ops execute immediately; debuggable like NumPy</td></tr>
+        <tr><td><code>@tf.function</code></td><td>Decorator that JIT-compiles a fn to a static TF graph; faster but traces once</td></tr>
+        <tr><td>Functional API</td><td>Keras style for non-linear models; required for branches, multi-input/output, skip connections</td></tr>
+        <tr><td>transfer learning</td><td>Use ImageNet-pretrained weights as feature extractor; freeze base, train new head</td></tr>
+        <tr><td><code>include_top=False</code></td><td>Drops the final Dense classification head from the pretrained model; keeps convolutional base</td></tr>
+        <tr><td><code>training=False</code></td><td>Passed to frozen base model call; prevents BatchNorm from updating running statistics on your small dataset</td></tr>
+        <tr><td>MultiHeadAttention</td><td>Keras built-in; <code>key_dim</code> = dimension per head (not total); self-attention: pass same tensor as query and value</td></tr>
+        <tr><td>autoencoder</td><td>Encoder compresses to latent z; decoder reconstructs; trained on reconstruction loss</td></tr>
+        <tr><td>VAE</td><td>Encoder outputs distribution (μ, σ²) not a point; reparameterisation trick enables sampling + backprop; can generate new data</td></tr>
+        <tr><td>GAN</td><td>Generator vs Discriminator adversarial training; failure modes: mode collapse, instability</td></tr>
+        <tr><td>Q-value Q(s,a)</td><td>Expected cumulative reward from state s taking action a; DQN approximates this with a neural network</td></tr>
+        <tr><td>target network</td><td>Frozen copy of Q-network updated periodically; prevents training instability in DQN</td></tr>
+        <tr><td>experience replay</td><td>Buffer of past transitions (s,a,r,s'); random sampling breaks temporal correlation during DQN training</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══ EXAM TRAPS ════════════════════════════════════════════ -->
+  <div class="section-head pjn-target" id="section-traps">Exam Traps</div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 1 — include_top</div>
+    <strong>The assessment may ask what <code>include_top=False</code> does.</strong>
+    The correct answer: it removes the final <strong>Dense classification head</strong> (the ImageNet softmax layer),
+    leaving only the convolutional feature extraction layers. It does NOT disable any weights or freeze anything.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 2 — training=False on frozen base</div>
+    <strong>Why must you pass <code>training=False</code> when calling a frozen base model?</strong>
+    BatchNorm layers in the base will update their running statistics even when <code>trainable=False</code>
+    unless you explicitly pass <code>training=False</code>. Corruption of pretrained BatchNorm stats
+    degrades performance — the base loses its ImageNet calibration.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 3 — recompile after changing trainable</div>
+    <strong>Changing <code>layer.trainable</code> has no effect until you call <code>model.compile()</code> again.</strong>
+    The optimiser's list of parameters to update is frozen at compile time. Setting a layer's
+    <code>trainable</code> attribute without recompiling means the optimiser still updates (or still skips)
+    the old set of parameters.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 4 — fine-tuning learning rate</div>
+    <strong>Fine-tuning requires a much smaller learning rate than training from scratch</strong>
+    — typically <strong>10–100× smaller</strong> (e.g. 1e-5 instead of 1e-3).
+    A high LR during fine-tuning destroys the pretrained feature representations (catastrophic forgetting),
+    which defeats the entire point of using a pretrained model.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 5 — @tf.function and Python side effects</div>
+    <strong><code>@tf.function</code> traces the function once</strong> and caches the compiled graph.
+    Python-side effects inside the function (print statements, list appends, counters) only execute
+    during the first trace. If you rely on them running every call, remove <code>@tf.function</code>
+    or move the side effects outside.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 6 — key_dim in MultiHeadAttention</div>
+    <strong><code>key_dim</code> is the dimension per attention head, not the total model dimension.</strong>
+    A transformer with <code>embed_dim=512</code> and <code>num_heads=8</code> uses <code>key_dim=64</code> (= 512 ÷ 8).
+    The total attention output is <code>num_heads × key_dim = 512</code>, matching the embedding dimension.
+    Confusing <code>key_dim</code> with the full model dimension is a common error.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 7 — Autoencoder vs VAE generation</div>
+    <strong>A regular autoencoder cannot reliably generate new samples.</strong>
+    Its latent space is unstructured — random points in latent space decode to garbage.
+    A VAE forces the latent space toward N(0,1) via the KL divergence term, so sampling
+    z ~ N(0,1) and decoding actually produces valid outputs. The reparameterisation trick
+    is what makes the VAE's sampling step differentiable.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 8 — DQN target network purpose</div>
+    <strong>The target network is not for evaluation — it's for training stability.</strong>
+    Without a separate frozen target network, the Q-values you're training toward change at every
+    update step (since both the Q-network and the targets depend on the same weights).
+    This chasing of moving targets causes oscillation. The target network is updated every N steps,
+    providing stable targets during training.
+  </div>
+
+  <!-- ═══ INTERACTIVE VIZ ══════════════════════════════════════ -->
+  <div class="section-head pjn-target" id="section-viz" style="margin-top:2rem">Interactive Visualisations</div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.875rem;margin-bottom:2rem">
+    <a class="viz-card" href="../viz/gradient-descent.html">
+      <div class="viz-card-title">📊 Gradient Descent</div>
+      <div class="viz-card-desc">Learning rate effect on convergence. Relevant to all optimisation discussions.</div>
+    </a>
+    <a class="viz-card" href="../viz/activation-functions.html">
+      <div class="viz-card-title">⚡ Activation Functions</div>
+      <div class="viz-card-desc">ReLU, sigmoid, tanh, Leaky ReLU. Saturation zones and derivative behaviour.</div>
+    </a>
+    <a class="viz-card" href="../viz/backprop.html">
+      <div class="viz-card-title">🔁 Backpropagation</div>
+      <div class="viz-card-desc">Step through forward and backward passes in a small network. See gradient flow.</div>
+    </a>
+  </div>
+
+  <!-- ═══ PRACTICAL NOTES (collapsed) ══════════════════════════ -->
+  <div style="margin-bottom:2rem">
+    <button class="collapse-toggle">
+      <span class="c-arrow">▶</span>
+      Practical Notes &amp; Code Patterns
+      <span style="margin-left:.5rem;font-size:.75rem;color:var(--muted)">(useful for application — not needed to pass the assessment)</span>
+    </button>
+    <div class="collapse-body">
+
+      <div class="card" style="margin-bottom:1rem">
+        <div class="tag tag-blue">Common Gotchas</div>
+        <ul style="font-size:.875rem;line-height:1.7;padding-left:1.25rem;color:var(--text)">
+          <li><strong><code>base(inputs, training=False)</code></strong> when base is frozen — must be explicit; <code>model.fit()</code> won't infer this automatically</li>
+          <li><strong>Forgetting to recompile</strong> after changing <code>trainable</code> — the optimiser parameter list is set at compile time</li>
+          <li><strong>GlobalAveragePooling2D vs Flatten</strong> — Flatten creates a huge parameter count; GAP reduces each feature map to one number. Always use GAP for transfer learning</li>
+          <li><strong>Preprocessing mismatch</strong> — each <code>tf.keras.applications</code> model expects its own preprocessing: MobileNetV2 wants inputs in [-1,1], VGG16 wants BGR with ImageNet mean subtracted. Use the accompanying <code>preprocess_input</code> function</li>
+          <li><strong>EarlyStopping without <code>restore_best_weights=True</code></strong> — you'll get the last epoch weights, not the best epoch</li>
+          <li><strong>Dataset not batched</strong> before <code>model.fit()</code> — always <code>.batch()</code> your tf.data pipeline</li>
+          <li><strong>Forgetting <code>.prefetch(AUTOTUNE)</code></strong> — GPU idles waiting for CPU to prepare the next batch</li>
+          <li><strong>Conv2D output size confusion</strong> — <code>padding='valid'</code> reduces spatial dims; <code>padding='same'</code> preserves them</li>
+        </ul>
+      </div>
+
+      <div class="card" style="margin-bottom:1rem">
+        <div class="tag tag-blue">tf.data Pipeline Pattern</div>
+        <pre><code class="language-python">dataset = tf.data.Dataset.from_tensor_slices((X_train, y_train))
+dataset = (dataset
+    .shuffle(buffer_size=10_000)   # shuffle BEFORE batch
+    .batch(32)
+    .prefetch(tf.data.AUTOTUNE)    # overlap CPU prep with GPU training
+)
+model.fit(dataset, epochs=10)</code></pre>
+      </div>
+
+      <div class="card" style="margin-bottom:1rem">
+        <div class="tag tag-blue">Transfer Learning Pattern</div>
+        <pre><code class="language-python">base = tf.keras.applications.MobileNetV2(
+    input_shape=(224, 224, 3),
+    include_top=False,          # drop classification head
+    weights='imagenet'
+)
+base.trainable = False          # freeze pretrained weights
+
+inputs  = Input(shape=(224, 224, 3))
+x       = base(inputs, training=False)  # CRITICAL: keeps BatchNorm frozen
+x       = GlobalAveragePooling2D()(x)
+x       = Dropout(0.2)(x)
+outputs = Dense(n_classes, activation='softmax')(x)
+model   = Model(inputs, outputs)
+
+model.compile(optimizer='adam', loss='sparse_categorical_crossentropy')
+model.fit(dataset, epochs=5)
+
+# Fine-tuning (Stage 3):
+base.trainable = True
+for layer in base.layers[:-20]:
+    layer.trainable = False
+
+model.compile(optimizer=Adam(1e-5), ...)  # much smaller LR
+model.fit(dataset, epochs=5)</code></pre>
+      </div>
+
+      <div class="card" style="margin-bottom:1rem">
+        <div class="tag tag-blue">Custom Training Loop</div>
+        <pre><code class="language-python">optimizer = tf.keras.optimizers.Adam(1e-3)
+loss_fn   = tf.keras.losses.SparseCategoricalCrossentropy()
+
+for epoch in range(epochs):
+    for X_batch, y_batch in dataset:
+        with tf.GradientTape() as tape:
+            logits = model(X_batch, training=True)
+            loss   = loss_fn(y_batch, logits)
+        grads = tape.gradient(loss, model.trainable_variables)
+        optimizer.apply_gradients(zip(grads, model.trainable_variables))</code></pre>
+        <p style="font-size:.78rem;color:var(--muted);margin-top:.5rem">
+          Use when you need control that <code>model.fit()</code> doesn't provide:
+          custom metrics, gradient clipping, multiple losses, research experiments.
+        </p>
+      </div>
+
+      <div class="card" style="margin-bottom:.5rem">
+        <div class="tag tag-blue">Key Architecture Patterns to Recognise</div>
+        <pre><code class="language-text">VGG-style:  [Conv-Conv-Pool] × N → Flatten/GAP → Dense → output
+ResNet:     [Conv-BN-ReLU + skip connection] × N → output
+Inception:  parallel conv branches (different kernel sizes) → concat → output
+MobileNet:  depthwise separable convolutions (much cheaper than standard Conv)</code></pre>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ STUDY GAMES ═════════════════════════════════════════ -->
+  <div class="section-head pjn-target" id="section-games" style="margin-top:1rem">Study Games</div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.875rem;margin-bottom:2rem">
+    <a class="viz-card" href="../games/c03-quiz.html" style="text-decoration:none">
+      <div class="viz-card-title">🎮 Multiple Choice Quiz</div>
+      <div class="viz-card-desc">12 questions · ~6 min. Functional API, transfer learning, transformers, VAEs, GANs, DQN. Immediate explanatory feedback.</div>
+    </a>
+    <a class="viz-card" href="../games/c03-flashcards.html" style="text-decoration:none">
+      <div class="viz-card-title">🃏 Flashcard Game</div>
+      <div class="viz-card-desc">12 cards · ~8 min. Theory-weighted elaborative questions. Replay missed cards. Best used after a study session.</div>
+    </a>
+    <a class="viz-card" href="../games/c03-odd-one-out.html" style="text-decoration:none">
+      <div class="viz-card-title">🔍 Odd One Out</div>
+      <div class="viz-card-desc">10 questions · ~6 min. Four items — pick the one that doesn't belong. Tests category discrimination across C3 concepts.</div>
+    </a>
+    <a class="viz-card" href="../games/c03-true-false.html" style="text-decoration:none">
+      <div class="viz-card-title">⚡ True/False Sprint</div>
+      <div class="viz-card-desc">20 statements · timed · ~8 min. 10 true, 10 plausible misconceptions. Read carefully — the false ones are designed to trap.</div>
+    </a>
+  </div>
+
+  <!-- ═══ FULL NOTES + CODE LIBRARY LINKS ════════════════════ -->
+  <div class="card" style="margin-bottom:1.5rem;background:var(--surface2)">
+    <div style="font-size:.875rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:.75rem;align-items:center">
+      <span>
+        Full curated notes (Obsidian):
+        <a href="obsidian://open?vault=IBM%20Courses&file=claude-content%2F03-deep-learning-keras-tensorflow"
+           style="color:var(--blue)">
+          claude-content/03-deep-learning-keras-tensorflow →
+        </a>
+      </span>
+      <span style="color:var(--border)">|</span>
+      <span>
+        <a href="../library/c03.html" style="color:var(--blue)">
+          📖 Code Library — all C3 models annotated →
+        </a>
+      </span>
+    </div>
+  </div>
+
+  <div class="footer">
+    <a href="../index.html">← VLE Home</a> ·
+    <a href="c02.html">← C2</a> ·
+    <a href="c04.html">C4 →</a> ·
+    <a href="../course-tracker.html" target="_blank">📊 Tracker</a>
+  </div>
+
+</div>
+</body>
+</html>

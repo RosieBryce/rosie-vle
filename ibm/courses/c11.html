@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>C11 — Generative AI Advanced Fine-Tuning for LLMs · VLE</title>
+  <link rel="stylesheet" href="../shared.css">
+  <script src="../shared.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</head>
+<body>
+<script>initNav('../');</script>
+
+<div class="container">
+
+  <!-- ═══ HEADER ══════════════════════════════════════════════ -->
+  <div style="margin-bottom:1.75rem">
+    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem;flex-wrap:wrap">
+      <span style="color:var(--muted);font-size:.83rem">Course 11 of 13</span>
+      <span class="badge badge-pending"><span class="dot dot-m"></span>Not Started</span>
+      <span class="badge badge-pending">9 hours</span>
+    </div>
+    <h1 style="font-size:1.5rem;font-weight:700;letter-spacing:-.02em;margin-bottom:.375rem">
+      Generative AI Advanced Fine-Tuning for LLMs
+    </h1>
+    <p style="color:var(--muted);font-size:.875rem;line-height:1.55">
+      The hardest conceptual course in the Gen AI block. RLHF, DPO, QLoRA, and quantisation.
+      You don't need to implement RLHF from scratch, but you need to understand the pipeline,
+      why it exists, and its failure modes. QLoRA is the practical technique you will use.
+    </p>
+  </div>
+
+  <!-- ═══ FLIPPED CLASSROOM ════════════════════════════════════ -->
+  <div class="flip-card" style="margin-bottom:2rem">
+    <div class="flip-header">
+      <span>📖</span>
+      Flipped Classroom — Before You Watch
+    </div>
+
+    <div class="flip-sublabel">Prime your thinking — bring these questions into the lectures</div>
+    <ul class="flip-questions">
+      <li>
+        <span class="flip-q-num">1</span>
+        <span>RLHF uses a reward model and PPO to align an LLM's outputs with human preferences. What failure mode do you predict if the model is allowed to train against the reward model for too long without any constraint? What mechanism prevents this?</span>
+      </li>
+      <li>
+        <span class="flip-q-num">2</span>
+        <span>DPO claims to achieve alignment without a reward model or RL. How can it be possible to train on preference data (which response is better) without explicitly modelling a reward? What is being implicitly derived?</span>
+      </li>
+      <li>
+        <span class="flip-q-num">3</span>
+        <span>Storing a 7B parameter model in fp32 requires ~28GB. In 4-bit (NF4) it requires ~3.5GB. What is being lost when you reduce precision, and why does NF4 lose less quality than naive int4 for transformer weights specifically?</span>
+      </li>
+    </ul>
+
+    <div class="flip-sublabel">Watch for…</div>
+    <div class="watch-for">
+      The KL divergence penalty in RLHF — it's not just a technical detail, it's the mechanism preventing reward hacking.
+      Also: DPO's key insight that the optimal RL policy has a closed-form solution derivable from the SFT reference model,
+      making a reward model unnecessary. And: NF4 vs int4 — normal float 4-bit is optimised for normally distributed values,
+      which is why it fits transformer weights better than naive int4.
+    </div>
+  </div>
+
+  <!-- ═══ CORE THEORY ══════════════════════════════════════════ -->
+  <div class="section-head">
+    Core Theory
+    <span class="section-hint">Assessment priority — RLHF pipeline stages, DPO vs RLHF, and QLoRA mechanics</span>
+  </div>
+
+  <!-- 1. RLHF -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">RLHF</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">RLHF — Three Stages</h3>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:.75rem">
+      <div style="background:var(--surface2);border-radius:8px;padding:.875rem;border-left:3px solid var(--blue)">
+        <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--blue);margin-bottom:.4rem">Stage 1</div>
+        <div style="font-size:.875rem;font-weight:600;margin-bottom:.3rem">SFT</div>
+        <div style="font-size:.78rem;color:var(--muted);line-height:1.4">Fine-tune base model on high-quality instruction-response pairs. Creates instruction-following SFT model.</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:8px;padding:.875rem;border-left:3px solid var(--yellow)">
+        <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--yellow);margin-bottom:.4rem">Stage 2</div>
+        <div style="font-size:.875rem;font-weight:600;margin-bottom:.3rem">Reward Model</div>
+        <div style="font-size:.78rem;color:var(--muted);line-height:1.4">Humans compare response pairs; a separate model learns to predict human preference as a scalar reward score. This stage IS supervised learning.</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:8px;padding:.875rem;border-left:3px solid var(--green)">
+        <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--green);margin-bottom:.4rem">Stage 3</div>
+        <div style="font-size:.875rem;font-weight:600;margin-bottom:.3rem">PPO</div>
+        <div style="font-size:.78rem;color:var(--muted);line-height:1.4">RL updates LLM to maximise reward score, constrained by KL divergence from SFT model to prevent reward hacking.</div>
+      </div>
+    </div>
+    <div class="insight ins-warn">
+      <strong>The KL penalty is critical:</strong> Reward = R(response) − β × KL(π ∥ π_SFT). Without it, the model quickly finds adversarial patterns that fool the reward model without being genuinely better (reward hacking). The KL term anchors the model to the SFT baseline.
+    </div>
+  </div>
+
+  <!-- 2. RLHF Failure Modes -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">Alignment Failures</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">RLHF Failure Modes</h3>
+    <div style="overflow-x:auto">
+      <table class="decision-table">
+        <thead><tr><th>Problem</th><th>Description</th><th>Mitigation</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Reward hacking</strong></td>
+            <td>Model exploits reward model weaknesses; gets high reward without being genuinely better</td>
+            <td>KL penalty, ensemble reward models</td>
+          </tr>
+          <tr>
+            <td><strong>Mode collapse</strong></td>
+            <td>Model converges to one type of safe, repetitive response</td>
+            <td>Diversity rewards, sampling during RL</td>
+          </tr>
+          <tr>
+            <td><strong>Sycophancy</strong></td>
+            <td>Model tells users what they want to hear even when wrong</td>
+            <td>Adversarial preference data</td>
+          </tr>
+          <tr>
+            <td><strong>Overoptimisation</strong></td>
+            <td>Too many PPO steps degrades general capabilities</td>
+            <td>Early stopping, tight KL constraint</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 3. DPO -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">DPO</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">DPO — Direct Preference Optimisation</h3>
+    <p style="font-size:.875rem;line-height:1.6;margin-bottom:.75rem">
+      DPO achieves alignment without a reward model or RL. Key insight: the optimal RL policy has a closed-form solution expressible directly in terms of the reference SFT model. Train directly on preference data.
+    </p>
+    <div style="overflow-x:auto;margin-bottom:.75rem">
+      <table class="decision-table">
+        <thead><tr><th></th><th>RLHF</th><th>DPO</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Reward model</strong></td><td style="color:var(--yellow)">Required (separate model)</td><td style="color:var(--green)">Not needed</td></tr>
+          <tr><td><strong>Training algorithm</strong></td><td>PPO (RL)</td><td>Standard gradient descent</td></tr>
+          <tr><td><strong>Stability</strong></td><td style="color:var(--yellow)">Complex, sensitive</td><td style="color:var(--green)">More stable</td></tr>
+          <tr><td><strong>Reference model</strong></td><td>KL constraint from π_SFT</td><td>Frozen π_ref required</td></tr>
+          <tr><td><strong>Adoption</strong></td><td>OpenAI, early ChatGPT</td><td>Now the default in open-source</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="insight ins-info">
+      <strong>DPO requires a frozen reference model (π_ref).</strong> Without it, there is no calibration point and training diverges. The reference model must be the same SFT model you're starting from, kept frozen throughout DPO training.
+    </div>
+  </div>
+
+  <!-- 4. Quantisation and QLoRA -->
+  <div class="card" style="margin-bottom:2rem">
+    <div class="tag tag-blue">QLoRA</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">Quantisation &amp; QLoRA</h3>
+    <div style="overflow-x:auto;margin-bottom:.75rem">
+      <table class="decision-table">
+        <thead><tr><th>Precision</th><th>Bits</th><th>7B model size</th><th>Quality</th></tr></thead>
+        <tbody>
+          <tr><td>fp32</td><td>32</td><td>~28 GB</td><td>Perfect reference</td></tr>
+          <tr><td>fp16 / bf16</td><td>16</td><td>~14 GB</td><td>Essentially identical</td></tr>
+          <tr><td>int8</td><td>8</td><td>~7 GB</td><td>Minor degradation</td></tr>
+          <tr><td>NF4 (QLoRA)</td><td>4</td><td>~3.5 GB</td><td>Usable; better than naive int4</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:.875rem;line-height:1.6;margin-bottom:.5rem">
+      <strong>QLoRA combines 4-bit quantisation with LoRA:</strong> load model weights in 4-bit (NF4), keep frozen, train only LoRA adapters in bf16. Fine-tune a 7B model on a 16GB consumer GPU.
+    </p>
+    <div class="insight ins-warn">
+      <strong>QLoRA does NOT fine-tune the quantised weights</strong> — only the LoRA adapters are updated (in higher precision). The base model weights stay fixed in 4-bit throughout training. NF4 is better than naive int4 because transformer weights follow roughly normal distributions — NF4 is specifically designed for normally distributed values.
+    </div>
+  </div>
+
+  <!-- ═══ MUST-KNOW CONCEPTS ════════════════════════════════════ -->
+  <div class="section-head">Must-Know Concepts</div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:2rem">
+    <table class="concept-table">
+      <thead><tr><th>Term</th><th>One-liner (assessment vocabulary)</th></tr></thead>
+      <tbody>
+        <tr><td>RLHF Stage 1 (SFT)</td><td>Supervised fine-tuning on instruction pairs — teaches instruction following; precedes reward modelling</td></tr>
+        <tr><td>RLHF Stage 2 (reward model)</td><td>Supervised model trained on human pairwise preference labels to predict response quality as scalar</td></tr>
+        <tr><td>PPO</td><td>Proximal Policy Optimisation — the RL algorithm used in RLHF Stage 3; not Q-learning or A3C</td></tr>
+        <tr><td>KL penalty</td><td>Constrains LLM during PPO to not diverge too far from SFT baseline — prevents reward hacking</td></tr>
+        <tr><td>reward hacking</td><td>Model finds patterns that maximise reward model score without genuinely improving; mitigated by KL constraint</td></tr>
+        <tr><td>DPO</td><td>Direct Preference Optimisation — alignment without reward model or RL; trains directly on (prompt, chosen, rejected) data</td></tr>
+        <tr><td>quantisation</td><td>Reducing weight precision (fp32 → int8 → int4) to fit large models in less GPU memory</td></tr>
+        <tr><td>NF4</td><td>Normal Float 4-bit — 4-bit format optimised for normally distributed weights; better than naive int4 for transformers</td></tr>
+        <tr><td>double quantisation</td><td>Quantises the quantisation constants themselves — saves ~0.4 bits per parameter</td></tr>
+        <tr><td>QLoRA</td><td>4-bit quantised base model + LoRA adapters trained in bf16; enables fine-tuning 7B on a 16GB GPU</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══ EXAM TRAPS ════════════════════════════════════════════ -->
+  <div class="section-head">Exam Traps</div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 1 — RLHF Stage 2 is supervised, not RL</div>
+    <strong>Training the reward model (Stage 2) is supervised learning, not reinforcement learning.</strong>
+    Humans provide pairwise preference labels — the reward model is trained via standard gradient descent
+    to predict which response is better. RL only appears in Stage 3 (PPO).
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 2 — PPO is the RL algorithm, not Q-learning</div>
+    <strong>RLHF uses Proximal Policy Optimisation (PPO).</strong>
+    Common wrong answers: Q-learning, A3C, DQN. PPO is chosen because it's stable, on-policy,
+    and the KL constraint integrates naturally. PPO is NOT the same as DPO.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 3 — DPO does NOT require a reward model</div>
+    <strong>DPO's defining advantage over RLHF is that it requires no separate reward model.</strong>
+    It trains directly on (prompt, chosen_response, rejected_response) triples using standard gradient descent.
+    However, it still requires a frozen reference model (the SFT model) for calibration.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 4 — QLoRA does not update quantised weights</div>
+    <strong>In QLoRA, the base model weights remain frozen in 4-bit throughout training.</strong>
+    Only the LoRA adapter matrices are updated — and they are kept in higher precision (bf16/fp16).
+    The quantised weights are never directly modified. This is the "Quantised" in QLoRA.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 5 — NF4 vs int4 quality difference</div>
+    <strong>NF4 is better than naive int4 for transformer weights</strong> because transformer weights
+    roughly follow a normal distribution. NF4 places quantisation levels at positions that minimise error
+    specifically for normally distributed values. Int4 places them at uniform intervals, which is suboptimal
+    for values concentrated near zero.
+  </div>
+
+  <!-- ═══ INTERACTIVE VIZ ══════════════════════════════════════ -->
+  <div class="section-head" style="margin-top:2rem">Interactive Visualisations</div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.875rem;margin-bottom:2rem">
+    <a class="viz-card" href="../viz/lora-decomposition.html">
+      <div class="viz-card-title">🔢 LoRA Decomposition</div>
+      <div class="viz-card-desc">Relevant to QLoRA — same LoRA mechanics on top of quantised weights.</div>
+    </a>
+    <a class="viz-card" href="../viz/temperature-sampling.html">
+      <div class="viz-card-title">🌡 Temperature Sampling</div>
+      <div class="viz-card-desc">Decoding strategies used in RLHF response generation and evaluation.</div>
+    </a>
+  </div>
+
+  <!-- ═══ PRACTICAL NOTES (collapsed) ══════════════════════════ -->
+  <div style="margin-bottom:2rem">
+    <button class="collapse-toggle">
+      <span class="c-arrow">▶</span>
+      Practical Notes &amp; Code Patterns
+      <span style="margin-left:.5rem;font-size:.75rem;color:var(--muted)">(useful for application — not needed to pass the assessment)</span>
+    </button>
+    <div class="collapse-body">
+
+      <div class="card" style="margin-bottom:1rem">
+        <div class="tag tag-blue">Common Gotchas</div>
+        <ul style="font-size:.875rem;line-height:1.7;padding-left:1.25rem;color:var(--text)">
+          <li><strong>DPO needs frozen reference model</strong> — ref_model must be the same SFT model, frozen throughout; without it training diverges</li>
+          <li><strong>4-bit quantisation requires bitsandbytes</strong> — currently NVIDIA CUDA only; no MPS (Mac) or CPU training support</li>
+          <li><strong>device_map='auto' incompatible with manual .to(device)</strong> — don't combine them; auto handles device placement</li>
+          <li><strong>KL penalty β in DPO</strong> — critical hyperparameter; too small = model diverges; too large = fine-tuning has no effect; range 0.01–0.5</li>
+          <li><strong>Merge LoRA before deployment</strong> — model.merge_and_unload() eliminates inference overhead</li>
+          <li><strong>Reward hacking is real</strong> — monitor both reward score AND human evaluation; reward score alone is insufficient</li>
+        </ul>
+      </div>
+
+      <div class="card" style="margin-bottom:1rem">
+        <div class="tag tag-blue">QLoRA Pattern</div>
+        <pre><code class="language-python">from transformers import BitsAndBytesConfig, AutoModelForCausalLM
+from peft import LoraConfig, get_peft_model
+import torch
+
+bnb_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_quant_type='nf4',           # NF4 > int4 for normal distributions
+    bnb_4bit_use_double_quant=True,      # quantise quantisation constants too
+    bnb_4bit_compute_dtype=torch.bfloat16
+)
+
+model = AutoModelForCausalLM.from_pretrained(
+    'meta-llama/Llama-2-7b-hf',
+    quantization_config=bnb_config,
+    device_map='auto'                    # distribute across available devices
+)
+
+lora_config = LoraConfig(r=64, lora_alpha=16, target_modules=['q_proj','v_proj'])
+model = get_peft_model(model, lora_config)
+# Only LoRA adapters train; base weights stay frozen in 4-bit</code></pre>
+      </div>
+
+      <div class="card" style="margin-bottom:.5rem">
+        <div class="tag tag-blue">DPO Pattern</div>
+        <pre><code class="language-python">from trl import DPOTrainer, DPOConfig
+
+# Dataset must have 'prompt', 'chosen', 'rejected' columns
+config = DPOConfig(beta=0.1, ...)
+
+trainer = DPOTrainer(
+    model=model,             # the SFT model to align
+    ref_model=ref_model,     # FROZEN copy of same SFT model
+    args=config,
+    train_dataset=dataset,
+    tokenizer=tokenizer,
+)
+trainer.train()</code></pre>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ STUDY GAMES (placeholder) ════════════════════════════ -->
+  <div class="section-head" style="margin-top:1rem">Study Games</div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.875rem;margin-bottom:2rem;opacity:.45">
+    <div class="card" style="cursor:not-allowed">
+      <div class="tag">🎮 RLHF Pipeline Sorter</div>
+      <div style="font-size:.875rem">Put the 3 RLHF stages in order and identify what's supervised vs RL — coming Phase 4</div>
+    </div>
+    <div class="card" style="cursor:not-allowed">
+      <div class="tag">⚖ RLHF vs DPO Discriminator</div>
+      <div style="font-size:.875rem">Identify which technique applies in different scenarios — coming Phase 4</div>
+    </div>
+  </div>
+
+  <!-- ═══ FULL NOTES LINK ══════════════════════════════════════ -->
+  <div class="card" style="margin-bottom:1.5rem;background:var(--surface2)">
+    <div style="font-size:.875rem;color:var(--muted)">
+      Full curated notes (Obsidian):
+      <a href="obsidian://open?vault=IBM%20Courses&file=claude-content%2F11-genai-advanced-finetuning-llms"
+         style="color:var(--blue)">
+        claude-content/11-genai-advanced-finetuning-llms →
+      </a>
+    </div>
+  </div>
+
+  <div class="footer">
+    <a href="../index.html">← VLE Home</a> ·
+    <a href="c10.html">← C10</a> ·
+    <a href="c12.html">C12 →</a> ·
+    <a href="../course-tracker.html" target="_blank">📊 Tracker</a>
+  </div>
+
+</div>
+</body>
+</html>

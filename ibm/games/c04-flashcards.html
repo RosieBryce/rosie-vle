@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>C4 Flashcards — Intro to Neural Networks & PyTorch · VLE</title>
+  <link rel="stylesheet" href="../shared.css">
+  <script src="../shared.js"></script>
+  <style>
+    .game-shell { max-width: 680px; margin: 0 auto; }
+
+    /* ── Intro ── */
+    .intro-card { text-align:center; padding:2.5rem 2rem; }
+    .intro-badge { display:inline-block; font-size:.75rem; font-weight:700; text-transform:uppercase;
+      letter-spacing:.08em; padding:.3rem .75rem; border-radius:99px;
+      background:var(--green-bg); color:var(--green); border:1px solid rgba(63,185,80,.3); margin-bottom:1.25rem; }
+    .intro-title { font-size:1.3rem; font-weight:700; letter-spacing:-.02em; margin-bottom:.5rem; }
+    .intro-meta { color:var(--muted); font-size:.875rem; margin-bottom:1.75rem; line-height:1.6; }
+    .btn-start { padding:.65rem 2rem; border-radius:8px; background:var(--green);
+      color:#fff; font-weight:600; font-size:.9rem; border:none; cursor:pointer; transition:opacity .15s; }
+    .btn-start:hover { opacity:.85; }
+
+    /* ── Progress ── */
+    .q-progress { margin-bottom:1.25rem; }
+    .q-progress-label { display:flex; justify-content:space-between; font-size:.78rem;
+      color:var(--muted); margin-bottom:.35rem; }
+    .q-bar { height:4px; background:var(--surface2); border-radius:99px; overflow:hidden; }
+    .q-bar-fill { height:100%; background:var(--green); border-radius:99px; transition:width .3s ease; }
+    .score-chips { display:flex; gap:.5rem; }
+    .chip { font-size:.75rem; font-weight:700; padding:.15rem .55rem; border-radius:99px; }
+    .chip-g { background:var(--green-bg); color:var(--green); }
+    .chip-y { background:var(--yellow-bg); color:var(--yellow); }
+    .chip-r { background:rgba(248,81,73,.1); color:var(--red); }
+
+    /* ── Flash card ── */
+    .flash-card { cursor:pointer; min-height:220px; position:relative;
+      border:1px solid var(--border); border-radius:12px; overflow:hidden;
+      background:var(--surface); transition:border-color .2s; }
+    .flash-card:hover { border-color:var(--blue); }
+    .flash-face { padding:2rem 1.75rem; }
+    .flash-face.front .face-label { color:var(--blue); }
+    .flash-face.back { border-top:1px solid var(--border); background:var(--surface2); display:none; }
+    .flash-face.back .face-label { color:var(--green); }
+    .face-label { font-size:.72rem; font-weight:700; text-transform:uppercase;
+      letter-spacing:.08em; margin-bottom:.75rem; }
+    .face-text { font-size:.925rem; line-height:1.65; }
+    .face-text code { background:var(--surface2); padding:.1em .35em; border-radius:4px;
+      font-size:.85em; color:var(--blue); font-family:"SFMono-Regular",Consolas,monospace; }
+    .flash-face.back .face-text code { background:var(--surface); }
+    .flash-hint { font-size:.75rem; color:var(--muted); text-align:center;
+      padding:.5rem; border-top:1px solid var(--border); }
+
+    /* ── Self-assess ── */
+    .assess-bar { display:flex; gap:.625rem; margin-top:1rem; }
+    .assess-btn { flex:1; padding:.6rem .5rem; border-radius:8px; font-size:.83rem; font-weight:600;
+      border:1px solid; cursor:pointer; transition:opacity .15s; }
+    .assess-btn:hover { opacity:.8; }
+    .assess-btn.got-it { background:var(--green-bg); border-color:rgba(63,185,80,.4); color:var(--green); }
+    .assess-btn.nearly { background:var(--yellow-bg); border-color:rgba(210,153,34,.4); color:var(--yellow); }
+    .assess-btn.missed { background:rgba(248,81,73,.08); border-color:rgba(248,81,73,.35); color:var(--red); }
+
+    /* ── Results ── */
+    .result-row { display:flex; gap:.75rem; justify-content:center; flex-wrap:wrap; margin-bottom:1.5rem; }
+    .result-badge { text-align:center; padding:1rem 1.5rem; border-radius:10px; min-width:90px; }
+    .result-badge .rnum { font-size:2rem; font-weight:700; }
+    .result-badge .rlbl { font-size:.75rem; font-weight:600; text-transform:uppercase;
+      letter-spacing:.06em; margin-top:.2rem; }
+    .result-badge.g { background:var(--green-bg); color:var(--green); }
+    .result-badge.y { background:var(--yellow-bg); color:var(--yellow); }
+    .result-badge.r { background:rgba(248,81,73,.08); color:var(--red); }
+    .results-actions { display:flex; gap:.75rem; justify-content:center; flex-wrap:wrap; margin-top:1.25rem; }
+    .btn-action { padding:.55rem 1.25rem; border-radius:8px; font-size:.875rem; font-weight:600;
+      cursor:pointer; border:1px solid var(--border); background:var(--surface2);
+      color:var(--text); text-decoration:none; transition:border-color .12s; }
+    .btn-action:hover { border-color:var(--green); color:var(--green); }
+    .btn-action.primary { background:var(--green); border-color:var(--green); color:#fff; }
+    .btn-action.primary:hover { opacity:.85; }
+  </style>
+</head>
+<body>
+<script>initNav('../'); localStorage.setItem('VLE_lastGame', 'C4 Flashcards — PyTorch');</script>
+
+<div class="container">
+  <div class="game-shell">
+
+    <div style="margin-bottom:1.25rem">
+      <div class="tag" style="background:var(--green-bg);color:var(--green);border:1px solid rgba(63,185,80,.3);margin-bottom:.4rem">
+        Study Game · Flashcards
+      </div>
+      <h1 style="font-size:1.3rem;font-weight:700;letter-spacing:-.02em">C4 Flashcards — Intro to Neural Networks &amp; PyTorch</h1>
+    </div>
+
+    <div id="game-root"></div>
+
+  </div>
+</div>
+
+<script>
+// ── Card bank ─────────────────────────────────────────────────────────────────
+const CARDS = [
+  {
+    q: "What is the fundamental difference between how PyTorch and Keras approach model training?",
+    a: "Keras abstracts training behind `model.fit()` — you hand over your data and it handles the loop, loss, backprop, and updates. PyTorch gives you explicit control: you write the training loop yourself, calling `zero_grad()`, `backward()`, and `step()` manually. This makes PyTorch more transparent and flexible (custom losses, gradient manipulation, research) but requires more code."
+  },
+  {
+    q: "What is autograd in PyTorch? What does it track, and when does it compute gradients?",
+    a: "Autograd is PyTorch's automatic differentiation engine. When you perform operations on tensors with `requires_grad=True`, PyTorch builds a computation graph recording every operation. Gradients are computed lazily — only when you call `.backward()` on a scalar loss. The graph is then traversed in reverse (backpropagation) and each tensor's `.grad` attribute is populated."
+  },
+  {
+    q: "Why do gradients accumulate in PyTorch by default rather than being reset each step? When is accumulation intentional?",
+    a: "PyTorch adds new gradients to `.grad` rather than overwriting it, so you must call `optimizer.zero_grad()` manually at the start of each batch. This is a deliberate design choice. Accumulation is intentional in gradient accumulation training: you forward-pass several small batches, accumulate their gradients, then take one optimiser step — simulating a larger effective batch size when GPU memory is limited."
+  },
+  {
+    q: "What is the conceptual difference between `model.train()` and `model.eval()`? Why does it matter for validation accuracy?",
+    a: "`model.train()` enables stochastic layers: Dropout randomly drops units, BatchNorm computes statistics from the current batch. `model.eval()` makes the model deterministic: Dropout passes all units through, BatchNorm uses its accumulated running statistics. Validating in train mode means Dropout randomly zeroes parts of your network on each forward pass, making validation metrics noisy and artificially low."
+  },
+  {
+    q: "What does `nn.CrossEntropyLoss` actually compute internally, and what does this mean for your model's output layer?",
+    a: "`CrossEntropyLoss` = LogSoftmax + NLLLoss. It applies softmax internally to convert raw logits to probabilities, takes the log, then computes the negative log likelihood. This means your model's final layer must output raw logits — no activation. If you add `nn.Softmax` to the model AND use CrossEntropyLoss, softmax is applied twice, producing incorrect probabilities and corrupted gradients."
+  },
+  {
+    q: "What is the key distinction between MSELoss and CrossEntropyLoss? What type of task does each suit?",
+    a: "MSELoss: measures average squared difference between predicted and actual values. Suited to regression — continuous output targets. CrossEntropyLoss: measures the predicted probability assigned to the correct class (penalises confident wrong predictions heavily). Suited to classification — discrete class labels. The deciding factor is whether the output is a continuous value or a class assignment."
+  },
+  {
+    q: "Why is `BCEWithLogitsLoss` preferred over applying sigmoid then `BCELoss` for binary classification?",
+    a: "Numerical stability. Sigmoid can produce outputs of exactly 0.0 or 1.0 for large inputs, and log(0) = -infinity — the loss becomes undefined. `BCEWithLogitsLoss` fuses sigmoid and binary cross-entropy into a single expression using the log-sum-exp trick, which is mathematically equivalent but avoids the numerical overflow. It also means your model outputs raw logits, consistent with the multi-class convention."
+  },
+  {
+    q: "What is the conceptual contract of `nn.Module`? What belongs in `__init__` vs `forward`?",
+    a: "`__init__`: declare and register all learnable components (layers, sub-modules) as instance attributes. This is how PyTorch discovers what parameters the model owns. `forward`: define the computation — how inputs flow through those components to produce outputs. PyTorch uses `forward` when you call `model(x)`. Computation does not belong in `__init__`; learnable components do not belong in `forward`."
+  },
+  {
+    q: "What does `DataLoader` provide that iterating directly over a `Dataset` does not?",
+    a: "DataLoader adds: batching (groups samples into tensors of shape [batch, ...]), shuffling (random order each epoch, important for training), parallel data loading (`num_workers` loads batches in background processes), and automatic collation (stacks individual samples into batch tensors). A plain Dataset only knows how to return one sample by index."
+  },
+  {
+    q: "Why must the training DataLoader use `shuffle=True`, and the validation DataLoader use `shuffle=False`?",
+    a: "Training: shuffling breaks the order correlation between consecutive batches — if samples are ordered by class or time, unshuffled batches are biased and gradient updates pull the model inconsistently. Validation: order doesn't affect the computed metrics (you're averaging over all samples), and deterministic order makes results reproducible and easier to compare across runs."
+  },
+  {
+    q: "What is the difference between saving a model's state dict and saving the full model object?",
+    a: "State dict: a plain Python dictionary mapping layer names to parameter tensors. Portable — loading it only requires that you construct the model architecture separately. The standard, preferred approach. Full model: serialises the model architecture and weights together using pickle. Fragile — breaks if the class is moved, renamed, or the Python/PyTorch version changes. State dict is preferred for anything that will be reloaded later."
+  },
+  {
+    q: "What is the difference between `torch.no_grad()` and `model.eval()`, and do you need both during inference?",
+    a: "They do different things. `model.eval()` changes layer behaviour — Dropout is disabled, BatchNorm uses running statistics. This affects the values computed. `torch.no_grad()` tells PyTorch not to build a computation graph or store intermediate activations for gradient computation. This saves memory and speeds up the forward pass. You need both: `.eval()` for correct outputs, `no_grad()` for efficiency."
+  }
+];
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let queue = [];
+let currentIdx = 0;
+let gotIt = 0, nearly = 0, missedCount = 0;
+let missedIndices = [];
+let revealed = false;
+let isReplay = false;
+
+const root = document.getElementById('game-root');
+
+function showIntro() {
+  root.innerHTML = `
+    <div class="card intro-card">
+      <div class="intro-badge">Flashcard Game</div>
+      <div class="intro-title">Course 4 — Intro to Neural Networks &amp; PyTorch</div>
+      <div class="intro-meta">
+        ${CARDS.length} cards · ~8 minutes<br>
+        Covers: autograd, training loop design, loss function rationale, DataLoader, model architecture concepts.<br>
+        Theory-weighted — explain the concept, not just the symptom.
+      </div>
+      <button class="btn-start" onclick="startGame()">Start →</button>
+    </div>`;
+}
+
+function startGame() {
+  queue = CARDS.map((_, i) => i);
+  currentIdx = 0; gotIt = 0; nearly = 0; missedCount = 0;
+  missedIndices = []; revealed = false; isReplay = false;
+  showCard();
+}
+
+function showCard() {
+  revealed = false;
+  const card = CARDS[queue[currentIdx]];
+  const total = queue.length;
+  const pct = Math.round((currentIdx / total) * 100);
+
+  root.innerHTML = `
+    <div class="q-progress">
+      <div class="q-progress-label">
+        <span>${isReplay ? 'Replay — ' : ''}Card ${currentIdx + 1} of ${total}</span>
+        <div class="score-chips">
+          <span class="chip chip-g">✓ ${gotIt}</span>
+          <span class="chip chip-y">~ ${nearly}</span>
+          <span class="chip chip-r">✗ ${missedCount}</span>
+        </div>
+      </div>
+      <div class="q-bar"><div class="q-bar-fill" style="width:${pct}%"></div></div>
+    </div>
+
+    <div class="flash-card" id="flash-card" onclick="revealCard()">
+      <div class="flash-face front">
+        <div class="face-label">Question</div>
+        <div class="face-text">${escHtml(card.q)}</div>
+      </div>
+      <div class="flash-hint">Click to reveal answer</div>
+    </div>
+
+    <div id="assess-area"></div>`;
+}
+
+function revealCard() {
+  if (revealed) return;
+  revealed = true;
+  const card = CARDS[queue[currentIdx]];
+
+  document.querySelector('.flash-hint').style.display = 'none';
+
+  const backDiv = document.createElement('div');
+  backDiv.className = 'flash-face back';
+  backDiv.style.display = 'block';
+  backDiv.innerHTML = `<div class="face-label">Answer</div><div class="face-text">${formatAnswer(card.a)}</div>`;
+  document.getElementById('flash-card').appendChild(backDiv);
+
+  document.getElementById('assess-area').innerHTML = `
+    <div class="assess-bar">
+      <button class="assess-btn got-it" onclick="assess('got')">✓ Got it</button>
+      <button class="assess-btn nearly" onclick="assess('nearly')">~ Nearly</button>
+      <button class="assess-btn missed" onclick="assess('missed')">✗ Missed it</button>
+    </div>`;
+}
+
+function assess(result) {
+  const originalIdx = queue[currentIdx];
+  if (result === 'got') gotIt++;
+  else if (result === 'nearly') nearly++;
+  else { missedCount++; if (!isReplay) missedIndices.push(originalIdx); }
+
+  currentIdx++;
+  if (currentIdx >= queue.length) showResults();
+  else showCard();
+}
+
+function showResults() {
+  const total = gotIt + nearly + missedCount;
+  const replayBtn = missedIndices.length > 0
+    ? `<button class="btn-action primary" onclick="startReplay()">Replay ${missedIndices.length} missed</button>`
+    : '';
+
+  let histHtml = '';
+  if (!isReplay) {
+    const histKey = 'VLE_scores_c04_flashcards';
+    let hist = JSON.parse(localStorage.getItem(histKey) || '[]');
+    hist.unshift({got: gotIt, total: total});
+    if (hist.length > 3) hist = hist.slice(0, 3);
+    localStorage.setItem(histKey, JSON.stringify(hist));
+    if (hist.length > 1) {
+      histHtml = '<div style="font-size:.8rem;color:var(--muted);margin-top:.5rem">Previous: '
+        + hist.slice(1).map(function(h) { return 'Got ' + h.got + '/' + h.total; }).join(' · ')
+        + '</div>';
+    }
+  }
+
+  root.innerHTML = `
+    <div class="card intro-card">
+      <div class="intro-title" style="margin-bottom:1rem">Session complete</div>
+      <div class="result-row">
+        <div class="result-badge g"><div class="rnum">${gotIt}</div><div class="rlbl">Got it</div></div>
+        <div class="result-badge y"><div class="rnum">${nearly}</div><div class="rlbl">Nearly</div></div>
+        <div class="result-badge r"><div class="rnum">${missedCount}</div><div class="rlbl">Missed</div></div>
+      </div>
+      <div class="intro-meta">${sessionMsg(gotIt, total)}${histHtml}</div>
+      <div class="results-actions">
+        ${replayBtn}
+        <button class="btn-action" onclick="startGame()">Restart</button>
+        <a class="btn-action" href="index.html">← Games Hub</a>
+        <a class="btn-action" href="../courses/c04.html">← Back to C4</a>
+        <a class="btn-action" href="c04-quiz.html">Try the quiz →</a>
+      </div>
+    </div>`;
+}
+
+function startReplay() {
+  queue = [...missedIndices];
+  currentIdx = 0; gotIt = 0; nearly = 0; missedCount = 0;
+  missedIndices = []; revealed = false; isReplay = true;
+  showCard();
+}
+
+function sessionMsg(got, total) {
+  const pct = total > 0 ? got / total : 0;
+  if (pct >= 0.8) return "Solid — the PyTorch patterns are landing. Try the quiz to test discrimination under pressure.";
+  if (pct >= 0.5) return "Good start — replay the missed cards, then try the quiz.";
+  return "These patterns need more reps. Replay the missed cards and check the Core Theory section in C4.";
+}
+
+function formatAnswer(text) {
+  // Convert backtick code spans, then newlines to <br>
+  return escHtml(text)
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\n/g, '<br>');
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+showIntro();
+</script>
+</body>
+</html>

@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>C4 True/False Sprint — Neural Networks & PyTorch · VLE</title>
+  <link rel="stylesheet" href="../shared.css">
+  <script src="../shared.js"></script>
+  <style>
+    .game-shell { max-width: 680px; margin: 0 auto; }
+
+    .intro-card { text-align:center; padding:2.5rem 2rem; }
+    .intro-badge { display:inline-block; font-size:.75rem; font-weight:700; text-transform:uppercase;
+      letter-spacing:.08em; padding:.3rem .75rem; border-radius:99px;
+      background:var(--yellow-bg); color:var(--yellow); border:1px solid rgba(210,153,34,.3); margin-bottom:1.25rem; }
+    .intro-title { font-size:1.3rem; font-weight:700; letter-spacing:-.02em; margin-bottom:.5rem; }
+    .intro-meta { color:var(--muted); font-size:.875rem; margin-bottom:1.75rem; line-height:1.6; }
+    .btn-start { padding:.65rem 2rem; border-radius:8px;
+      background:var(--yellow); color:#000; font-weight:700; font-size:.9rem;
+      border:none; cursor:pointer; transition:opacity .15s; }
+    .btn-start:hover { opacity:.85; }
+
+    .sprint-header { display:flex; justify-content:space-between; align-items:center;
+      margin-bottom:1.25rem; }
+    .sprint-counter { font-size:.875rem; color:var(--muted); font-weight:600; }
+    .sprint-timer { font-size:.875rem; font-weight:700; font-variant-numeric:tabular-nums;
+      color:var(--yellow); }
+    .score-chips { display:flex; gap:.5rem; }
+    .chip { font-size:.75rem; font-weight:700; padding:.15rem .55rem; border-radius:99px; }
+    .chip-g { background:var(--green-bg); color:var(--green); }
+    .chip-r { background:rgba(248,81,73,.1); color:var(--red); }
+
+    .q-bar { height:4px; background:var(--surface2); border-radius:99px; overflow:hidden; margin-bottom:1.25rem; }
+    .q-bar-fill { height:100%; background:var(--yellow); border-radius:99px; transition:width .3s ease; }
+
+    .statement-card { background:var(--surface); border:2px solid var(--border); border-radius:12px;
+      padding:2rem 1.75rem; margin-bottom:1rem; transition:border-color .2s; min-height:120px;
+      display:flex; align-items:center; }
+    .statement-card.correct-border { border-color:var(--green); }
+    .statement-card.wrong-border   { border-color:var(--red); }
+    .statement-text { font-size:1rem; line-height:1.6; font-weight:500; }
+    .statement-text code { background:var(--surface2); padding:.1em .35em; border-radius:4px;
+      font-size:.85em; color:var(--blue); font-family:"SFMono-Regular",Consolas,monospace; }
+
+    .tf-buttons { display:grid; grid-template-columns:1fr 1fr; gap:.75rem; margin-bottom:1rem; }
+    .tf-btn { padding:1rem; border-radius:10px; font-size:1rem; font-weight:700;
+      border:2px solid; cursor:pointer; transition:opacity .15s, background .12s; }
+    .tf-btn:disabled { cursor:default; opacity:.45; }
+    .tf-btn.true-btn  { background:var(--green-bg); border-color:rgba(63,185,80,.4); color:var(--green); }
+    .tf-btn.false-btn { background:rgba(248,81,73,.08); border-color:rgba(248,81,73,.35); color:var(--red); }
+    .tf-btn.true-btn:hover:not(:disabled)  { background:rgba(63,185,80,.2); }
+    .tf-btn.false-btn:hover:not(:disabled) { background:rgba(248,81,73,.15); }
+
+    .feedback-row { display:flex; align-items:flex-start; gap:.75rem; padding:.875rem 1rem;
+      border-radius:8px; font-size:.875rem; line-height:1.55; margin-bottom:.75rem; display:none; }
+    .feedback-row.fb-correct { background:var(--green-bg); border:1px solid rgba(63,185,80,.3); }
+    .feedback-row.fb-wrong   { background:rgba(248,81,73,.07); border:1px solid rgba(248,81,73,.3); }
+    .fb-icon { font-size:1rem; flex-shrink:0; margin-top:.1rem; }
+    .fb-text code { background:rgba(0,0,0,.15); padding:.1em .3em; border-radius:3px;
+      font-size:.85em; font-family:"SFMono-Regular",Consolas,monospace; }
+
+    .btn-next { padding:.6rem 1.5rem; border-radius:8px;
+      background:var(--yellow); color:#000; font-weight:700; font-size:.875rem;
+      border:none; cursor:pointer; transition:opacity .15s; display:none; }
+    .btn-next:hover { opacity:.85; }
+
+    .result-row { display:flex; gap:.75rem; justify-content:center; flex-wrap:wrap; margin-bottom:1.5rem; }
+    .result-badge { text-align:center; padding:1rem 1.5rem; border-radius:10px; min-width:90px; }
+    .result-badge .rnum { font-size:2rem; font-weight:700; }
+    .result-badge .rlbl { font-size:.75rem; font-weight:600; text-transform:uppercase;
+      letter-spacing:.06em; margin-top:.2rem; }
+    .result-badge.g { background:var(--green-bg); color:var(--green); }
+    .result-badge.r { background:rgba(248,81,73,.08); color:var(--red); }
+    .result-badge.y { background:var(--yellow-bg); color:var(--yellow); }
+    .results-actions { display:flex; gap:.75rem; justify-content:center; flex-wrap:wrap; margin-top:1.25rem; }
+    .btn-action { padding:.55rem 1.25rem; border-radius:8px; font-size:.875rem; font-weight:600;
+      cursor:pointer; border:1px solid var(--border); background:var(--surface2);
+      color:var(--text); text-decoration:none; transition:border-color .12s; }
+    .btn-action:hover { border-color:var(--yellow); color:var(--yellow); }
+    .btn-action.primary { background:var(--yellow); border-color:var(--yellow); color:#000; }
+    .btn-action.primary:hover { opacity:.85; }
+  </style>
+</head>
+<body>
+<script>initNav('../'); localStorage.setItem('VLE_lastGame', 'C4 True/False Sprint — PyTorch');</script>
+
+<div class="container">
+  <div class="game-shell">
+
+    <div style="margin-bottom:1.25rem">
+      <div class="tag" style="background:var(--yellow-bg);color:var(--yellow);border:1px solid rgba(210,153,34,.3);margin-bottom:.4rem">
+        Study Game · True/False Sprint
+      </div>
+      <h1 style="font-size:1.3rem;font-weight:700;letter-spacing:-.02em">C4 True/False Sprint — Neural Networks &amp; PyTorch</h1>
+    </div>
+
+    <div id="game-root"></div>
+
+  </div>
+</div>
+
+<script>
+const STATEMENTS = [
+  // TRUE statements
+  {
+    text: "PyTorch gradients accumulate into `.grad` by default and are not reset between batches.",
+    answer: true,
+    explanation: "By design, PyTorch adds new gradients to .grad rather than replacing them. This enables gradient accumulation training — but it means you must explicitly call optimizer.zero_grad() before each batch's forward pass. Without it, every batch's gradient update is contaminated by gradients from all previous batches."
+  },
+  {
+    text: "`optimizer.zero_grad()` must be called before the forward pass — not after `optimizer.step()`.",
+    answer: true,
+    explanation: "The correct order is: zero_grad → forward → backward → step. If you call zero_grad after step, the current batch's gradients persist until the start of the next batch, where they get cleared — but by then those gradients have already incorrectly contributed to the previous step."
+  },
+  {
+    text: "`nn.CrossEntropyLoss` applies softmax internally — the model's output layer must produce raw logits.",
+    answer: true,
+    explanation: "CrossEntropyLoss = LogSoftmax + NLLLoss. It converts raw logits to log-probabilities internally. If you also add nn.Softmax to the model output, softmax is applied twice. The doubly-squashed probabilities produce near-uniform distributions, making gradients vanish and training fail silently."
+  },
+  {
+    text: "`model.eval()` disables Dropout, making it pass all activations through unchanged.",
+    answer: true,
+    explanation: "During training, Dropout randomly zeroes a fraction of activations, acting as regularisation. model.eval() disables this — all neurons are active and outputs are passed through unchanged. Without it, validation metrics are noisy and artificially low because the network is randomly degraded on every forward pass."
+  },
+  {
+    text: "`torch.no_grad()` prevents PyTorch from building the computation graph, saving memory and time.",
+    answer: true,
+    explanation: "During training, every operation on tracked tensors stores intermediate activations in the computation graph (required for backprop). torch.no_grad() disables this: no graph is built, no intermediates are stored. This substantially reduces memory usage and speeds up the forward pass during validation and inference."
+  },
+  {
+    text: "A state dict saves only model weights — you must separately construct the model architecture before loading.",
+    answer: true,
+    explanation: "state_dict() returns {layer_name: tensor} — just the learned parameters, no architecture. To restore the model: (1) construct it (model = MyModel(...)), then (2) call model.load_state_dict(torch.load('weights.pt')). This two-step requirement is why state dicts are more portable than pickle-serialised full models."
+  },
+  {
+    text: "Storing layers in a plain Python list does NOT register their parameters in `model.parameters()`.",
+    answer: true,
+    explanation: "PyTorch discovers parameters by scanning a module's attributes for registered nn.Module instances. A plain list stores layers as a regular Python object — PyTorch never sees them. Those layers' weights won't appear in model.parameters(), won't be updated by the optimiser, and won't appear in state_dict(). Use nn.ModuleList instead."
+  },
+  {
+    text: "The validation DataLoader should use `shuffle=False` to ensure reproducible evaluation.",
+    answer: true,
+    explanation: "For validation, order doesn't affect computed metrics — you're averaging over all samples regardless. shuffle=False ensures the same order on every run, making results comparable across experiments. Training DataLoaders should shuffle to break order correlation; validation should be deterministic."
+  },
+  {
+    text: "`BCEWithLogitsLoss` is numerically more stable than applying sigmoid then `BCELoss` for the same task.",
+    answer: true,
+    explanation: "When inputs are large, sigmoid saturates to exactly 1.0 or 0.0. Taking log(0) = −∞ makes the loss undefined. BCEWithLogitsLoss fuses sigmoid and BCE into log(1 + exp(−x)) for positive targets — mathematically equivalent but computed via the log-sum-exp trick, remaining stable for any finite logit."
+  },
+  {
+    text: "Accumulating `total_loss += loss` without `.item()` causes a memory leak that grows with each batch.",
+    answer: true,
+    explanation: "loss is a tensor connected to the computation graph that produced it. Accumulating tensors keeps all those graphs alive — they're never freed because the accumulated sum holds a reference. .item() extracts the Python float and releases the tensor and its graph. Without it, memory usage grows with every batch and eventually causes an OOM crash."
+  },
+  // FALSE statements
+  {
+    text: "`model.eval()` and `torch.no_grad()` are equivalent — both disable gradient computation.",
+    answer: false,
+    explanation: "False. They do completely different things. model.eval() changes layer behaviour: Dropout is disabled, BatchNorm uses running statistics. torch.no_grad() tells PyTorch not to build a computation graph. model.eval() does not affect gradient tracking; torch.no_grad() does not affect Dropout or BatchNorm. You need both during inference."
+  },
+  {
+    text: "Calling `loss.backward()` resets the gradient buffer before computing new gradients.",
+    answer: false,
+    explanation: "False. backward() ADDS to .grad — it never resets it. This is PyTorch's deliberate design: gradients accumulate so you can implement gradient accumulation training. You must explicitly call optimizer.zero_grad() to clear the buffer. Forgetting this is the most common PyTorch mistake."
+  },
+  {
+    text: "You can add `nn.Softmax` to your model and safely use `nn.CrossEntropyLoss` — they complement each other.",
+    answer: false,
+    explanation: "False. This is the double-softmax trap. CrossEntropyLoss applies LogSoftmax internally, expecting raw logits. If your model also applies Softmax, the loss receives an already-valid probability distribution and squashes it again — pushing it toward uniform for large values. Gradients become wrong and training fails silently."
+  },
+  {
+    text: "Saving the full model object with pickle is more portable than saving the state dict.",
+    answer: false,
+    explanation: "False. Saving the full model with pickle serialises the class definition's file location. If you rename the class, move it to a different module, or change Python/PyTorch versions, loading breaks. State dicts are plain {str: tensor} dictionaries — framework-agnostic and stable. Always save state_dict()."
+  },
+  {
+    text: "`MSELoss` is appropriate for multi-class classification because it measures how far predictions are from targets.",
+    answer: false,
+    explanation: "False. MSELoss treats class labels as continuous values — it would compute (predicted - class_index)² which treats class 2 as twice as far from class 0 as class 1, an arbitrary and meaningless distance. CrossEntropyLoss is correct for classification: it measures the predicted probability for the true class and strongly penalises confident wrong predictions."
+  },
+  {
+    text: "DataLoader's `shuffle=True` shuffles the dataset once before the first epoch and keeps that order.",
+    answer: false,
+    explanation: "False. shuffle=True re-shuffles independently each epoch. A single shuffle before training would still expose the model to the same (shuffled but fixed) order across all epochs — and if training data has any class or time ordering, a single shuffle doesn't fully remove the correlation. Independent per-epoch shuffling ensures each epoch sees a different random order."
+  },
+  {
+    text: "`torch.no_grad()` disables Dropout, so there's no need to call `model.eval()` separately.",
+    answer: false,
+    explanation: "False. torch.no_grad() has no effect on Dropout whatsoever. It only disables computation graph building. Dropout still randomly zeroes activations at the same rate inside a no_grad context. You must call model.eval() to disable Dropout and switch BatchNorm to running statistics. Both calls are needed for correct inference."
+  },
+  {
+    text: "`tensor.view()` always works regardless of the tensor's memory layout.",
+    answer: false,
+    explanation: "False. view() requires contiguous memory. After operations like .permute(), .transpose(), or .expand(), a tensor's memory may be non-contiguous. Calling .view() on such a tensor raises: RuntimeError: view size is not compatible with input tensor's size and stride. Use .reshape() instead — it calls .contiguous() internally if the tensor isn't already contiguous."
+  },
+  {
+    text: "The training DataLoader should use `shuffle=False` to keep training stable and reproducible.",
+    answer: false,
+    explanation: "False. Shuffling is essential for training, not harmful. Without shuffling, if data is ordered by class or time, each batch is biased — gradient updates pull the model inconsistently toward whichever class dominated recent batches. Shuffling ensures each batch is a representative sample of the full dataset. Validation should use shuffle=False; training should shuffle."
+  },
+  {
+    text: "The six steps of the PyTorch training loop can be reordered without affecting training correctness.",
+    answer: false,
+    explanation: "False. The order is strict: zero_grad must precede the forward pass (so previous gradients don't corrupt the new batch); forward must precede loss computation (you need predictions); backward must follow loss computation (you need a scalar); step must follow backward (it reads .grad values). Reordering any step — e.g. calling zero_grad after step — causes stale gradients to corrupt the next batch."
+  }
+];
+
+let currentIdx = 0;
+let correct = 0;
+let wrong = 0;
+let answered = false;
+let startTime = null;
+let timerInterval = null;
+let activeStatements = [];
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+const root = document.getElementById('game-root');
+
+function showIntro() {
+  root.innerHTML = `
+    <div class="card intro-card">
+      <div class="intro-badge">True/False Sprint</div>
+      <div class="intro-title">Course 4 — Neural Networks &amp; PyTorch</div>
+      <div class="intro-meta">
+        ${STATEMENTS.length} statements · timed · ~8 minutes<br>
+        10 true statements, 10 common misconceptions.<br>
+        Read carefully — the false ones are designed to sound plausible.
+      </div>
+      <button class="btn-start" onclick="startGame()">Start →</button>
+    </div>`;
+}
+
+function startGame() {
+  currentIdx = 0; correct = 0; wrong = 0;
+  activeStatements = shuffle(STATEMENTS);
+  startTime = Date.now();
+  timerInterval = setInterval(updateTimer, 1000);
+  showStatement();
+}
+
+function updateTimer() {
+  const el = document.getElementById('timer');
+  if (!el) return;
+  el.textContent = formatTime(Date.now() - startTime);
+}
+
+function formatTime(ms) {
+  const s = Math.floor(ms / 1000);
+  const m = Math.floor(s / 60);
+  return `${m}:${String(s % 60).padStart(2, '0')}`;
+}
+
+function showStatement() {
+  answered = false;
+  const s = activeStatements[currentIdx];
+  const pct = Math.round((currentIdx / activeStatements.length) * 100);
+
+  root.innerHTML = `
+    <div class="sprint-header">
+      <span class="sprint-counter">${currentIdx + 1} / ${activeStatements.length}</span>
+      <div class="score-chips">
+        <span class="chip chip-g">✓ ${correct}</span>
+        <span class="chip chip-r">✗ ${wrong}</span>
+      </div>
+      <span class="sprint-timer" id="timer">${formatTime(Date.now() - startTime)}</span>
+    </div>
+    <div class="q-bar"><div class="q-bar-fill" style="width:${pct}%"></div></div>
+
+    <div class="statement-card" id="stmt-card">
+      <div class="statement-text">${formatText(escHtml(s.text))}</div>
+    </div>
+
+    <div class="tf-buttons">
+      <button class="tf-btn true-btn"  onclick="answer(true)">✓ True</button>
+      <button class="tf-btn false-btn" onclick="answer(false)">✗ False</button>
+    </div>
+
+    <div class="feedback-row" id="feedback">
+      <span class="fb-icon" id="fb-icon"></span>
+      <span class="fb-text" id="fb-text"></span>
+    </div>
+
+    <button class="btn-next" id="btn-next" onclick="nextStatement()">Next →</button>`;
+}
+
+function answer(userAnswer) {
+  if (answered) return;
+  answered = true;
+
+  const s = activeStatements[currentIdx];
+  const isCorrect = userAnswer === s.answer;
+  if (isCorrect) correct++; else wrong++;
+
+  const card = document.getElementById('stmt-card');
+  card.classList.add(isCorrect ? 'correct-border' : 'wrong-border');
+
+  document.querySelectorAll('.tf-btn').forEach(b => b.disabled = true);
+
+  const fb = document.getElementById('feedback');
+  const correctLabel = s.answer ? 'True' : 'False';
+  fb.className = `feedback-row ${isCorrect ? 'fb-correct' : 'fb-wrong'}`;
+  document.getElementById('fb-icon').textContent = isCorrect ? '✓' : '✗';
+  document.getElementById('fb-text').innerHTML =
+    `<strong>${isCorrect ? 'Correct' : `Wrong — this is ${correctLabel}`}.</strong> ${formatText(escHtml(s.explanation))}`;
+  fb.style.display = 'flex';
+
+  document.getElementById('btn-next').style.display = 'inline-block';
+}
+
+function nextStatement() {
+  currentIdx++;
+  if (currentIdx >= activeStatements.length) showResults();
+  else showStatement();
+}
+
+function showResults() {
+  clearInterval(timerInterval);
+  const elapsed = formatTime(Date.now() - startTime);
+  const total = activeStatements.length;
+  const pct = correct / total;
+  let msg;
+  if (pct >= 0.9) msg = "Excellent — you're reliably distinguishing true statements from plausible misconceptions. Strong assessment readiness.";
+  else if (pct >= 0.75) msg = "Good. Review the explanations for statements you missed — pay attention to which ones were false.";
+  else msg = "Several misconceptions slipped through. Work through the explanations and retry — these are common exam traps.";
+
+  const histKey = 'VLE_scores_c04_tf';
+  let hist = JSON.parse(localStorage.getItem(histKey) || '[]');
+  hist.unshift({score: correct, total: total});
+  if (hist.length > 3) hist = hist.slice(0, 3);
+  localStorage.setItem(histKey, JSON.stringify(hist));
+  const histHtml = hist.length > 1
+    ? '<div style="font-size:.8rem;color:var(--muted);margin-top:.5rem">Previous: '
+      + hist.slice(1).map(function(h) { return h.score + '/' + h.total; }).join(' · ')
+      + '</div>'
+    : '';
+
+  root.innerHTML = `
+    <div class="card intro-card">
+      <div class="intro-title" style="margin-bottom:1rem">Sprint complete</div>
+      <div class="result-row">
+        <div class="result-badge g"><div class="rnum">${correct}</div><div class="rlbl">Correct</div></div>
+        <div class="result-badge r"><div class="rnum">${wrong}</div><div class="rlbl">Wrong</div></div>
+        <div class="result-badge y"><div class="rnum">${elapsed}</div><div class="rlbl">Time</div></div>
+      </div>
+      <div class="intro-meta">${msg}${histHtml}</div>
+      <div class="results-actions">
+        <button class="btn-action primary" onclick="startGame()">Play again</button>
+        <a class="btn-action" href="index.html">← Games Hub</a>
+        <a class="btn-action" href="../courses/c04.html">← Back to C4</a>
+        <a class="btn-action" href="c04-quiz.html">Try the quiz →</a>
+      </div>
+    </div>`;
+}
+
+function formatText(text) {
+  return text.replace(/`([^`]+)`/g, '<code>$1</code>');
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+showIntro();
+</script>
+</body>
+</html>

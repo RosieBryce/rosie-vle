@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>C9 — Generative AI Language Modeling with Transformers · VLE</title>
+  <link rel="stylesheet" href="../shared.css">
+  <script src="../shared.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</head>
+<body>
+<script>initNav('../');</script>
+
+<div class="container">
+
+  <!-- ═══ HEADER ══════════════════════════════════════════════ -->
+  <div style="margin-bottom:1.75rem">
+    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem;flex-wrap:wrap">
+      <span style="color:var(--muted);font-size:.83rem">Course 9 of 13</span>
+      <span class="badge badge-pending"><span class="dot dot-m"></span>Not Started</span>
+      <span class="badge badge-pending">9 hours</span>
+    </div>
+    <h1 style="font-size:1.5rem;font-weight:700;letter-spacing:-.02em;margin-bottom:.375rem">
+      Generative AI Language Modeling with Transformers
+    </h1>
+    <p style="color:var(--muted);font-size:.875rem;line-height:1.55">
+      GPT architecture, autoregressive generation, and decoding strategies.
+      This is where you understand how text generation actually works — from causal masking to temperature sampling.
+      The decoding strategy section has lots of quiz content.
+    </p>
+  </div>
+
+  <!-- ═══ FLIPPED CLASSROOM ════════════════════════════════════ -->
+  <div class="flip-card" style="margin-bottom:2rem">
+    <div class="flip-header">
+      <span>📖</span>
+      Flipped Classroom — Before You Watch
+    </div>
+
+    <div class="flip-sublabel">Prime your thinking — bring these questions into the lectures</div>
+    <ul class="flip-questions">
+      <li>
+        <span class="flip-q-num">1</span>
+        <span>Greedy decoding always picks the single most probable next token at each step. Can you construct a simple example where this produces a worse overall sequence than a different strategy? What property of probability spaces makes greedy search locally optimal but globally suboptimal?</span>
+      </li>
+      <li>
+        <span class="flip-q-num">2</span>
+        <span>Temperature scaling divides logits by a temperature parameter T. Think through: what happens to the probability distribution when T → 0? When T → ∞? And when T = 1?</span>
+      </li>
+      <li>
+        <span class="flip-q-num">3</span>
+        <span>Top-k sampling fixes the candidate pool to the k highest probability tokens regardless of the actual probability distribution. Why might this be problematic when the distribution is very peaked (one token has 95% probability) vs very flat?</span>
+      </li>
+    </ul>
+
+    <div class="flip-sublabel">Watch for…</div>
+    <div class="watch-for">
+      The key difference between top-k (fixed pool size) and top-p / nucleus (dynamic pool based on cumulative probability).
+      Top-p is generally preferred in practice because it adapts to the distribution shape.
+      Also: the distinction between <code>do_sample=False</code> (overrides temperature/top_p entirely) and sampling with <code>temperature=1.0</code>.
+    </div>
+  </div>
+
+  <!-- ═══ CORE THEORY ══════════════════════════════════════════ -->
+  <div class="section-head">
+    Core Theory
+    <span class="section-hint">Assessment priority — decoding strategies are heavily tested</span>
+  </div>
+
+  <!-- 1. Autoregressive Generation -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">Generation</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">Autoregressive Generation &amp; Causal Masking</h3>
+    <p style="font-size:.875rem;line-height:1.6;margin-bottom:.75rem">
+      Decoder-only models (GPT family) generate text one token at a time. Each new token is conditioned on all previous:
+    </p>
+    <div style="background:var(--surface2);border-radius:8px;padding:.875rem;font-size:.83rem;font-family:monospace;line-height:1.8;margin-bottom:.75rem;border:1px solid var(--border)">
+      P(t₁, t₂, ..., tₙ) = P(t₁) × P(t₂|t₁) × P(t₃|t₁,t₂) × ...
+    </div>
+    <p style="font-size:.875rem;line-height:1.6;margin-bottom:.75rem">
+      Causal masking enforces this — token i cannot attend to token j &gt; i (future tokens).
+      This upper-triangular mask enables parallel training (all positions computed at once) while maintaining the autoregressive property.
+    </p>
+    <div class="insight ins-info">
+      <strong>Each forward pass produces a probability distribution over the entire vocabulary.</strong>
+      A decoding strategy decides which token to emit. This choice has a huge effect on the quality and character of generated text.
+    </div>
+  </div>
+
+  <!-- 2. Decoding Strategies -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">Decoding Strategies</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">Decoding Strategies — Know Each One Cold</h3>
+    <div style="overflow-x:auto;margin-bottom:.75rem">
+      <table class="decision-table">
+        <thead><tr><th>Strategy</th><th>How it works</th><th>Deterministic?</th><th>Use when</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Greedy</strong></td>
+            <td>Always pick highest-probability token</td>
+            <td style="color:var(--green)">Yes</td>
+            <td>Speed; simple structured output</td>
+          </tr>
+          <tr>
+            <td><strong>Beam search</strong></td>
+            <td>Keep top-k sequences at each step</td>
+            <td style="color:var(--green)">Yes</td>
+            <td>Translation, summarisation (conservative)</td>
+          </tr>
+          <tr>
+            <td><strong>Sampling</strong></td>
+            <td>Sample randomly from full distribution</td>
+            <td style="color:var(--red)">No</td>
+            <td>Creative tasks; diverse outputs needed</td>
+          </tr>
+          <tr>
+            <td><strong>Top-k</strong></td>
+            <td>Sample from top k tokens only</td>
+            <td style="color:var(--red)">No</td>
+            <td>Reduce incoherence while adding diversity</td>
+          </tr>
+          <tr>
+            <td><strong>Top-p (nucleus)</strong></td>
+            <td>Sample from smallest set with cumulative prob ≥ p</td>
+            <td style="color:var(--red)">No</td>
+            <td>General generation — preferred over top-k</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:.83rem;color:var(--muted)">
+      <strong>Beam size=1 = greedy.</strong> Top-p=1.0 = sample from full vocabulary (no restriction). Top-p=0.0 ≈ greedy.
+      Typical production settings: <code>temperature=0.7, top_p=0.9</code>.
+    </p>
+  </div>
+
+  <!-- 3. Temperature -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">Temperature</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">Temperature Scaling — The Creativity Dial</h3>
+    <p style="font-size:.875rem;line-height:1.6;margin-bottom:.75rem">
+      Temperature T divides the raw logits before softmax: <code>probs = softmax(logits / T)</code>
+    </p>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:.75rem">
+      <div style="background:var(--surface2);border-radius:8px;padding:.875rem;border-left:3px solid var(--green);text-align:center">
+        <div style="font-size:.8rem;font-weight:700;color:var(--green);margin-bottom:.4rem">T → 0 (very small)</div>
+        <div style="font-size:.83rem;color:var(--muted)">Peaked distribution. Approaches greedy (argmax). Deterministic, safe, boring.</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:8px;padding:.875rem;border-left:3px solid var(--blue);text-align:center">
+        <div style="font-size:.8rem;font-weight:700;color:var(--blue);margin-bottom:.4rem">T = 1.0</div>
+        <div style="font-size:.83rem;color:var(--muted)">Unchanged distribution. Model's raw probabilities.</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:8px;padding:.875rem;border-left:3px solid var(--yellow);text-align:center">
+        <div style="font-size:.8rem;font-weight:700;color:var(--yellow);margin-bottom:.4rem">T &gt; 1.0 (high)</div>
+        <div style="font-size:.83rem;color:var(--muted)">Flatter distribution. More random, more creative, more risk of incoherence.</div>
+      </div>
+    </div>
+    <div class="insight ins-warn">
+      <strong>Temperature=0 causes division by zero</strong> — most libraries handle this by switching to greedy (argmax) when temperature is 0 or very small. Also: <code>do_sample=False</code> overrides temperature and top_p entirely — you always get greedy/beam regardless of other settings.
+    </div>
+  </div>
+
+  <!-- 4. Perplexity and KV Cache -->
+  <div class="card" style="margin-bottom:2rem">
+    <div class="tag tag-blue">Evaluation &amp; Efficiency</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">Perplexity &amp; KV Cache</h3>
+    <div style="overflow-x:auto;margin-bottom:.75rem">
+      <table class="concept-table">
+        <thead><tr><th>Concept</th><th>What it means</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Perplexity</strong></td>
+            <td>exp(−1/N × Σ log P(token|context)) — how "surprised" the model is; lower = better language model</td>
+          </tr>
+          <tr>
+            <td><strong>Perplexity = 10</strong></td>
+            <td>Model is as uncertain as if choosing uniformly among 10 options</td>
+          </tr>
+          <tr>
+            <td><strong>KV cache</strong></td>
+            <td>Caches key/value pairs from previous tokens to avoid recomputation at each generation step</td>
+          </tr>
+          <tr>
+            <td><strong>KV cache effect</strong></td>
+            <td>Makes inference memory-bound, not compute-bound for long sequences; speeds up generation significantly</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="insight ins-info">
+      <strong>Perplexity is tokeniser-dependent</strong> — you cannot compare perplexity scores across models with different vocabularies. Models with larger vocabularies tend to have lower perplexity. Perplexity measures pretraining quality, not task performance.
+    </div>
+  </div>
+
+  <!-- ═══ MUST-KNOW CONCEPTS ════════════════════════════════════ -->
+  <div class="section-head">Must-Know Concepts</div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:2rem">
+    <table class="concept-table">
+      <thead><tr><th>Term</th><th>One-liner (assessment vocabulary)</th></tr></thead>
+      <tbody>
+        <tr><td>autoregressive generation</td><td>Generates one token at a time; each token conditioned on all previous; probability factored as product of conditionals</td></tr>
+        <tr><td>causal masking</td><td>Upper-triangular mask prevents tokens from attending to future positions; enables parallel training while maintaining autoregression</td></tr>
+        <tr><td>greedy decoding</td><td>Always picks highest-probability token; deterministic; locally optimal but misses globally better sequences</td></tr>
+        <tr><td>beam search</td><td>Maintains multiple candidate sequences (beams) simultaneously; beam=1 = greedy; better for structured output</td></tr>
+        <tr><td>temperature</td><td>Divides logits before softmax; T&lt;1 = sharper (safer); T&gt;1 = flatter (more random)</td></tr>
+        <tr><td>top-k sampling</td><td>Restricts sampling to k highest-probability tokens; fixed pool regardless of distribution shape</td></tr>
+        <tr><td>top-p (nucleus)</td><td>Samples from smallest set whose cumulative probability ≥ p; pool adapts to distribution shape — preferred over top-k</td></tr>
+        <tr><td>repetition penalty</td><td>Reduces logit of tokens already generated; &gt;1.0 discourages repetition; 1.0 = no penalty</td></tr>
+        <tr><td>perplexity</td><td>exp(average negative log-likelihood) — lower = better; tokeniser-dependent; not comparable across vocab sizes</td></tr>
+        <tr><td>KV cache</td><td>Caches key/value attention pairs during generation to avoid recomputing over the full sequence each step</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══ EXAM TRAPS ════════════════════════════════════════════ -->
+  <div class="section-head">Exam Traps</div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 1 — Greedy is not globally optimal</div>
+    <strong>Greedy search does NOT find the globally most probable sequence.</strong>
+    It is locally optimal at each step. A sequence that requires a lower-probability intermediate token
+    to reach a high-probability continuation will be missed entirely by greedy decoding.
+    Beam search addresses this by maintaining multiple hypotheses.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 2 — do_sample=False overrides temperature</div>
+    <strong>If <code>do_sample=False</code>, temperature and top_p have no effect.</strong>
+    With sampling disabled, you always get greedy decoding (or beam search if num_beams &gt; 1).
+    Temperature scaling only applies when sampling is enabled. Setting temperature without
+    enabling sampling is a common silent mistake.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 3 — max_length includes prompt tokens</div>
+    <strong><code>max_length</code> counts the prompt tokens too.</strong>
+    If your prompt is 50 tokens and you set <code>max_length=100</code>, you only get 50 new tokens.
+    Use <code>max_new_tokens</code> instead to specify how many new tokens to generate.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 4 — Beam search is deterministic</div>
+    <strong>Beam search is deterministic — same input, same output every time.</strong>
+    Sampling-based methods (top-k, top-p, temperature) are stochastic — different output each run.
+    KV cache does NOT affect model quality — it only affects inference speed.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 5 — Perplexity cannot be compared across tokenisers</div>
+    <strong>Perplexity scores are only meaningful when compared within the same tokeniser.</strong>
+    A model with a larger vocabulary can artificially achieve lower perplexity because it assigns
+    higher probability to each token. Comparing perplexity between GPT-2 and LLaMA is meaningless.
+  </div>
+
+  <!-- ═══ INTERACTIVE VIZ ══════════════════════════════════════ -->
+  <div class="section-head" style="margin-top:2rem">Interactive Visualisations</div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.875rem;margin-bottom:2rem">
+    <a class="viz-card" href="../viz/temperature-sampling.html">
+      <div class="viz-card-title">🌡 Temperature Sampling</div>
+      <div class="viz-card-desc">See how temperature reshapes the probability distribution. Compare T=0.1, T=1.0, T=2.0.</div>
+    </a>
+    <a class="viz-card" href="../viz/attention.html">
+      <div class="viz-card-title">🎯 Attention Visualiser</div>
+      <div class="viz-card-desc">Causal masking and attention patterns in decoder-only generation.</div>
+    </a>
+  </div>
+
+  <!-- ═══ PRACTICAL NOTES (collapsed) ══════════════════════════ -->
+  <div style="margin-bottom:2rem">
+    <button class="collapse-toggle">
+      <span class="c-arrow">▶</span>
+      Practical Notes &amp; Code Patterns
+      <span style="margin-left:.5rem;font-size:.75rem;color:var(--muted)">(useful for application — not needed to pass the assessment)</span>
+    </button>
+    <div class="collapse-body">
+
+      <div class="card" style="margin-bottom:1rem">
+        <div class="tag tag-blue">Common Gotchas</div>
+        <ul style="font-size:.875rem;line-height:1.7;padding-left:1.25rem;color:var(--text)">
+          <li><strong>temperature=0 is division by zero</strong> — libraries handle it by switching to greedy; use do_sample=False explicitly instead</li>
+          <li><strong>do_sample=False overrides temperature/top_p</strong> — if sampling is off, these parameters have no effect</li>
+          <li><strong>max_length includes the prompt</strong> — use max_new_tokens to control output length independently</li>
+          <li><strong>GPT-2 has no pad token</strong> — set pad_token_id=tokenizer.eos_token_id to avoid warnings</li>
+          <li><strong>top_p and top_k can be combined</strong> — apply top_k first, then top_p, then sample</li>
+          <li><strong>Beam search num_beams=1 = greedy</strong> — explicitly specifying num_beams=1 disables beam search</li>
+        </ul>
+      </div>
+
+      <div class="card" style="margin-bottom:.5rem">
+        <div class="tag tag-blue">Text Generation Pattern</div>
+        <pre><code class="language-python">from transformers import AutoModelForCausalLM, AutoTokenizer
+import torch
+
+tokenizer = AutoTokenizer.from_pretrained('gpt2')
+model     = AutoModelForCausalLM.from_pretrained('gpt2')
+
+inputs = tokenizer("The future of AI is", return_tensors='pt')
+
+outputs = model.generate(
+    **inputs,
+    max_new_tokens=100,         # not max_length — excludes prompt
+    do_sample=True,             # enable sampling
+    temperature=0.7,            # sharpen distribution slightly
+    top_p=0.9,                  # nucleus sampling
+    repetition_penalty=1.1,     # slight repetition penalty
+    pad_token_id=tokenizer.eos_token_id
+)
+print(tokenizer.decode(outputs[0], skip_special_tokens=True))</code></pre>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ STUDY GAMES (placeholder) ════════════════════════════ -->
+  <div class="section-head" style="margin-top:1rem">Study Games</div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.875rem;margin-bottom:2rem;opacity:.45">
+    <div class="card" style="cursor:not-allowed">
+      <div class="tag">🌡 Temperature Predictor</div>
+      <div style="font-size:.875rem">Given a distribution, predict which temperature setting produced it — coming Phase 4</div>
+    </div>
+    <div class="card" style="cursor:not-allowed">
+      <div class="tag">🎮 Strategy Selector</div>
+      <div style="font-size:.875rem">Choose the right decoding strategy for given use cases — coming Phase 4</div>
+    </div>
+  </div>
+
+  <!-- ═══ FULL NOTES LINK ══════════════════════════════════════ -->
+  <div class="card" style="margin-bottom:1.5rem;background:var(--surface2)">
+    <div style="font-size:.875rem;color:var(--muted)">
+      Full curated notes (Obsidian):
+      <a href="obsidian://open?vault=IBM%20Courses&file=claude-content%2F09-genai-language-modeling-transformers"
+         style="color:var(--blue)">
+        claude-content/09-genai-language-modeling-transformers →
+      </a>
+    </div>
+  </div>
+
+  <div class="footer">
+    <a href="../index.html">← VLE Home</a> ·
+    <a href="c08.html">← C8</a> ·
+    <a href="c10.html">C10 →</a> ·
+    <a href="../course-tracker.html" target="_blank">📊 Tracker</a>
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Code Library — C3: Keras & TF · VLE</title>
+  <link rel="stylesheet" href="../shared.css">
+  <script src="../shared.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+  <style>
+    /* ── Layout ── */
+    .lib-container { max-width: 860px; margin: 0 auto; }
+
+    /* ── TOC ── */
+    .toc-card { background:var(--surface); border:1px solid var(--border); border-radius:10px;
+      padding:1.25rem 1.5rem; margin-bottom:2rem; }
+    .toc-label { font-size:.72rem; font-weight:700; text-transform:uppercase;
+      letter-spacing:.08em; color:var(--muted); margin-bottom:.75rem; }
+    .toc-links { display:flex; flex-wrap:wrap; gap:.4rem .75rem; }
+    .toc-links a { font-size:.83rem; color:var(--blue); text-decoration:none; }
+    .toc-links a:hover { text-decoration:underline; }
+    .toc-sep { color:var(--border); }
+
+    /* ── Section ── */
+    .nb-section { margin-bottom:3rem; }
+    .nb-section-header {
+      display:flex; align-items:baseline; gap:.75rem;
+      border-bottom:1px solid var(--border); padding-bottom:.6rem; margin-bottom:1.25rem; }
+    .nb-section-num { font-size:.72rem; font-weight:700; text-transform:uppercase;
+      letter-spacing:.1em; color:var(--muted); flex-shrink:0; }
+    .nb-section-title { font-size:1.15rem; font-weight:700; letter-spacing:-.02em; }
+    .nb-section-badge { font-size:.7rem; font-weight:700; text-transform:uppercase;
+      letter-spacing:.07em; padding:.2rem .55rem; border-radius:99px; margin-left:auto;
+      background:var(--blue-bg); color:var(--blue); border:1px solid rgba(88,166,255,.3); flex-shrink:0; }
+
+    /* ── Prose cell (like a markdown cell) ── */
+    .nb-prose { font-size:.9rem; line-height:1.7; color:var(--text);
+      margin-bottom:1rem; }
+    .nb-prose p { margin:0 0 .75rem; }
+    .nb-prose p:last-child { margin-bottom:0; }
+    .nb-prose code { background:var(--surface2); padding:.1em .35em; border-radius:4px;
+      font-size:.85em; color:var(--blue); font-family:"SFMono-Regular",Consolas,monospace; }
+    .nb-prose strong { color:var(--text); }
+
+    /* ── Analogy callout ── */
+    .analogy { background:rgba(88,166,255,.07); border:1px solid rgba(88,166,255,.2);
+      border-left:3px solid var(--blue); border-radius:6px; padding:.875rem 1rem;
+      margin-bottom:1rem; font-size:.875rem; line-height:1.65; }
+    .analogy-label { font-size:.68rem; font-weight:700; text-transform:uppercase;
+      letter-spacing:.1em; color:var(--blue); margin-bottom:.35rem; }
+
+    /* ── Code cell ── */
+    .nb-cell { margin-bottom:1.25rem; border-radius:10px; overflow:hidden;
+      border:1px solid var(--border); }
+    .nb-cell-label { display:flex; align-items:center; gap:.5rem;
+      background:var(--surface2); border-bottom:1px solid var(--border);
+      padding:.4rem .875rem; font-size:.72rem; font-family:"SFMono-Regular",Consolas,monospace;
+      color:var(--muted); }
+    .nb-cell-label .in-num { color:var(--blue); font-weight:700; }
+    .nb-cell-label .cell-tag { font-size:.65rem; text-transform:uppercase;
+      letter-spacing:.08em; padding:.1rem .4rem; border-radius:3px;
+      background:var(--surface); border:1px solid var(--border); color:var(--muted);
+      margin-left:auto; }
+    .nb-cell pre { margin:0; border-radius:0; }
+    .nb-cell pre code.hljs { padding:1.1rem 1.25rem; font-size:.82rem;
+      line-height:1.65; background:#0d1117; }
+
+    /* ── Note / gotcha box ── */
+    .nb-note { display:flex; gap:.75rem; padding:.8rem 1rem; border-radius:7px;
+      font-size:.85rem; line-height:1.6; margin-bottom:.75rem; }
+    .nb-note.info { background:var(--surface2); border:1px solid var(--border); }
+    .nb-note.warn { background:rgba(248,81,73,.06); border:1px solid rgba(248,81,73,.25); }
+    .nb-note.tip  { background:var(--green-bg); border:1px solid rgba(63,185,80,.25); }
+    .nb-note-icon { font-size:1rem; flex-shrink:0; }
+    .nb-note-body code { background:rgba(255,255,255,.07); padding:.1em .3em;
+      border-radius:3px; font-size:.85em; font-family:"SFMono-Regular",Consolas,monospace; }
+
+    /* ── Divider between sub-sections ── */
+    .nb-sub { font-size:.75rem; font-weight:700; text-transform:uppercase;
+      letter-spacing:.09em; color:var(--muted); margin:1.5rem 0 .75rem;
+      padding-bottom:.4rem; border-bottom:1px dashed var(--border); }
+  </style>
+</head>
+<body>
+<script>initNav('../');</script>
+
+<div class="container">
+<div class="lib-container">
+
+  <!-- Header -->
+  <div style="margin-bottom:1.75rem">
+    <div class="tag" style="background:var(--blue-bg);color:var(--blue);border:1px solid rgba(88,166,255,.3);margin-bottom:.5rem">
+      Code Library · Course 3
+    </div>
+    <h1 style="font-size:1.4rem;font-weight:700;letter-spacing:-.02em;margin-bottom:.3rem">
+      Deep Learning with Keras &amp; TensorFlow
+    </h1>
+    <p style="color:var(--muted);font-size:.875rem">
+      Every model pattern from C3 — annotated from first principles.
+      Treat this like a notebook: read the context, then study the code.
+    </p>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc-card">
+    <div class="toc-label">Models in this library</div>
+    <div class="toc-links">
+      <a href="#functional-api">Functional API</a><span class="toc-sep">·</span>
+      <a href="#cnn">CNN</a><span class="toc-sep">·</span>
+      <a href="#transfer-learning">Transfer Learning</a><span class="toc-sep">·</span>
+      <a href="#fine-tuning">Fine-Tuning</a><span class="toc-sep">·</span>
+      <a href="#custom-loop">Custom Training Loop</a><span class="toc-sep">·</span>
+      <a href="#transformer">Transformer Block</a><span class="toc-sep">·</span>
+      <a href="#autoencoder">Autoencoder</a><span class="toc-sep">·</span>
+      <a href="#vae">VAE</a><span class="toc-sep">·</span>
+      <a href="#gan">GAN</a><span class="toc-sep">·</span>
+      <a href="#dqn">DQN</a>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+       1. FUNCTIONAL API
+  ════════════════════════════════════════════════════════════ -->
+  <div class="nb-section" id="functional-api">
+    <div class="nb-section-header">
+      <span class="nb-section-num">01</span>
+      <span class="nb-section-title">Functional API</span>
+      <span class="nb-section-badge">Modules 1–2</span>
+    </div>
+
+    <div class="nb-prose">
+      <p>Keras has two ways to build a model. <strong>Sequential</strong> stacks layers in a single line: one input goes in, transformations happen one after another, one output comes out. This works for simple classifiers but breaks the moment the architecture is more complex.</p>
+      <p>The <strong>Functional API</strong> lets you build a computation graph: you define tensors explicitly and pass them through layers like function calls. The result is that you can have branches, merges, shared layers, and multiple inputs or outputs.</p>
+    </div>
+
+    <div class="analogy">
+      <div class="analogy-label">Analogy</div>
+      Sequential is a single conveyor belt — items move forward one step at a time.
+      The Functional API is a factory floor: you can have multiple belts running in parallel, merging their outputs, splitting, or looping. The moment you need anything other than a straight line, you need the factory floor.
+    </div>
+
+    <div class="nb-cell">
+      <div class="nb-cell-label">
+        <span class="in-num">In [1]</span>
+        <span>Multi-input model with Functional API</span>
+        <span class="cell-tag">Keras</span>
+      </div>
+      <pre><code class="language-python">from tensorflow.keras import Input, Model
+from tensorflow.keras.layers import Dense, Concatenate, Dropout
+
+# ── DEFINE INPUTS ─────────────────────────────────────────────────────────────
+# Input() is like defining the "socket" your data will plug into.
+# shape=(100,) means each sample is a 1-D array of 100 numbers.
+# The name argument is optional but makes debugging much easier.
+text_input  = Input(shape=(100,), name='text')   # e.g. a 100-dim text embedding
+image_input = Input(shape=(50,),  name='image')  # e.g. 50 extracted image features
+
+# ── SEPARATE BRANCHES ─────────────────────────────────────────────────────────
+# Each input gets its own processing path before we combine them.
+# Notation: Dense(units, activation)(previous_layer)
+# The layer is called like a function — this is the key Functional API pattern.
+x_text  = Dense(64, activation='relu')(text_input)
+x_image = Dense(64, activation='relu')(image_input)
+
+# ── MERGE ─────────────────────────────────────────────────────────────────────
+# Concatenate joins tensors end-to-end along the last axis.
+# x_text is 64 numbers, x_image is 64 numbers → merged is 128 numbers.
+# Both streams of information are now in one vector.
+merged = Concatenate()([x_text, x_image])
+
+# ── SHARED PROCESSING ─────────────────────────────────────────────────────────
+x = Dense(128, activation='relu')(merged)
+x = Dropout(0.3)(x)      # randomly zero 30% of activations each forward pass
+                          # this forces the network not to rely too heavily on
+                          # any single neuron — a regularisation technique
+
+# ── OUTPUT ────────────────────────────────────────────────────────────────────
+# sigmoid squashes any number to the range (0, 1).
+# Useful for binary classification: output ≈ 1 means "yes", ≈ 0 means "no".
+output = Dense(1, activation='sigmoid')(x)
+
+# ── BUILD ─────────────────────────────────────────────────────────────────────
+# Model() takes the "entrances" (inputs) and the "exit" (output).
+# Keras traces the path between them to construct the full computation graph.
+model = Model(
+    inputs=[text_input, image_input],  # list because we have two inputs
+    outputs=output
+)
+
+model.summary()  # prints a table: layer names, output shapes, parameter counts
+
+# ── COMPILE ───────────────────────────────────────────────────────────────────
+model.compile(
+    optimizer='adam',              # Adam: an adaptive learning rate optimiser
+                                   # usually a safe default to start with
+    loss='binary_crossentropy',    # correct loss when output is sigmoid + labels are 0/1
+    metrics=['accuracy']
+)
+
+# ── TRAIN ─────────────────────────────────────────────────────────────────────
+# Pass a dict whose keys match the Input() name arguments.
+# Keras routes each array to the correct input layer automatically.
+model.fit(
+    x={'text': X_text_train, 'image': X_image_train},
+    y=y_train,
+    validation_split=0.2,  # hold out 20% of training data to monitor overfitting
+    epochs=20,
+    batch_size=32
+)</code></pre>
+    </div>
+
+    <div class="nb-note info">
+      <span class="nb-note-icon">ℹ️</span>
+      <span class="nb-note-body"><strong>When to use Functional vs Sequential:</strong> use Sequential for simple linear stacks. Switch to Functional the moment you need multiple inputs, multiple outputs, skip connections (ResNet style), or shared layers. The Functional API can express everything Sequential can — plus anything else.</span>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+       2. CNN
+  ════════════════════════════════════════════════════════════ -->
+  <div class="nb-section" id="cnn">
+    <div class="nb-section-header">
+      <span class="nb-section-num">02</span>
+      <span class="nb-section-title">Convolutional Neural Network (CNN)</span>
+      <span class="nb-section-badge">Module 2</span>
+    </div>
+
+    <div class="nb-prose">
+      <p>A CNN processes images by sliding small filters (kernels) across the image. Each filter looks for a specific pattern — an edge, a colour gradient, a texture. Early layers detect simple patterns; deeper layers combine those into complex ones (corners → eyes → faces).</p>
+      <p>The key operation is <code>Conv2D</code>: it applies a learnable filter to each local patch of the image, producing a "feature map" — a new image-like array where high values mean "this pattern was found here".</p>
+    </div>
+
+    <div class="analogy">
+      <div class="analogy-label">Analogy</div>
+      Imagine scanning a page looking for the letter "e". You move a small magnifying glass across the page and mark every position where you see that shape. That's one filter. A CNN uses 32, 64, or 128 different magnifying glasses simultaneously, each trained to find a different pattern.
+    </div>
+
+    <div class="nb-cell">
+      <div class="nb-cell-label">
+        <span class="in-num">In [2]</span>
+        <span>Standard CNN for image classification</span>
+        <span class="cell-tag">Keras · Sequential</span>
+      </div>
+      <pre><code class="language-python">from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import (
+    Conv2D, MaxPooling2D, GlobalAveragePooling2D, Dense, Dropout
+)
+
+model = Sequential([
+
+    # ── BLOCK 1: detect simple features (edges, colours, textures) ───────────
+    # Conv2D(filters, kernel_size):
+    #   filters=32   → 32 different pattern detectors running in parallel
+    #   kernel_size=(3,3) → each detector looks at a 3×3 patch at a time
+    #   activation='relu' → negative values are clamped to 0 (non-linearity)
+    #   padding='same'  → zero-pad the edges so output has same H×W as input
+    #   input_shape=(224,224,3) → 224×224 pixels, 3 channels (RGB)
+    Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(224, 224, 3)),
+
+    # MaxPooling2D(2,2): shrink the spatial dimensions by half.
+    # Keeps only the maximum value in each 2×2 region.
+    # Effect: 224×224 → 112×112. Fewer numbers to process; model learns
+    # "roughly where" a feature is, not the exact pixel.
+    MaxPooling2D(2, 2),
+
+    # ── BLOCK 2: detect combinations of simple features ──────────────────────
+    Conv2D(64, (3, 3), activation='relu', padding='same'),  # 64 detectors now
+    MaxPooling2D(2, 2),   # 112×112 → 56×56
+
+    # ── BLOCK 3: detect high-level structures ────────────────────────────────
+    Conv2D(128, (3, 3), activation='relu', padding='same'),
+    MaxPooling2D(2, 2),   # 56×56 → 28×28
+
+    # ── TRANSITION: spatial → flat ────────────────────────────────────────────
+    # We've extracted spatial features; now we need a flat vector for Dense layers.
+    #
+    # GlobalAveragePooling2D: averages each of the 128 feature maps to a single number.
+    # Output: 128 numbers. Much smaller than Flatten (which gives 28×28×128 = 100,352).
+    # Use GAP for transfer learning and as a general best practice.
+    GlobalAveragePooling2D(),
+
+    # ── CLASSIFICATION HEAD ───────────────────────────────────────────────────
+    Dense(256, activation='relu'),
+    Dropout(0.5),   # 50% dropout before final layer — strong regularisation
+
+    # softmax: converts raw scores to probabilities that sum to 1.
+    # With 10 classes, output[i] = "probability this image belongs to class i".
+    Dense(10, activation='softmax')
+])
+
+model.compile(
+    optimizer='adam',
+    # sparse_categorical_crossentropy: use when labels are integers (0, 1, 2...)
+    # categorical_crossentropy:        use when labels are one-hot ([0,0,1,0...])
+    loss='sparse_categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+model.fit(train_dataset, validation_data=val_dataset, epochs=20)</code></pre>
+    </div>
+
+    <div class="nb-note info">
+      <span class="nb-note-icon">ℹ️</span>
+      <span class="nb-note-body"><strong>Output size rule:</strong> After <code>Conv2D</code> with <code>padding='valid'</code> (the default): output = (H − kernel + 1) × (W − kernel + 1). With <code>padding='same'</code>: output = H × W (unchanged). After <code>MaxPooling2D(2,2)</code>: H and W are each halved.</span>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+       3. TRANSFER LEARNING
+  ════════════════════════════════════════════════════════════ -->
+  <div class="nb-section" id="transfer-learning">
+    <div class="nb-section-header">
+      <span class="nb-section-num">03</span>
+      <span class="nb-section-title">Transfer Learning</span>
+      <span class="nb-section-badge">Module 2</span>
+    </div>
+
+    <div class="nb-prose">
+      <p>Training a CNN from scratch requires millions of images and days of compute. Transfer learning shortcuts this: take a model already trained on a huge dataset (ImageNet: 1.2 million images, 1000 classes), strip off its final classification layer, and reuse the rest as a feature extractor for your own task.</p>
+      <p>The idea is that the early layers — which detect edges, textures, and shapes — are useful across almost any image task. You only need to teach the model your specific categories.</p>
+    </div>
+
+    <div class="analogy">
+      <div class="analogy-label">Analogy</div>
+      Hiring a chef who has already mastered fundamentals (knife skills, sauce-making, timing) from years of professional cooking. You don't reteach the basics — you just train them on your restaurant's specific menu. The pretrained model has already mastered "what things look like"; you only teach it your specific categories.
+    </div>
+
+    <div class="nb-cell">
+      <div class="nb-cell-label">
+        <span class="in-num">In [3]</span>
+        <span>Feature extraction with MobileNetV2</span>
+        <span class="cell-tag">Transfer Learning</span>
+      </div>
+      <pre><code class="language-python">import tensorflow as tf
+from tensorflow.keras import Input, Model
+from tensorflow.keras.layers import GlobalAveragePooling2D, Dense, Dropout
+
+# ── STEP 1: Load pretrained base ──────────────────────────────────────────────
+# tf.keras.applications has many pretrained models: MobileNetV2, VGG16,
+# ResNet50, EfficientNet, InceptionV3, etc.
+#
+# include_top=False → remove the final Dense layer (which outputs 1000 ImageNet classes).
+#                     We want just the feature extractor, not the original classifier.
+# weights='imagenet' → load weights from training on ImageNet.
+#                      weights=None would give random initialisation (defeats the purpose).
+base = tf.keras.applications.MobileNetV2(
+    input_shape=(224, 224, 3),
+    include_top=False,
+    weights='imagenet'
+)
+
+# ── STEP 2: Freeze the base ───────────────────────────────────────────────────
+# trainable=False puts all layers in the base into read-only mode.
+# Their weights will NOT be updated during our training.
+# We want to preserve the ImageNet knowledge — only the new head will learn.
+base.trainable = False
+
+# ── STEP 3: Build the new model ───────────────────────────────────────────────
+inputs = Input(shape=(224, 224, 3))
+
+# CRITICAL: pass training=False when calling the frozen base.
+# Even with base.trainable=False, BatchNorm layers inside the base
+# will update their running statistics if you pass training=True.
+# Those statistics were calibrated on ImageNet — corrupting them degrades everything.
+x = base(inputs, training=False)
+
+# The base output has shape (7, 7, 1280) for MobileNetV2 on 224×224 input.
+# GlobalAveragePooling2D collapses 7×7 spatial dims → one number per channel.
+# Result: (1280,) — a rich 1280-dimensional description of the image.
+x = GlobalAveragePooling2D()(x)
+
+x = Dropout(0.2)(x)
+
+# Our new classification head — this is the only part that will be trained.
+# n_classes = number of categories in our specific dataset.
+outputs = Dense(n_classes, activation='softmax')(x)
+
+model = Model(inputs, outputs)
+
+# ── STEP 4: Compile and train ─────────────────────────────────────────────────
+# Standard learning rate is fine here — only the small Dense head is learning.
+model.compile(
+    optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3),
+    loss='sparse_categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+# Each training model processes pretrained features → trains the new head.
+# This is fast: the base is frozen so no gradients flow through its ~2M parameters.
+model.fit(train_dataset, validation_data=val_dataset, epochs=10)</code></pre>
+    </div>
+
+    <div class="nb-note warn">
+      <span class="nb-note-icon">⚠️</span>
+      <span class="nb-note-body"><strong>Preprocessing mismatch:</strong> Each pretrained model expects its input in a specific range. MobileNetV2 wants pixels in <code>[-1, 1]</code>, VGG16 wants BGR with ImageNet mean subtracted. Always use the matching <code>preprocess_input</code> function: <code>tf.keras.applications.mobilenet_v2.preprocess_input(images)</code>.</span>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+       4. FINE-TUNING
+  ════════════════════════════════════════════════════════════ -->
+  <div class="nb-section" id="fine-tuning">
+    <div class="nb-section-header">
+      <span class="nb-section-num">04</span>
+      <span class="nb-section-title">Fine-Tuning</span>
+      <span class="nb-section-badge">Module 2</span>
+    </div>
+
+    <div class="nb-prose">
+      <p>After training the new head, you can squeeze out more accuracy by <em>fine-tuning</em>: unfreezing the top layers of the base and training them alongside the head with a very small learning rate.</p>
+      <p>The logic: early layers in the base learn general features (edges, textures) that generalise well across tasks — don't touch those. Later layers learn higher-level, more task-specific features — these benefit from small adjustments toward your data.</p>
+    </div>
+
+    <div class="nb-note warn">
+      <span class="nb-note-icon">⚠️</span>
+      <span class="nb-note-body"><strong>Order matters:</strong> always train the head first (base frozen), then fine-tune. If you fine-tune from the start, large random gradients from the untrained head cascade back and destroy the pretrained weights before the head has a chance to learn anything useful.</span>
+    </div>
+
+    <div class="nb-cell">
+      <div class="nb-cell-label">
+        <span class="in-num">In [4]</span>
+        <span>Fine-tuning: unfreeze top layers of the base</span>
+        <span class="cell-tag">Fine-Tuning</span>
+      </div>
+      <pre><code class="language-python"># ── Run AFTER the head-only training from the Transfer Learning section ───────
+
+# Unfreeze the whole base first...
+base.trainable = True
+
+# ...then re-freeze the bottom layers.
+# base.layers is a list of all layers in the base from bottom (index 0) to top.
+# [:-20] means "everything except the last 20 layers".
+# The bottom layers learn general features (edges, corners) — keep them frozen.
+# The top ~20 layers learn complex, task-specific features — let these adapt.
+for layer in base.layers[:-20]:
+    layer.trainable = False
+
+# ── CRITICAL: recompile after changing trainability ───────────────────────────
+# The optimiser maintains an internal list of variables to update.
+# Changing layer.trainable changes which variables are "trainable_variables".
+# Recompiling forces the optimiser to rebuild that list.
+# Skip this and the newly unfrozen layers won't actually be trained.
+model.compile(
+    # Learning rate must be much smaller than during head training.
+    # We're making tiny, careful adjustments to pretrained weights —
+    # not learning from scratch. Too large and we destroy what ImageNet taught.
+    # Rule of thumb: 10× to 100× smaller than the head training LR.
+    optimizer=tf.keras.optimizers.Adam(learning_rate=1e-5),
+    loss='sparse_categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+# Fine-tune for fewer epochs — the model is already close to a good solution.
+model.fit(
+    train_dataset,
+    validation_data=val_dataset,
+    epochs=5
+)</code></pre>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+       5. CUSTOM TRAINING LOOP
+  ════════════════════════════════════════════════════════════ -->
+  <div class="nb-section" id="custom-loop">
+    <div class="nb-section-header">
+      <span class="nb-section-num">05</span>
+      <span class="nb-section-title">Custom Training Loop</span>
+      <span class="nb-section-badge">Module 1</span>
+    </div>
+
+    <div class="nb-prose">
+      <p><code>model.fit()</code> is convenient — it handles the training loop, metrics, callbacks, and validation automatically. But sometimes you need control it can't provide: custom loss terms, gradient clipping, logging intermediate activations, or training two models alternately (like a GAN).</p>
+      <p>A custom training loop uses <strong>GradientTape</strong> — TensorFlow's mechanism for computing gradients manually. You wrap the forward pass in a <code>with tf.GradientTape() as tape</code> block; the tape records every operation so it can compute derivatives when asked.</p>
+    </div>
+
+    <div class="analogy">
+      <div class="analogy-label">Analogy</div>
+      <code>model.fit()</code> is like hiring a contractor: you describe the job, they handle everything. A custom loop is doing the work yourself — more code, but you control exactly what happens at every step. GradientTape is like a video recorder that watches your calculations so it can "play them backwards" to compute how each weight contributed to the final loss.
+    </div>
+
+    <div class="nb-cell">
+      <div class="nb-cell-label">
+        <span class="in-num">In [5]</span>
+        <span>Manual training loop with GradientTape</span>
+        <span class="cell-tag">GradientTape</span>
+      </div>
+      <pre><code class="language-python">import tensorflow as tf
+
+optimizer = tf.keras.optimizers.Adam(learning_rate=1e-3)
+loss_fn   = tf.keras.losses.SparseCategoricalCrossentropy()
+
+# Metric objects track running averages — we reset them each epoch.
+train_acc_metric = tf.keras.metrics.SparseCategoricalAccuracy()
+val_acc_metric   = tf.keras.metrics.SparseCategoricalAccuracy()
+
+for epoch in range(num_epochs):
+    train_acc_metric.reset_state()
+    val_acc_metric.reset_state()
+
+    # ── TRAINING PASS ─────────────────────────────────────────────────────────
+    for X_batch, y_batch in train_dataset:
+
+        # GradientTape records all operations inside the with block.
+        # When we call tape.gradient(loss, variables), it replays the recording
+        # in reverse (backpropagation) to compute dLoss/dVariable for each weight.
+        with tf.GradientTape() as tape:
+            # training=True: enables Dropout (random neuron dropping)
+            # and tells BatchNorm to use the current batch's statistics.
+            logits = model(X_batch, training=True)
+            loss   = loss_fn(y_batch, logits)
+
+        # Ask the tape: for each trainable weight, how does a small change
+        # in that weight affect the loss? That's the gradient.
+        grads = tape.gradient(loss, model.trainable_variables)
+
+        # Apply the gradients: move each weight slightly in the direction
+        # that reduces the loss. zip() pairs each gradient with its weight.
+        optimizer.apply_gradients(zip(grads, model.trainable_variables))
+
+        train_acc_metric.update_state(y_batch, logits)
+
+    # ── VALIDATION PASS ───────────────────────────────────────────────────────
+    for X_batch, y_batch in val_dataset:
+        # training=False: disable Dropout, use BatchNorm's running statistics.
+        # No GradientTape needed — we're not computing gradients here.
+        logits = model(X_batch, training=False)
+        val_acc_metric.update_state(y_batch, logits)
+
+    print(f'Epoch {epoch+1}: '
+          f'train_acc={train_acc_metric.result():.4f}  '
+          f'val_acc={val_acc_metric.result():.4f}')</code></pre>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+       6. TRANSFORMER ENCODER BLOCK
+  ════════════════════════════════════════════════════════════ -->
+  <div class="nb-section" id="transformer">
+    <div class="nb-section-header">
+      <span class="nb-section-num">06</span>
+      <span class="nb-section-title">Transformer Encoder Block</span>
+      <span class="nb-section-badge">Module 3</span>
+    </div>
+
+    <div class="nb-prose">
+      <p>A transformer processes a <em>sequence</em> of vectors (e.g. word embeddings). The core operation — <strong>self-attention</strong> — lets every element in the sequence look at and gather information from every other element simultaneously. This solves the long-range dependency problem that RNNs struggle with.</p>
+      <p>A transformer encoder block has two sub-layers: (1) multi-head self-attention, (2) a small feed-forward network. Each sub-layer is wrapped with a residual connection and layer normalisation.</p>
+    </div>
+
+    <div class="analogy">
+      <div class="analogy-label">Analogy</div>
+      Self-attention is like a roundtable discussion. Every word in the sentence simultaneously "asks a question" (query), "offers information" (key/value), and "listens to all answers". The word "bank" can immediately consult all surrounding words to decide whether it means a river bank or a financial institution — without passing through a chain of intermediate steps.
+    </div>
+
+    <div class="nb-cell">
+      <div class="nb-cell-label">
+        <span class="in-num">In [6]</span>
+        <span>Custom transformer encoder block as a Keras Layer</span>
+        <span class="cell-tag">Transformer · Keras</span>
+      </div>
+      <pre><code class="language-python">import tensorflow as tf
+
+class TransformerEncoderBlock(tf.keras.layers.Layer):
+    """One transformer encoder block: self-attention + FFN, with residuals."""
+
+    def __init__(self, embed_dim, num_heads, ff_dim, dropout_rate=0.1):
+        # Always call super().__init__() first — registers the layer with Keras.
+        super().__init__()
+
+        # ── MULTI-HEAD ATTENTION ───────────────────────────────────────────────
+        # Instead of one attention pass, we run num_heads passes in parallel,
+        # each operating on a smaller slice of the embedding. Each head can
+        # attend to different types of relationships simultaneously
+        # (e.g. one head learns syntax, another learns coreference).
+        #
+        # key_dim: dimension of each head's query and key vectors.
+        # Convention: key_dim = embed_dim // num_heads
+        # so the total cost stays the same as single-head attention.
+        self.attention = tf.keras.layers.MultiHeadAttention(
+            num_heads=num_heads,
+            key_dim=embed_dim // num_heads  # e.g. 512 dims / 8 heads = 64 per head
+        )
+
+        # ── FEED-FORWARD NETWORK ───────────────────────────────────────────────
+        # Applied independently to each position after attention.
+        # Typically expands to 4× the embedding dimension then contracts back.
+        # This is where much of the model's "memory" (parameters) lives.
+        self.ffn = tf.keras.Sequential([
+            tf.keras.layers.Dense(ff_dim, activation='relu'),
+            tf.keras.layers.Dense(embed_dim)  # project back to original dimension
+        ])
+
+        # ── LAYER NORMALISATION ────────────────────────────────────────────────
+        # Normalises across the feature dimension for each position independently.
+        # Keeps activation scales stable as gradients travel through many layers.
+        # Applied twice — once after attention, once after FFN.
+        self.norm1 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        self.norm2 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+
+        self.drop1 = tf.keras.layers.Dropout(dropout_rate)
+        self.drop2 = tf.keras.layers.Dropout(dropout_rate)
+
+    def call(self, x, training=False):
+        # x shape: (batch_size, sequence_length, embed_dim)
+        # e.g.     (32, 128, 512) — 32 sentences, 128 tokens each, 512-dim embeddings
+
+        # ── SELF-ATTENTION + RESIDUAL ──────────────────────────────────────────
+        # query=x, value=x: each position attends to all other positions.
+        # The same tensor plays all three roles (query, key, value) — hence "self" attention.
+        attn_out = self.attention(query=x, value=x)
+
+        # Residual connection: add the original x back to the attention output.
+        # Why? Gradients can flow directly through the addition, bypassing the
+        # attention sub-layer entirely. This prevents vanishing gradients in deep stacks.
+        # Then LayerNorm: stabilise the scale of activations.
+        x = self.norm1(x + self.drop1(attn_out, training=training))
+
+        # ── FEED-FORWARD + RESIDUAL ────────────────────────────────────────────
+        # Same pattern: process, add original, normalise.
+        ffn_out = self.ffn(x)
+        x = self.norm2(x + self.drop2(ffn_out, training=training))
+
+        # Output shape is identical to input shape — the block is stackable.
+        return x  # (batch_size, sequence_length, embed_dim)
+
+
+# ── USAGE ─────────────────────────────────────────────────────────────────────
+block = TransformerEncoderBlock(
+    embed_dim=512,   # must match the dimension of your token embeddings
+    num_heads=8,     # 8 parallel attention heads, each with key_dim=64
+    ff_dim=2048      # FFN inner dimension — conventionally 4× embed_dim
+)
+
+# Pass a batch of token embeddings (random here, would be real embeddings in practice)
+x   = tf.random.normal((16, 128, 512))  # (batch=16, seq_len=128, embed_dim=512)
+out = block(x)                          # (16, 128, 512) — same shape in, same shape out
+print(out.shape)  # TensorShape([16, 128, 512])</code></pre>
+    </div>
+
+    <div class="nb-note info">
+      <span class="nb-note-icon">ℹ️</span>
+      <span class="nb-note-body"><strong>key_dim is per head, not total.</strong> With <code>num_heads=8</code> and <code>key_dim=64</code>, the total attention output is 8 × 64 = 512. If you mistakenly set <code>key_dim=512</code>, you get 8 × 512 = 4096 — an 8× larger computation than intended.</span>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+       7. AUTOENCODER
+  ════════════════════════════════════════════════════════════ -->
+  <div class="nb-section" id="autoencoder">
+    <div class="nb-section-header">
+      <span class="nb-section-num">07</span>
+      <span class="nb-section-title">Autoencoder</span>
+      <span class="nb-section-badge">Module 4</span>
+    </div>
+
+    <div class="nb-prose">
+      <p>An autoencoder is trained to reconstruct its own input. This sounds trivial — but the trick is the bottleneck: a hidden layer far smaller than the input forces the network to compress the data into a compact representation. Anything that can't fit in the bottleneck gets discarded.</p>
+      <p>The model has two halves: the <strong>encoder</strong> (input → compressed representation) and the <strong>decoder</strong> (compressed → reconstructed input). After training, you can use the encoder alone to extract compact representations of new data.</p>
+    </div>
+
+    <div class="analogy">
+      <div class="analogy-label">Analogy</div>
+      Like summarising a book into a paragraph (encoder) and then reconstructing the full book from the paragraph (decoder). The network is forced to identify what's truly essential. Once trained, the paragraph-writing skill (encoder) is useful on its own: use it to compare books, find similar ones, or detect which ones are unusual.
+    </div>
+
+    <div class="nb-cell">
+      <div class="nb-cell-label">
+        <span class="in-num">In [7]</span>
+        <span>Autoencoder for dimensionality reduction and anomaly detection</span>
+        <span class="cell-tag">Autoencoder · Keras</span>
+      </div>
+      <pre><code class="language-python">import numpy as np
+from tensorflow.keras import Input, Model
+from tensorflow.keras.layers import Dense
+
+# ── ENCODER ───────────────────────────────────────────────────────────────────
+# Progressively compress the input down to the latent (bottleneck) dimension.
+# Each Dense layer reduces the number of values the model must work with.
+inp      = Input(shape=(784,))           # flattened 28×28 MNIST image
+x        = Dense(256, activation='relu')(inp)
+x        = Dense(128, activation='relu')(x)
+latent   = Dense(32, name='latent')(x)   # the bottleneck: 784 → 32 numbers
+                                          # no activation on the latent layer —
+                                          # latent values should be unconstrained
+
+# ── DECODER ───────────────────────────────────────────────────────────────────
+# Mirror image of the encoder: expand back to original input size.
+x        = Dense(128, activation='relu')(latent)
+x        = Dense(256, activation='relu')(x)
+output   = Dense(784, activation='sigmoid')(x)  # sigmoid → values in [0, 1]
+                                                  # matches pixel range after /255 normalisation
+
+# ── BUILD: two models sharing the same layers ─────────────────────────────────
+autoencoder  = Model(inp, output, name='autoencoder')
+encoder_only = Model(inp, latent, name='encoder')  # useful for extracting embeddings
+
+# ── COMPILE ───────────────────────────────────────────────────────────────────
+autoencoder.compile(
+    optimizer='adam',
+    loss='binary_crossentropy'  # pixel-by-pixel reconstruction loss; works for [0,1] outputs
+)
+
+# ── TRAIN ─────────────────────────────────────────────────────────────────────
+# Target = input (the model learns to recreate what it was given).
+autoencoder.fit(
+    X_train, X_train,           # same data for both input and target
+    epochs=50,
+    batch_size=256,
+    validation_split=0.1
+)
+
+# ── APPLICATIONS ──────────────────────────────────────────────────────────────
+
+# 1. Dimensionality reduction: get 32-dim representations of all test images.
+embeddings = encoder_only.predict(X_test)   # shape: (n_samples, 32)
+
+# 2. Anomaly detection: if reconstruction error is high, the input is unusual.
+# The autoencoder learned to reconstruct "normal" patterns efficiently.
+# Unusual inputs (anomalies) are not reconstructed well → high error.
+reconstructions   = autoencoder.predict(X_test)
+mse_per_sample    = np.mean((X_test - reconstructions) ** 2, axis=1)
+anomaly_threshold = np.percentile(mse_per_sample, 95)  # top 5% = anomalies
+anomalies         = X_test[mse_per_sample > anomaly_threshold]</code></pre>
+    </div>
+
+    <div class="nb-note info">
+      <span class="nb-note-icon">ℹ️</span>
+      <span class="nb-note-body"><strong>Why can't a plain autoencoder generate new data?</strong> Its latent space is unstructured — only the specific points the encoder maps real inputs to decode meaningfully. A random point in latent space will likely decode to noise. The VAE (below) solves this by regularising the latent space.</span>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+       8. VAE
+  ════════════════════════════════════════════════════════════ -->
+  <div class="nb-section" id="vae">
+    <div class="nb-section-header">
+      <span class="nb-section-num">08</span>
+      <span class="nb-section-title">Variational Autoencoder (VAE)</span>
+      <span class="nb-section-badge">Module 4</span>
+    </div>
+
+    <div class="nb-prose">
+      <p>A plain autoencoder maps each input to a single fixed point in latent space. A VAE maps each input to a <em>region</em> — a small probability distribution (a Gaussian bell curve) centred at some mean μ with spread σ. Training forces all these distributions to overlap near the origin via a KL divergence penalty.</p>
+      <p>The payoff: any random point sampled from N(0,1) now falls somewhere in the covered latent space and decodes to a plausible output. The model has learned to generate, not just reconstruct.</p>
+    </div>
+
+    <div class="analogy">
+      <div class="analogy-label">Analogy</div>
+      A plain autoencoder assigns each face a single GPS coordinate. A VAE assigns each face a small neighbourhood. The KL penalty forces all neighbourhoods to cluster near the city centre. Once trained, you can drop a pin anywhere near the centre and find a valid face — because the whole centre is covered, not just isolated points.
+    </div>
+
+    <div class="nb-cell">
+      <div class="nb-cell-label">
+        <span class="in-num">In [8]</span>
+        <span>VAE with reparameterisation trick and custom training step</span>
+        <span class="cell-tag">VAE · Keras</span>
+      </div>
+      <pre><code class="language-python">import tensorflow as tf
+import numpy as np
+
+# ── ENCODER ───────────────────────────────────────────────────────────────────
+# Outputs a distribution, not a single vector.
+# For each of the 16 latent dimensions, we get a mean (z_mean) and a
+# log-variance (z_log_var). We use log(σ²) rather than σ² because
+# log-space keeps values near zero and avoids numerical instability.
+inp       = tf.keras.Input(shape=(784,))
+x         = tf.keras.layers.Dense(256, activation='relu')(inp)
+z_mean    = tf.keras.layers.Dense(16, name='z_mean')(x)    # μ: centre of distribution
+z_log_var = tf.keras.layers.Dense(16, name='z_log_var')(x) # log σ²: width of distribution
+
+# ── REPARAMETERISATION TRICK ──────────────────────────────────────────────────
+# Problem: we need to sample z from N(μ, σ²), but sampling is not differentiable
+# (gradients can't flow through a random draw — there's no ∂z/∂μ).
+#
+# Solution: instead of sampling z directly, sample ε from N(0,1) first
+# (this is "outside" the network, so no gradient needed through it),
+# then compute z = μ + ε·σ. Now z is a deterministic function of μ and σ —
+# gradients can flow through them as normal.
+def sampling(args):
+    z_mean, z_log_var = args
+    epsilon = tf.random.normal(shape=tf.shape(z_mean))  # ε ~ N(0,1)
+    return z_mean + tf.exp(0.5 * z_log_var) * epsilon   # z = μ + ε·σ
+    # 0.5 * z_log_var = log(σ), so exp(0.5 * z_log_var) = σ
+
+z = tf.keras.layers.Lambda(sampling, name='z')([z_mean, z_log_var])
+
+encoder = tf.keras.Model(inp, [z_mean, z_log_var, z], name='encoder')
+
+# ── DECODER ───────────────────────────────────────────────────────────────────
+latent_inp = tf.keras.Input(shape=(16,))
+x          = tf.keras.layers.Dense(256, activation='relu')(latent_inp)
+output     = tf.keras.layers.Dense(784, activation='sigmoid')(x)
+decoder    = tf.keras.Model(latent_inp, output, name='decoder')
+
+
+# ── FULL VAE (custom Model with custom loss) ───────────────────────────────────
+class VAE(tf.keras.Model):
+    def __init__(self, encoder, decoder):
+        super().__init__()
+        self.encoder = encoder
+        self.decoder = decoder
+
+    def call(self, x):
+        z_mean, z_log_var, z = self.encoder(x)
+        return self.decoder(z)
+
+    def train_step(self, data):
+        # data might be (x, y) or just x — we only need x here
+        x = data[0] if isinstance(data, tuple) else data
+
+        with tf.GradientTape() as tape:
+            z_mean, z_log_var, z = self.encoder(x, training=True)
+            reconstruction       = self.decoder(z, training=True)
+
+            # ── RECONSTRUCTION LOSS ────────────────────────────────────────────
+            # How accurately does the decoder recreate the original input?
+            # We scale by 784 (image size) to balance against the KL term.
+            recon_loss = tf.reduce_mean(
+                tf.keras.losses.binary_crossentropy(x, reconstruction)
+            ) * 784
+
+            # ── KL DIVERGENCE LOSS ─────────────────────────────────────────────
+            # How much does our latent distribution differ from N(0,1)?
+            # This is the regularisation term that makes the latent space smooth.
+            # Formula: -0.5 × Σ(1 + log σ² - μ² - σ²)
+            # When μ=0 and σ=1: KL = 0. The further we are from N(0,1), the larger the penalty.
+            kl_loss = -0.5 * tf.reduce_mean(
+                1 + z_log_var - tf.square(z_mean) - tf.exp(z_log_var)
+            )
+
+            # Total loss = reconstruction + KL.
+            # This is the negative ELBO (Evidence Lower BOund) — the standard VAE objective.
+            total_loss = recon_loss + kl_loss
+
+        grads = tape.gradient(total_loss, self.trainable_variables)
+        self.optimizer.apply_gradients(zip(grads, self.trainable_variables))
+        return {'loss': total_loss, 'recon_loss': recon_loss, 'kl_loss': kl_loss}
+
+
+vae = VAE(encoder, decoder)
+vae.compile(optimizer='adam')
+vae.fit(X_train, X_train, epochs=50, batch_size=128)
+
+# ── GENERATION: sample new images ─────────────────────────────────────────────
+# The KL term ensured the latent space approximates N(0,1).
+# So we can sample any z ~ N(0,1) and expect the decoder to produce something valid.
+z_samples = np.random.normal(size=(10, 16))  # 10 random points in latent space
+generated = decoder.predict(z_samples)        # decode to image space: (10, 784)</code></pre>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+       9. GAN
+  ════════════════════════════════════════════════════════════ -->
+  <div class="nb-section" id="gan">
+    <div class="nb-section-header">
+      <span class="nb-section-num">09</span>
+      <span class="nb-section-title">Generative Adversarial Network (GAN)</span>
+      <span class="nb-section-badge">Module 4</span>
+    </div>
+
+    <div class="nb-prose">
+      <p>A GAN pits two networks against each other. The <strong>generator</strong> takes random noise and tries to produce realistic fake samples. The <strong>discriminator</strong> tries to tell real samples from fakes. As the discriminator improves, the generator is forced to improve to keep fooling it. They push each other upward in a competitive loop.</p>
+      <p>Training a GAN requires alternating two updates: first train D on real + fake batches, then train G through the (frozen) D. Both updates use binary cross-entropy, but with opposite goals.</p>
+    </div>
+
+    <div class="analogy">
+      <div class="analogy-label">Analogy</div>
+      A counterfeiter (generator) and a detective (discriminator). As the detective gets better at spotting fakes, the counterfeiter studies the feedback and improves. As the counterfeiter gets better, the detective must sharpen their eye. Neither can rest — their competition is what drives quality upward.
+    </div>
+
+    <div class="nb-cell">
+      <div class="nb-cell-label">
+        <span class="in-num">In [9]</span>
+        <span>GAN: generator, discriminator, and alternating training loop</span>
+        <span class="cell-tag">GAN · Keras</span>
+      </div>
+      <pre><code class="language-python">import tensorflow as tf
+import numpy as np
+
+LATENT_DIM = 100  # size of the random noise vector — the generator's "seed"
+
+# ── GENERATOR: noise → fake images ────────────────────────────────────────────
+# Input: a random point in "noise space" (100 numbers from N(0,1)).
+# Output: a fake image in the same format as real training images.
+# tanh output: values in [-1, 1] — real images must also be rescaled to this range.
+generator = tf.keras.Sequential([
+    tf.keras.layers.Dense(256, activation='relu', input_shape=(LATENT_DIM,)),
+    tf.keras.layers.Dense(512, activation='relu'),
+    tf.keras.layers.Dense(784, activation='tanh'),  # tanh → output in [-1, 1]
+    tf.keras.layers.Reshape((28, 28, 1))            # reshape to image dimensions
+], name='generator')
+
+# ── DISCRIMINATOR: image → real or fake ───────────────────────────────────────
+# A binary classifier.
+# sigmoid output → probability that the input is a REAL image (not a fake).
+# Leaky ReLU avoids "dead neurons" — unlike ReLU, it allows small negative values
+# to pass through, which helps the discriminator learn from subtle fake cues.
+discriminator = tf.keras.Sequential([
+    tf.keras.layers.Flatten(input_shape=(28, 28, 1)),
+    tf.keras.layers.Dense(512, activation=tf.keras.layers.LeakyReLU(0.2)),
+    tf.keras.layers.Dense(256, activation=tf.keras.layers.LeakyReLU(0.2)),
+    tf.keras.layers.Dense(1, activation='sigmoid')  # 1.0 = real, ~0.0 = fake
+], name='discriminator')
+
+discriminator.compile(
+    optimizer=tf.keras.optimizers.Adam(1e-4),
+    loss='binary_crossentropy'
+)
+
+# ── COMBINED MODEL: for training the generator ────────────────────────────────
+# When we train G, we must freeze D first.
+# Why? D's weights should only update during "Step 1: train D".
+# During "Step 2: train G", we want gradients to flow back through D to G —
+# but we don't want D's weights to change. Freezing D achieves this.
+discriminator.trainable = False
+
+gan_input  = tf.keras.Input(shape=(LATENT_DIM,))
+gan_output = discriminator(generator(gan_input))  # noise → fake image → D verdict
+gan        = tf.keras.Model(gan_input, gan_output, name='gan')
+
+gan.compile(
+    optimizer=tf.keras.optimizers.Adam(1e-4),
+    loss='binary_crossentropy'
+)
+
+# ── TRAINING LOOP ─────────────────────────────────────────────────────────────
+def train_gan(real_images, epochs=100, batch_size=64):
+    half = batch_size // 2
+
+    for epoch in range(epochs):
+
+        # ── STEP 1: TRAIN DISCRIMINATOR ───────────────────────────────────────
+        # D sees: real images (label=1 "these are genuine") +
+        #         fake images (label=0 "these are fakes").
+        # It learns to tell them apart.
+
+        idx        = np.random.randint(0, real_images.shape[0], half)
+        real_batch = real_images[idx]
+
+        noise      = np.random.normal(0, 1, (half, LATENT_DIM))
+        fake_batch = generator.predict(noise, verbose=0)
+
+        # Train separately on real and fake (common for stability).
+        d_loss_real = discriminator.train_on_batch(real_batch, np.ones((half, 1)))
+        d_loss_fake = discriminator.train_on_batch(fake_batch, np.zeros((half, 1)))
+
+        # ── STEP 2: TRAIN GENERATOR ───────────────────────────────────────────
+        # G's goal: produce images that D labels as "real".
+        # We label the fakes as 1 (real) — this is intentional.
+        # When D says "fake" (output near 0) but label is 1, loss is high.
+        # Gradient flows back through frozen D into G, nudging G to fool D better.
+        noise             = np.random.normal(0, 1, (batch_size, LATENT_DIM))
+        misleading_labels = np.ones((batch_size, 1))  # lie: call fakes "real"
+        g_loss            = gan.train_on_batch(noise, misleading_labels)
+
+        if epoch % 10 == 0:
+            print(f'Epoch {epoch:3d} | '
+                  f'D_real: {d_loss_real:.3f}  D_fake: {d_loss_fake:.3f}  '
+                  f'G: {g_loss:.3f}')
+
+train_gan(X_train, epochs=200, batch_size=64)
+
+# ── GENERATE NEW IMAGES ────────────────────────────────────────────────────────
+noise     = np.random.normal(0, 1, (16, LATENT_DIM))
+generated = generator.predict(noise)  # (16, 28, 28, 1) — 16 new images</code></pre>
+    </div>
+
+    <div class="nb-note warn">
+      <span class="nb-note-icon">⚠️</span>
+      <span class="nb-note-body"><strong>Mode collapse:</strong> if the generator learns that one type of output consistently fools D, it may stop exploring and produce only that output. Symptom: D and G losses look reasonable, but all generated images look identical. There is no easy fix — it reflects a fundamental limitation of the standard GAN objective.</span>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+       10. DQN
+  ════════════════════════════════════════════════════════════ -->
+  <div class="nb-section" id="dqn">
+    <div class="nb-section-header">
+      <span class="nb-section-num">10</span>
+      <span class="nb-section-title">Deep Q-Network (DQN)</span>
+      <span class="nb-section-badge">Module 6</span>
+    </div>
+
+    <div class="nb-prose">
+      <p>Reinforcement learning is a different paradigm: instead of labelled training data, the model learns from <em>experience</em> — it takes actions in an environment, receives a reward signal, and gradually learns which actions lead to more reward.</p>
+      <p>DQN uses a neural network to approximate the <strong>Q-function</strong>: given the current state, predict the expected total future reward for each possible action. Two key tricks stabilise training: a <strong>replay buffer</strong> (random sampling from past experience) and a <strong>target network</strong> (a frozen copy that provides stable training targets).</p>
+    </div>
+
+    <div class="analogy">
+      <div class="analogy-label">Analogy</div>
+      Learning to play chess by playing thousands of games and noting which moves led to wins. The Q-network is a position evaluator: given the board, score each legal move. The agent picks the highest-scoring move — except when exploring, where it plays randomly to discover strategies it hasn't tried. The replay buffer is a game diary; training on random pages prevents recent games from dominating.
+    </div>
+
+    <div class="nb-cell">
+      <div class="nb-cell-label">
+        <span class="in-num">In [10]</span>
+        <span>DQN on CartPole — Q-network, replay buffer, target network</span>
+        <span class="cell-tag">DQN · RL · Keras</span>
+      </div>
+      <pre><code class="language-python">import gymnasium as gym
+import numpy as np
+import tensorflow as tf
+from collections import deque
+import random
+
+# ── ENVIRONMENT ───────────────────────────────────────────────────────────────
+# CartPole-v1: balance a pole on a moving cart.
+# State: 4 numbers (cart position, cart velocity, pole angle, pole angular velocity).
+# Actions: 2 (push left, push right).
+# Reward: +1 for every time step the pole stays upright. Max episode = 500 steps.
+env         = gym.make('CartPole-v1')
+state_size  = env.observation_space.shape[0]  # 4
+action_size = env.action_space.n              # 2
+
+# ── Q-NETWORK: state → Q-value for each action ────────────────────────────────
+# Given the current state, output one Q-value per possible action.
+# Q-value = expected total discounted reward if we take that action now.
+# The agent picks the action with the highest Q-value.
+# Linear output activation: Q-values can be any real number, not bounded.
+def build_network():
+    return tf.keras.Sequential([
+        tf.keras.layers.Dense(24, activation='relu', input_shape=(state_size,)),
+        tf.keras.layers.Dense(24, activation='relu'),
+        tf.keras.layers.Dense(action_size, activation='linear')  # raw Q-values
+    ])
+
+q_network      = build_network()  # updated every training step
+target_network = build_network()  # frozen copy — updated every N steps only
+target_network.set_weights(q_network.get_weights())  # start identical
+
+q_network.compile(optimizer=tf.keras.optimizers.Adam(1e-3), loss='mse')
+
+# ── REPLAY BUFFER ─────────────────────────────────────────────────────────────
+# Stores past (state, action, reward, next_state, done) tuples.
+# Why not train on transitions as they happen?
+# Consecutive transitions are highly correlated — same environment, similar states.
+# Training in order would bias the network toward recent experience and cause instability.
+# Random sampling from the buffer gives more diverse, independent-ish training batches.
+replay_buffer = deque(maxlen=10_000)  # oldest entries are dropped when full
+
+# ── HYPERPARAMETERS ───────────────────────────────────────────────────────────
+gamma     = 0.95   # discount factor: how much we value future rewards vs immediate ones
+                   # 0.95 means a reward 1 step in the future is worth 0.95 of one now
+epsilon   = 1.0    # exploration rate: 1.0 = 100% random actions at the start
+                   # we know nothing yet, so exploring randomly is optimal
+eps_min   = 0.01   # minimum exploration: always keep 1% random to avoid getting stuck
+eps_decay = 0.995  # multiply epsilon by this after each episode — slow decay over time
+
+# ── TRAINING LOOP ─────────────────────────────────────────────────────────────
+for episode in range(500):
+    state, _ = env.reset()
+    state    = np.reshape(state, [1, state_size])  # network expects shape (1, 4)
+    total_reward = 0
+
+    for step in range(500):  # max 500 steps per episode
+
+        # ── ACTION SELECTION (epsilon-greedy) ─────────────────────────────────
+        if np.random.random() < epsilon:
+            action = env.action_space.sample()            # explore: random action
+        else:
+            q_vals = q_network.predict(state, verbose=0)
+            action = np.argmax(q_vals[0])                # exploit: best known action
+
+        # Take action, observe result
+        next_state, reward, terminated, truncated, _ = env.step(action)
+        done       = terminated or truncated
+        next_state = np.reshape(next_state, [1, state_size])
+
+        # Store experience in replay buffer
+        replay_buffer.append((state, action, reward, next_state, done))
+        state        = next_state
+        total_reward += reward
+
+        # ── LEARNING: train on a random mini-batch from the buffer ────────────
+        if len(replay_buffer) >= 64:
+            batch = random.sample(replay_buffer, 64)
+
+            for s, a, r, ns, d in batch:
+
+                # BELLMAN EQUATION: what Q-value should we have predicted?
+                #   If the episode ended (d=True): Q_target = r
+                #     (no future rewards possible — the game is over)
+                #   Otherwise: Q_target = r + γ × max Q(next_state)
+                #     (immediate reward + discounted best future reward)
+                #
+                # We use the TARGET NETWORK for max Q(next_state), not the Q-network.
+                # The target network is frozen, so these targets are stable.
+                # If we used the Q-network instead, both predictions AND targets
+                # would shift with every update — unstable, often diverges.
+                if d:
+                    q_target = r
+                else:
+                    q_target = r + gamma * np.max(
+                        target_network.predict(ns, verbose=0)[0]
+                    )
+
+                # Update only the Q-value for the action we actually took.
+                # All other actions' Q-values stay unchanged in this update.
+                q_vals      = q_network.predict(s, verbose=0)
+                q_vals[0][a] = q_target
+                q_network.fit(s, q_vals, verbose=0)  # one gradient step
+
+        if done:
+            break
+
+    # ── END OF EPISODE: update target network and decay epsilon ───────────────
+    # Copy Q-network weights → target network.
+    # Doing this every episode (rather than every step) gives stable targets
+    # for a full episode at a time.
+    target_network.set_weights(q_network.get_weights())
+
+    # Decay epsilon: as the agent learns, rely more on exploitation.
+    epsilon = max(eps_min, epsilon * eps_decay)
+
+    if episode % 50 == 0:
+        print(f'Episode {episode:3d} | reward: {total_reward:.0f} | ε: {epsilon:.3f}')</code></pre>
+    </div>
+
+    <div class="nb-note tip">
+      <span class="nb-note-icon">💡</span>
+      <span class="nb-note-body"><strong>Signs of healthy DQN training:</strong> total reward per episode should trend upward over hundreds of episodes. Epsilon should visibly decline. If reward stays flat or crashes, common causes are: learning rate too high, gamma too close to 1, replay buffer too small, or target network not being updated.</span>
+    </div>
+  </div>
+
+
+  <!-- ── Back links ── -->
+  <div style="border-top:1px solid var(--border);padding-top:1.25rem;margin-top:1rem;
+              display:flex;gap:1rem;flex-wrap:wrap">
+    <a href="../courses/c03.html" style="color:var(--blue);font-size:.875rem;text-decoration:none">
+      ← Course 3 notes
+    </a>
+    <a href="../games/c03-quiz.html" style="color:var(--blue);font-size:.875rem;text-decoration:none">
+      C3 Quiz →
+    </a>
+  </div>
+
+</div><!-- lib-container -->
+</div><!-- container -->
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    hljs.highlightAll();
+  });
+</script>
+</body>
+</html>

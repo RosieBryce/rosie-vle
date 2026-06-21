@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>C5 — Deep Learning with PyTorch · VLE</title>
+  <link rel="stylesheet" href="../shared.css">
+  <script src="../shared.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</head>
+<body>
+<script>initNav('../');</script>
+
+<div class="container">
+
+  <!-- ═══ HEADER ══════════════════════════════════════════════ -->
+  <div style="margin-bottom:1.75rem">
+    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem;flex-wrap:wrap">
+      <span style="color:var(--muted);font-size:.83rem">Course 5 of 13</span>
+      <span class="badge badge-active"><span class="dot dot-b pulsing"></span>In Progress</span>
+      <span class="badge badge-pending">19 hours</span>
+    </div>
+    <h1 style="font-size:1.5rem;font-weight:700;letter-spacing:-.02em;margin-bottom:.375rem">
+      Deep Learning with PyTorch
+    </h1>
+    <p style="color:var(--muted);font-size:.875rem;line-height:1.55">
+      Applies PyTorch fundamentals to CNNs, RNNs, LSTMs, and transfer learning.
+      Builds on Course 4's manual training loop — now the architectures get complex.
+      Most bugs here are tensor shape errors; shape tracking is the essential skill.
+    </p>
+  </div>
+
+  <!-- ═══ FLIPPED CLASSROOM ════════════════════════════════════ -->
+  <div class="flip-card" style="margin-bottom:2rem">
+    <div class="flip-header">
+      <span>📖</span>
+      Flipped Classroom — Before You Watch
+    </div>
+
+    <div class="flip-sublabel">Prime your thinking — bring these questions into the lectures</div>
+    <ul class="flip-questions">
+      <li>
+        <span class="flip-q-num">1</span>
+        <span>A <code>Conv2d</code> layer with kernel size 3×3 and no padding reduces the spatial dimensions. If your input is (B, 3, 224, 224), what is the output shape after the conv, and how does <code>padding=1</code> change this?</span>
+      </li>
+      <li>
+        <span class="flip-q-num">2</span>
+        <span>LSTMs have two state vectors — hidden state and cell state. RNNs have only one. What problem does the second state solve? What does vanishing gradient mean specifically for a 100-step sequence RNN?</span>
+      </li>
+      <li>
+        <span class="flip-q-num">3</span>
+        <span>When you freeze all layers of a ResNet and replace only its final linear layer, which parameters does the optimiser update? What is the <em>correct</em> way to pass only those to the optimiser?</span>
+      </li>
+    </ul>
+
+    <div class="flip-sublabel">Watch for…</div>
+    <div class="watch-for">
+      The <code>batch_first=True</code> argument in LSTM — the default is <code>(seq_len, batch, features)</code> which
+      is the opposite of what most people expect. Also: LSTM returns a tuple, not just the output tensor.
+      Unpacking it wrong is the #1 LSTM bug in this course.
+    </div>
+  </div>
+
+  <!-- ═══ CORE THEORY ══════════════════════════════════════════ -->
+  <div class="section-head">
+    Core Theory
+    <span class="section-hint">Assessment priority — conceptual understanding over syntax</span>
+  </div>
+
+  <!-- 1. CNN Architecture -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">CNNs</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">Convolutional Networks — Key Concepts</h3>
+    <p style="font-size:.875rem;line-height:1.6;margin-bottom:.75rem">
+      CNNs exploit spatial structure through <strong>local receptive fields</strong> (each neuron sees only a patch),
+      <strong>weight sharing</strong> (same filter applied everywhere), and <strong>pooling</strong> (spatial downsampling).
+    </p>
+    <div style="overflow-x:auto;margin-bottom:.75rem">
+      <table class="concept-table">
+        <thead><tr><th>Concept</th><th>Details</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Conv2d output size</strong> (no padding)</td><td><code>floor((H − k) / stride) + 1</code> per spatial dim</td></tr>
+          <tr><td><strong>padding='same'</strong></td><td>Pads to preserve spatial dimensions (output same H × W as input)</td></tr>
+          <tr><td><strong>padding='valid'</strong></td><td>No padding — output is smaller than input</td></tr>
+          <tr><td><strong>Parameter count</strong></td><td><code>(k × k × C_in + 1) × C_out</code> per conv layer</td></tr>
+          <tr><td><strong>AdaptiveAvgPool2d(1)</strong></td><td>Reduces any spatial size to (B, C, 1, 1) — output is always 1×1 regardless of input size</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="insight ins-info">
+      <strong>Why AdaptiveAvgPool2d over Flatten for transfer learning:</strong> Flatten produces a vector whose size depends on input resolution — a parameter explosion. Global average pooling reduces each feature map to one scalar, giving a fixed-size output regardless of input size and far fewer parameters.
+    </div>
+  </div>
+
+  <!-- 2. RNN vs LSTM vs GRU -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">Sequence Models</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">RNN vs LSTM vs GRU — The Critical Differences</h3>
+    <p style="font-size:.875rem;line-height:1.6;margin-bottom:.75rem">
+      All three process sequences step-by-step, passing hidden state forward. They differ in how much of the past they can remember and at what computational cost.
+    </p>
+    <div style="overflow-x:auto;margin-bottom:.75rem">
+      <table class="decision-table">
+        <thead><tr><th></th><th>RNN</th><th>LSTM</th><th>GRU</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>State vectors</strong></td>
+            <td>h only</td>
+            <td>h + c (cell state)</td>
+            <td>h only (combined gate)</td>
+          </tr>
+          <tr>
+            <td><strong>Vanishing gradient</strong></td>
+            <td style="color:var(--red)">Severe</td>
+            <td style="color:var(--green)">Mostly solved</td>
+            <td style="color:var(--green)">Mostly solved</td>
+          </tr>
+          <tr>
+            <td><strong>Parameters</strong></td>
+            <td>Fewest</td>
+            <td>Most</td>
+            <td>Middle</td>
+          </tr>
+          <tr>
+            <td><strong>Speed</strong></td>
+            <td>Fastest</td>
+            <td>Slowest</td>
+            <td>Faster than LSTM</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="insight ins-warn">
+      <strong>GRU has no cell state</strong> — only hidden state. LSTM has both <code>h_n</code> and <code>c_n</code>.
+      This is a common exam question. GRU achieves comparable performance with fewer parameters.
+    </div>
+  </div>
+
+  <!-- 3. Transfer Learning -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">Transfer Learning</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">Transfer Learning in PyTorch — Model Anatomy</h3>
+    <p style="font-size:.875rem;line-height:1.6;margin-bottom:.75rem">
+      Each torchvision model has a different attribute name for its final classification layer.
+      You must know the correct attribute to replace it:
+    </p>
+    <div style="overflow-x:auto;margin-bottom:.75rem">
+      <table class="concept-table">
+        <thead><tr><th>Model</th><th>Final layer attribute</th><th>Typical use</th></tr></thead>
+        <tbody>
+          <tr><td>ResNet-18/50</td><td><code>model.fc</code></td><td>General purpose — good balance</td></tr>
+          <tr><td>VGG-16</td><td><code>model.classifier[-1]</code></td><td>Older benchmark; large parameter count</td></tr>
+          <tr><td>EfficientNet</td><td><code>model.classifier[-1]</code></td><td>Best accuracy-per-parameter</td></tr>
+          <tr><td>MobileNet</td><td><code>model.classifier[-1]</code></td><td>Mobile/edge deployment</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:.83rem;color:var(--muted);line-height:1.5">
+      After freezing layers (<code>param.requires_grad = False</code>), pass only trainable parameters to the
+      optimiser using <code>filter(lambda p: p.requires_grad, model.parameters())</code>.
+      Transfer learning benefits most when your dataset is small and similar to the pretraining domain.
+    </p>
+  </div>
+
+  <!-- 4. Bidirectional and shape flow -->
+  <div class="card" style="margin-bottom:2rem">
+    <div class="tag tag-blue">Architecture</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">Bidirectional RNNs &amp; LSTM Output Shapes</h3>
+    <p style="font-size:.875rem;line-height:1.6;margin-bottom:.625rem">
+      A bidirectional LSTM processes the sequence in both forward and backward directions, then concatenates the outputs.
+      This doubles the output hidden size.
+    </p>
+    <div style="overflow-x:auto;margin-bottom:.625rem">
+      <table class="concept-table">
+        <thead><tr><th>Configuration</th><th>Output shape (<code>batch_first=True</code>)</th></tr></thead>
+        <tbody>
+          <tr><td>Unidirectional LSTM, hidden_size=256</td><td><code>(batch, seq_len, 256)</code></td></tr>
+          <tr><td>Bidirectional LSTM, hidden_size=256</td><td><code>(batch, seq_len, 512)</code> — doubled</td></tr>
+          <tr><td>h_n from unidirectional</td><td><code>(num_layers, batch, hidden_size)</code></td></tr>
+          <tr><td>h_n from bidirectional</td><td><code>(num_layers × 2, batch, hidden_size)</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="insight ins-info">
+      <strong>Dropout in LSTM</strong> only applies between layers (not within a single layer), and is NOT applied to the last layer's output. If <code>num_layers=1</code>, setting dropout has no effect.
+    </div>
+  </div>
+
+  <!-- ═══ MUST-KNOW CONCEPTS ════════════════════════════════════ -->
+  <div class="section-head">Must-Know Concepts</div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:2rem">
+    <table class="concept-table">
+      <thead><tr><th>Term</th><th>One-liner (assessment vocabulary)</th></tr></thead>
+      <tbody>
+        <tr><td><code>nn.Conv2d</code></td><td><code>Conv2d(in_channels, out_channels, kernel_size, stride, padding)</code> — weight sharing across spatial positions</td></tr>
+        <tr><td><code>nn.MaxPool2d</code></td><td>Spatially downsamples by taking max within each window; reduces spatial dims, retains strongest activations</td></tr>
+        <tr><td><code>nn.LSTM</code></td><td>Returns tuple <code>(output, (h_n, c_n))</code> — must unpack; <code>batch_first=True</code> changes axis order</td></tr>
+        <tr><td><code>batch_first=True</code></td><td>Changes LSTM input/output to <code>(batch, seq_len, features)</code> instead of default <code>(seq_len, batch, features)</code></td></tr>
+        <tr><td>bidirectional LSTM</td><td>Processes sequence forward and backward; output hidden size doubles</td></tr>
+        <tr><td><code>AdaptiveAvgPool2d(1)</code></td><td>Reduces any spatial input to <code>(B, C, 1, 1)</code> — size-agnostic feature pooling</td></tr>
+        <tr><td><code>transforms.ToTensor()</code></td><td>Converts PIL/NumPy HWC [0,255] → CHW [0,1] tensor; don't manually transpose when using this</td></tr>
+        <tr><td>ImageNet normalisation</td><td>mean=[0.485,0.456,0.406], std=[0.229,0.224,0.225] — required when using ImageNet pretrained weights</td></tr>
+        <tr><td>gradient clipping</td><td><code>clip_grad_norm_(model.parameters(), max_norm=1.0)</code> — prevents exploding gradients in RNNs</td></tr>
+        <tr><td>learning rate scheduler</td><td><code>ReduceLROnPlateau</code>, <code>StepLR</code>, <code>CosineAnnealingLR</code> — call <code>scheduler.step()</code> AFTER <code>optimizer.step()</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══ EXAM TRAPS ════════════════════════════════════════════ -->
+  <div class="section-head">Exam Traps</div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 1 — batch_first default</div>
+    <strong><code>nn.LSTM</code> default is <code>(seq_len, batch, features)</code> — not batch-first.</strong>
+    If you feed <code>(batch, seq_len, features)</code> without <code>batch_first=True</code>,
+    the LSTM silently treats your batch dimension as the sequence length. Training will appear to run
+    but produce wrong results.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 2 — LSTM returns a tuple</div>
+    <strong><code>nn.LSTM</code> returns <code>(output, (h_n, c_n))</code>.</strong>
+    If you write <code>out = self.lstm(x)</code> and then do <code>out[:, -1, :]</code>,
+    you're indexing a tuple — this raises a TypeError or produces nonsense results.
+    Always unpack: <code>out, (h_n, c_n) = self.lstm(x)</code>.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 3 — GRU has no cell state</div>
+    <strong>GRU returns <code>(output, h_n)</code> — there is no <code>c_n</code>.</strong>
+    LSTM returns <code>(output, (h_n, c_n))</code>. Mixing up these return signatures is a common source
+    of unpacking errors. Remember: GRU is simpler — one state vector, not two.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 4 — model.eval() does NOT disable gradients</div>
+    <strong><code>model.eval()</code> disables dropout and switches BatchNorm to inference mode.</strong>
+    It does NOT disable gradient computation. For that you need <code>torch.no_grad()</code> separately.
+    Always use both during evaluation: <code>model.eval()</code> + <code>with torch.no_grad():</code>.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 5 — Bidirectional doubles output size</div>
+    <strong>A bidirectional LSTM with <code>hidden_size=256</code> produces output of size 512.</strong>
+    The linear layer after it must accept 512 inputs, not 256.
+    Forgetting this causes a shape mismatch error at the linear layer.
+  </div>
+
+  <!-- ═══ INTERACTIVE VIZ ══════════════════════════════════════ -->
+  <div class="section-head" style="margin-top:2rem">Interactive Visualisations</div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.875rem;margin-bottom:2rem">
+    <a class="viz-card" href="../viz/gradient-descent.html">
+      <div class="viz-card-title">📊 Gradient Descent</div>
+      <div class="viz-card-desc">Learning rate effects and scheduling. Relevant to CNN and RNN training dynamics.</div>
+    </a>
+    <a class="viz-card" href="../viz/activation-functions.html">
+      <div class="viz-card-title">⚡ Activation Functions</div>
+      <div class="viz-card-desc">ReLU and variants in CNN feature maps. Saturation effects.</div>
+    </a>
+    <a class="viz-card" href="../viz/backprop.html">
+      <div class="viz-card-title">🔁 Backpropagation</div>
+      <div class="viz-card-desc">Gradient flow through layers. Directly relevant to vanishing gradients in RNNs.</div>
+    </a>
+  </div>
+
+  <!-- ═══ PRACTICAL NOTES (collapsed) ══════════════════════════ -->
+  <div style="margin-bottom:2rem">
+    <button class="collapse-toggle">
+      <span class="c-arrow">▶</span>
+      Practical Notes &amp; Code Patterns
+      <span style="margin-left:.5rem;font-size:.75rem;color:var(--muted)">(useful for application — not needed to pass the assessment)</span>
+    </button>
+    <div class="collapse-body">
+
+      <div class="card" style="margin-bottom:1rem">
+        <div class="tag tag-blue">Common Gotchas</div>
+        <ul style="font-size:.875rem;line-height:1.7;padding-left:1.25rem;color:var(--text)">
+          <li><strong><code>batch_first=True</code> in LSTM</strong> — default is <code>(seq_len, batch, features)</code>; most expect batch-first</li>
+          <li><strong>LSTM returns a tuple</strong> — always unpack <code>out, (h_n, c_n) = self.lstm(x)</code></li>
+          <li><strong>Conv2d input must be 4D</strong> — <code>(batch, channels, height, width)</code>; a single image needs unsqueeze(0)</li>
+          <li><strong>ToTensor() changes channel order</strong> — HWC (PIL) → CHW (PyTorch); don't manually transpose</li>
+          <li><strong>ImageNet normalisation only when using pretrained weights</strong> — use dataset mean/std otherwise</li>
+          <li><strong>Forgetting <code>.detach()</code> when logging losses</strong> — accumulates computation graphs across epochs</li>
+        </ul>
+      </div>
+
+      <div class="card" style="margin-bottom:1rem">
+        <div class="tag tag-blue">CNN Pattern</div>
+        <pre><code class="language-python">import torch.nn as nn
+
+class CNN(nn.Module):
+    def __init__(self, num_classes):
+        super().__init__()
+        self.features = nn.Sequential(
+            nn.Conv2d(3, 32, kernel_size=3, padding=1),  # (B,3,H,W) → (B,32,H,W)
+            nn.BatchNorm2d(32),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2, 2),                          # → (B,32,H/2,W/2)
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2, 2),                          # → (B,64,H/4,W/4)
+        )
+        self.classifier = nn.Sequential(
+            nn.AdaptiveAvgPool2d(1),                      # → (B,64,1,1)
+            nn.Flatten(),                                 # → (B,64)
+            nn.Linear(64, num_classes)
+        )
+
+    def forward(self, x):
+        return self.classifier(self.features(x))</code></pre>
+      </div>
+
+      <div class="card" style="margin-bottom:1rem">
+        <div class="tag tag-blue">Transfer Learning Pattern</div>
+        <pre><code class="language-python">import torchvision.models as models
+
+backbone = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V1)
+
+# Freeze all layers
+for param in backbone.parameters():
+    param.requires_grad = False
+
+# Replace final layer
+backbone.fc = nn.Linear(backbone.fc.in_features, num_classes)
+
+# Only trainable params to optimiser
+optimizer = torch.optim.Adam(
+    filter(lambda p: p.requires_grad, backbone.parameters()),
+    lr=1e-3
+)</code></pre>
+      </div>
+
+      <div class="card" style="margin-bottom:.5rem">
+        <div class="tag tag-blue">LSTM Classifier Pattern</div>
+        <pre><code class="language-python">class LSTMClassifier(nn.Module):
+    def __init__(self, input_size, hidden_size, num_layers, num_classes):
+        super().__init__()
+        self.lstm = nn.LSTM(
+            input_size, hidden_size, num_layers,
+            batch_first=True,      # CRITICAL
+            dropout=0.3 if num_layers > 1 else 0
+        )
+        self.fc = nn.Linear(hidden_size, num_classes)
+
+    def forward(self, x):
+        # x: (batch, seq_len, input_size)
+        out, (h_n, c_n) = self.lstm(x)     # unpack tuple
+        last = out[:, -1, :]               # last timestep
+        return self.fc(last)</code></pre>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ STUDY GAMES (placeholder) ════════════════════════════ -->
+  <div class="section-head" style="margin-top:1rem">Study Games</div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.875rem;margin-bottom:2rem;opacity:.45">
+    <div class="card" style="cursor:not-allowed">
+      <div class="tag">🎮 Shape Tracker</div>
+      <div style="font-size:.875rem">Trace tensor shapes through CNN/LSTM layers — coming Phase 4</div>
+    </div>
+    <div class="card" style="cursor:not-allowed">
+      <div class="tag">🐛 LSTM Debugger</div>
+      <div style="font-size:.875rem">Spot batch_first and tuple-unpacking bugs — coming Phase 4</div>
+    </div>
+  </div>
+
+  <!-- ═══ FULL NOTES LINK ══════════════════════════════════════ -->
+  <div class="card" style="margin-bottom:1.5rem;background:var(--surface2)">
+    <div style="font-size:.875rem;color:var(--muted)">
+      Full curated notes (Obsidian):
+      <a href="obsidian://open?vault=IBM%20Courses&file=claude-content%2F05-deep-learning-pytorch"
+         style="color:var(--blue)">
+        claude-content/05-deep-learning-pytorch →
+      </a>
+    </div>
+  </div>
+
+  <div class="footer">
+    <a href="../index.html">← VLE Home</a> ·
+    <a href="c04.html">← C4</a> ·
+    <a href="c06.html">C6 →</a> ·
+    <a href="../course-tracker.html" target="_blank">📊 Tracker</a>
+  </div>
+
+</div>
+</body>
+</html>

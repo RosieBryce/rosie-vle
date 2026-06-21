@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>C1 — Machine Learning with Python · VLE</title>
+  <link rel="stylesheet" href="../shared.css">
+  <script src="../shared.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</head>
+<body>
+<script>initNav('../');</script>
+
+<div class="container">
+
+  <!-- ═══ HEADER ══════════════════════════════════════════════ -->
+  <div style="margin-bottom:1.75rem">
+    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem;flex-wrap:wrap">
+      <span style="color:var(--muted);font-size:.83rem">Course 1 of 13</span>
+      <span class="badge badge-done"><span class="dot dot-g"></span>Complete</span>
+      <span class="badge badge-pending">20 hours</span>
+    </div>
+    <h1 style="font-size:1.5rem;font-weight:700;letter-spacing:-.02em;margin-bottom:.375rem">
+      Machine Learning with Python
+    </h1>
+    <p style="color:var(--muted);font-size:.875rem;line-height:1.55">
+      The sklearn-centric foundation. Supervised and unsupervised algorithms, evaluation metrics,
+      bias-variance tradeoff, regularisation, and cross-validation.
+      Everything here reappears in every later course.
+    </p>
+  </div>
+
+  <!-- Revision insight -->
+  <div class="insight ins-info" style="margin-bottom:1.75rem">
+    <strong>This course is complete</strong> — use this page for revision. Focus on the exam traps and the decision tables;
+    the assessment tests concept discrimination more than code recall.
+  </div>
+
+  <!-- ═══ FLIPPED CLASSROOM (Looking back framing) ══════════════ -->
+  <div class="flip-card" style="margin-bottom:2rem">
+    <div class="flip-header">
+      <span>🔍</span>
+      Looking Back — Revision Prompts
+    </div>
+
+    <div class="flip-sublabel">Test your recall — answer these before looking at your notes</div>
+    <ul class="flip-questions">
+      <li>
+        <span class="flip-q-num">1</span>
+        <span>You have a medical dataset where 98% of patients are healthy. Your model achieves 98% accuracy. Is this a good model? What metric should you actually report, and why?</span>
+      </li>
+      <li>
+        <span class="flip-q-num">2</span>
+        <span>A colleague fits a <code>StandardScaler</code> on the entire dataset before splitting into train and test. What has gone wrong, and what is the correct procedure?</span>
+      </li>
+      <li>
+        <span class="flip-q-num">3</span>
+        <span>You train a decision tree and get 100% training accuracy and 60% test accuracy. What is happening, and name two ways to fix it?</span>
+      </li>
+    </ul>
+
+    <div class="flip-sublabel">Watch for…</div>
+    <div class="watch-for">
+      The difference between L1 (Lasso) and L2 (Ridge) regularisation — only L1 drives weights exactly to zero.
+      Also: why StratifiedKFold is required for classification (not plain KFold), and when to use F1 vs ROC-AUC.
+    </div>
+  </div>
+
+  <!-- ═══ CORE THEORY ══════════════════════════════════════════ -->
+  <div class="section-head">
+    Core Theory
+    <span class="section-hint">Assessment priority — conceptual understanding over syntax</span>
+  </div>
+
+  <!-- 1. Algorithm Decision Guide -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">Algorithm Selection</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">When to Use Which Algorithm</h3>
+    <div style="overflow-x:auto;margin-bottom:.75rem">
+      <table class="decision-table">
+        <thead>
+          <tr>
+            <th>Algorithm</th>
+            <th>Best for</th>
+            <th>Needs scaling?</th>
+            <th>Interpretable?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Linear Regression</td>
+            <td>Continuous target, linear relationship</td>
+            <td style="color:var(--yellow)">Yes</td>
+            <td style="color:var(--green)">Yes</td>
+          </tr>
+          <tr>
+            <td>Ridge / Lasso</td>
+            <td>Linear + regularisation needed</td>
+            <td style="color:var(--yellow)">Yes</td>
+            <td style="color:var(--green)">Yes</td>
+          </tr>
+          <tr>
+            <td>Logistic Regression</td>
+            <td>Binary/multiclass classification</td>
+            <td style="color:var(--yellow)">Yes</td>
+            <td style="color:var(--green)">Yes</td>
+          </tr>
+          <tr>
+            <td>Decision Tree</td>
+            <td>Non-linear, need interpretability</td>
+            <td style="color:var(--green)">No</td>
+            <td style="color:var(--green)">Yes</td>
+          </tr>
+          <tr>
+            <td>Random Forest</td>
+            <td>General-purpose, handles missing</td>
+            <td style="color:var(--green)">No</td>
+            <td style="color:var(--muted)">Partial</td>
+          </tr>
+          <tr>
+            <td>SVM (RBF kernel)</td>
+            <td>Small-medium datasets, high dim</td>
+            <td style="color:var(--yellow)">Yes</td>
+            <td style="color:var(--red)">No</td>
+          </tr>
+          <tr>
+            <td>KNN</td>
+            <td>Lazy baseline, no training cost</td>
+            <td style="color:var(--yellow)">Yes</td>
+            <td style="color:var(--red)">No</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="insight ins-info" style="margin-top:.5rem">
+      <strong>Key distinction:</strong> Tree-based methods (Decision Tree, Random Forest, Gradient Boosting) do NOT require feature scaling — they split on thresholds, not distances. Distance-based methods (KNN, SVM) and gradient-based methods (linear models, neural networks) require scaling.
+    </div>
+  </div>
+
+  <!-- 2. Evaluation Metrics -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">Evaluation</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">Evaluation Metrics — Match to Task</h3>
+    <div style="overflow-x:auto;margin-bottom:.75rem">
+      <table class="decision-table">
+        <thead>
+          <tr><th>Metric</th><th>Formula / Range</th><th>Use when</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Accuracy</strong></td>
+            <td>correct / total · [0,1]</td>
+            <td>Classes are balanced</td>
+          </tr>
+          <tr>
+            <td><strong>Precision</strong></td>
+            <td>TP / (TP + FP)</td>
+            <td>False positives are costly (spam filter)</td>
+          </tr>
+          <tr>
+            <td><strong>Recall</strong></td>
+            <td>TP / (TP + FN)</td>
+            <td>False negatives are costly (cancer screening)</td>
+          </tr>
+          <tr>
+            <td><strong>F1</strong></td>
+            <td>Harmonic mean of P &amp; R</td>
+            <td>Imbalanced classes, both P &amp; R matter</td>
+          </tr>
+          <tr>
+            <td><strong>ROC-AUC</strong></td>
+            <td>[0.5, 1.0] — threshold-independent</td>
+            <td>Ranking quality across all thresholds</td>
+          </tr>
+          <tr>
+            <td><strong>R²</strong></td>
+            <td>1 = perfect, 0 = mean baseline, can be negative</td>
+            <td>Regression — proportion of variance explained</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:.83rem;color:var(--muted)">
+      Regression also uses <strong>MAE</strong> (robust to outliers, same units as target) and <strong>RMSE</strong> (penalises large errors; in original units after sqrt).
+    </p>
+  </div>
+
+  <!-- 3. Bias-Variance and Regularisation -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">Bias-Variance</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">Bias-Variance Tradeoff &amp; Regularisation</h3>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.75rem;margin-bottom:.75rem">
+      <div style="background:var(--surface2);border-radius:8px;padding:.875rem;border-left:3px solid var(--blue)">
+        <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--blue);margin-bottom:.4rem">High Bias (Underfitting)</div>
+        <div style="font-size:.83rem;color:var(--muted);line-height:1.5">High train error + high test error<br>→ Model too simple<br>→ Fix: more complex model, more features</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:8px;padding:.875rem;border-left:3px solid var(--yellow)">
+        <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--yellow);margin-bottom:.4rem">High Variance (Overfitting)</div>
+        <div style="font-size:.83rem;color:var(--muted);line-height:1.5">Low train error + high test error<br>→ Model too complex<br>→ Fix: regularise, more data, pruning</div>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="concept-table">
+        <thead><tr><th>Regularisation</th><th>Penalty</th><th>Effect</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>L2 (Ridge)</strong></td>
+            <td>λΣw²</td>
+            <td>Shrinks all weights toward zero — none reach exactly zero</td>
+          </tr>
+          <tr>
+            <td><strong>L1 (Lasso)</strong></td>
+            <td>λΣ|w|</td>
+            <td>Drives some weights to <em>exactly</em> zero — automatic feature selection</td>
+          </tr>
+          <tr>
+            <td><strong>ElasticNet</strong></td>
+            <td>λ₁Σ|w| + λ₂Σw²</td>
+            <td>Combines both — sparsity + stability</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 4. Clustering -->
+  <div class="card" style="margin-bottom:2rem">
+    <div class="tag tag-blue">Unsupervised Learning</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">Clustering Methods Compared</h3>
+    <div style="overflow-x:auto;margin-bottom:.75rem">
+      <table class="decision-table">
+        <thead><tr><th>Algorithm</th><th>Cluster shape</th><th>Needs k?</th><th>Handles outliers?</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>K-Means</strong></td>
+            <td>Spherical</td>
+            <td style="color:var(--yellow)">Yes</td>
+            <td style="color:var(--red)">No — pulled toward outliers</td>
+          </tr>
+          <tr>
+            <td><strong>DBSCAN</strong></td>
+            <td>Arbitrary</td>
+            <td style="color:var(--green)">No</td>
+            <td style="color:var(--green)">Yes — labels them −1</td>
+          </tr>
+          <tr>
+            <td><strong>HDBSCAN</strong></td>
+            <td>Arbitrary, varying density</td>
+            <td style="color:var(--green)">No</td>
+            <td style="color:var(--green)">Yes</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:.83rem;color:var(--muted);line-height:1.5">
+      <strong>Inertia</strong> (WCSS) always decreases as k increases — use the elbow method as a heuristic, not a guarantee.
+      <strong>Silhouette score</strong>: −1 to +1, close to +1 = well-separated clusters.
+    </p>
+  </div>
+
+  <!-- ═══ MUST-KNOW CONCEPTS ════════════════════════════════════ -->
+  <div class="section-head">Must-Know Concepts</div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:2rem">
+    <table class="concept-table">
+      <thead><tr><th>Term</th><th>One-liner (assessment vocabulary)</th></tr></thead>
+      <tbody>
+        <tr><td>data leakage</td><td>Test-set information leaks into training — usually by fitting transformers on all data before splitting</td></tr>
+        <tr><td>sklearn Pipeline</td><td>Chains preprocessing + model; guarantees fit-on-train-only for every step; prevents leakage</td></tr>
+        <tr><td>StratifiedKFold</td><td>Cross-validation that preserves class balance in every fold — always use for classification</td></tr>
+        <tr><td>cross-validation</td><td>Estimates generalisation error — does NOT train the final model</td></tr>
+        <tr><td>L1 / Lasso</td><td>Adds λΣ|w| to loss — unique in that it drives some weights exactly to zero (feature selection)</td></tr>
+        <tr><td>L2 / Ridge</td><td>Adds λΣw² to loss — shrinks all coefficients toward zero; none reach exactly zero</td></tr>
+        <tr><td>ROC-AUC</td><td>Threshold-independent measure of ranking quality; 0.5 = random, 1.0 = perfect</td></tr>
+        <tr><td>F1 score</td><td>Harmonic mean of precision and recall; use when classes are imbalanced and both matter</td></tr>
+        <tr><td>PCA</td><td>Linear dimensionality reduction; components ordered by variance explained; fit on train only</td></tr>
+        <tr><td>t-SNE</td><td>Non-linear visualisation only (2D/3D); stochastic — two runs give different results; do NOT use for ML features</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══ EXAM TRAPS ════════════════════════════════════════════ -->
+  <div class="section-head">Exam Traps</div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 1 — Lasso vs Ridge zeros</div>
+    <strong>Only L1 (Lasso) can drive weights exactly to zero.</strong>
+    Ridge (L2) shrinks weights toward zero but never reaches it — Ridge cannot perform feature selection.
+    Lasso is preferred when you suspect many features are irrelevant.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 2 — Cross-validation does not train the final model</div>
+    <strong>Cross-validation estimates generalisation error only.</strong>
+    The final model is trained on all training data with the best hyperparameters found by CV.
+    A common mistake: reporting CV fold accuracy as the final model's test accuracy.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 3 — Accuracy on imbalanced classes</div>
+    <strong>High accuracy on imbalanced data is meaningless.</strong>
+    A 99% class → always-predict-negative → 99% accuracy, 0% recall for the minority class.
+    Always check the confusion matrix; report F1 or per-class recall when classes are imbalanced.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 4 — fit_transform on test data</div>
+    <strong>Never call <code>fit_transform()</code> on the test set.</strong>
+    The scaler's mean/std must come from the training set only. Fitting on test data leaks test statistics
+    into the transformation, making test performance unrealistically optimistic.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 5 — t-SNE is stochastic and non-deterministic</div>
+    <strong>t-SNE produces different plots every run</strong> (unless you fix the random seed).
+    It is also not suitable for ML features — it cannot transform new data points without re-running.
+    Use UMAP if you need a dimensionality reduction for downstream ML.
+  </div>
+
+  <!-- ═══ INTERACTIVE VIZ ══════════════════════════════════════ -->
+  <div class="section-head" style="margin-top:2rem">Interactive Visualisations</div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.875rem;margin-bottom:2rem">
+    <a class="viz-card" href="../viz/gradient-descent.html">
+      <div class="viz-card-title">📊 Gradient Descent</div>
+      <div class="viz-card-desc">Learning rate effect on convergence. Relevant to linear and logistic regression optimisation.</div>
+    </a>
+    <a class="viz-card" href="../viz/bias-variance.html">
+      <div class="viz-card-title">⚖ Bias-Variance Explorer</div>
+      <div class="viz-card-desc">See how model complexity affects train vs test error. The tradeoff made visual.</div>
+    </a>
+  </div>
+
+  <!-- ═══ PRACTICAL NOTES (collapsed) ══════════════════════════ -->
+  <div style="margin-bottom:2rem">
+    <button class="collapse-toggle">
+      <span class="c-arrow">▶</span>
+      Practical Notes &amp; Code Patterns
+      <span style="margin-left:.5rem;font-size:.75rem;color:var(--muted)">(useful for application — not needed to pass the assessment)</span>
+    </button>
+    <div class="collapse-body">
+
+      <div class="card" style="margin-bottom:1rem">
+        <div class="tag tag-blue">Common Gotchas</div>
+        <ul style="font-size:.875rem;line-height:1.7;padding-left:1.25rem;color:var(--text)">
+          <li><strong>Data leakage:</strong> always split first, then fit scalers/encoders on train only</li>
+          <li><strong>KNN requires scaling</strong> — Euclidean distance is meaningless across different-scale features</li>
+          <li><strong>SVM with RBF is O(n³)</strong> — avoid on large datasets; use linear SVM or other scalable models</li>
+          <li><strong>Decision trees overfit by default</strong> — always set <code>max_depth</code> or <code>min_samples_leaf</code></li>
+          <li><strong>PCA must be fitted on train only</strong>, then applied to test — same as any other transformer</li>
+          <li><strong>k=1 in KNN</strong> = zero training error (memorises training set), very high variance</li>
+          <li><strong>Logistic Regression outputs probabilities</strong> — use <code>predict_proba()</code> when you need confidence scores</li>
+        </ul>
+      </div>
+
+      <div class="card" style="margin-bottom:1rem">
+        <div class="tag tag-blue">Full Pipeline Pattern</div>
+        <pre><code class="language-python">from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import GridSearchCV, StratifiedKFold
+
+pipe = Pipeline([
+    ('scaler', StandardScaler()),
+    ('clf',    LogisticRegression(C=1.0, max_iter=1000))
+])
+
+cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+param_grid = {'clf__C': [0.01, 0.1, 1, 10]}
+gs = GridSearchCV(pipe, param_grid, cv=cv, scoring='f1_macro')
+gs.fit(X_train, y_train)
+
+print(gs.best_params_)
+print(gs.score(X_test, y_test))</code></pre>
+      </div>
+
+      <div class="card" style="margin-bottom:.5rem">
+        <div class="tag tag-blue">Cross-Validation Variants</div>
+        <pre><code class="language-python">from sklearn.model_selection import cross_val_score, KFold, StratifiedKFold
+
+# For classification — always stratified
+cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+scores = cross_val_score(model, X, y, cv=cv, scoring='f1_macro')
+print(f"CV F1: {scores.mean():.3f} ± {scores.std():.3f}")
+
+# For regression — plain KFold is fine
+cv = KFold(n_splits=5, shuffle=True, random_state=42)
+scores = cross_val_score(model, X, y, cv=cv, scoring='r2')</code></pre>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ STUDY GAMES (placeholder) ════════════════════════════ -->
+  <div class="section-head" style="margin-top:1rem">Study Games</div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.875rem;margin-bottom:2rem;opacity:.45">
+    <div class="card" style="cursor:not-allowed">
+      <div class="tag">🎮 Multiple Choice Quiz</div>
+      <div style="font-size:.875rem">Algorithm selection and metric discrimination — coming Phase 4</div>
+    </div>
+    <div class="card" style="cursor:not-allowed">
+      <div class="tag">🔍 Spot the Leakage</div>
+      <div style="font-size:.875rem">Identify data leakage in code snippets — coming Phase 4</div>
+    </div>
+  </div>
+
+  <!-- ═══ FULL NOTES LINK ══════════════════════════════════════ -->
+  <div class="card" style="margin-bottom:1.5rem;background:var(--surface2)">
+    <div style="font-size:.875rem;color:var(--muted)">
+      Full curated notes (Obsidian):
+      <a href="obsidian://open?vault=IBM%20Courses&file=claude-content%2F01-machine-learning-with-python"
+         style="color:var(--blue)">
+        claude-content/01-machine-learning-with-python →
+      </a>
+    </div>
+  </div>
+
+  <div class="footer">
+    <a href="../index.html">← VLE Home</a> ·
+    <a href="c02.html">C2 →</a> ·
+    <a href="../course-tracker.html"  target="_blank">📊 Tracker</a>
+  </div>
+
+</div>
+</body>
+</html>

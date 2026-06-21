@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>C10 — Generative AI Engineering and Fine-Tuning Transformers · VLE</title>
+  <link rel="stylesheet" href="../shared.css">
+  <script src="../shared.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</head>
+<body>
+<script>initNav('../');</script>
+
+<div class="container">
+
+  <!-- ═══ HEADER ══════════════════════════════════════════════ -->
+  <div style="margin-bottom:1.75rem">
+    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem;flex-wrap:wrap">
+      <span style="color:var(--muted);font-size:.83rem">Course 10 of 13</span>
+      <span class="badge badge-pending"><span class="dot dot-m"></span>Not Started</span>
+      <span class="badge badge-pending">8 hours</span>
+    </div>
+    <h1 style="font-size:1.5rem;font-weight:700;letter-spacing:-.02em;margin-bottom:.375rem">
+      Generative AI Engineering and Fine-Tuning Transformers
+    </h1>
+    <p style="color:var(--muted);font-size:.875rem;line-height:1.55">
+      From using pretrained models to adapting them. Covers the Hugging Face fine-tuning stack,
+      PEFT methods (especially LoRA), and the critical importance of data formatting for instruction tuning.
+      PEFT is heavily tested.
+    </p>
+  </div>
+
+  <!-- ═══ FLIPPED CLASSROOM ════════════════════════════════════ -->
+  <div class="flip-card" style="margin-bottom:2rem">
+    <div class="flip-header">
+      <span>📖</span>
+      Flipped Classroom — Before You Watch
+    </div>
+
+    <div class="flip-sublabel">Prime your thinking — bring these questions into the lectures</div>
+    <ul class="flip-questions">
+      <li>
+        <span class="flip-q-num">1</span>
+        <span>Full fine-tuning of a 7B parameter model requires storing the model, gradients, and optimiser state in GPU memory — roughly 4–6× the model size. LoRA claims to achieve similar results while training only ~0.06% of parameters. What is the theoretical justification for why this works?</span>
+      </li>
+      <li>
+        <span class="flip-q-num">2</span>
+        <span>In instruction fine-tuning, the training data contains both the instruction (prompt) and the response. During training, should the model compute loss on the instruction tokens, the response tokens, or both? What is the implication of getting this wrong?</span>
+      </li>
+      <li>
+        <span class="flip-q-num">3</span>
+        <span>A model fine-tuned in Alpaca format is then used at inference time with ChatML format. The structure of the input is different from what the model saw during training. What specific failure mode do you expect?</span>
+      </li>
+    </ul>
+
+    <div class="flip-sublabel">Watch for…</div>
+    <div class="watch-for">
+      The LoRA rank decomposition — how two small matrices A (r × d_in) and B (d_out × r) approximate the weight update ΔW.
+      Also: B is initialised to zero so the initial LoRA output is zero — this means the model starts fine-tuning
+      as if LoRA weren't there and gradually learns the adaptation. The <code>lora_alpha</code> scaling and
+      why it's typically set to 2×r.
+    </div>
+  </div>
+
+  <!-- ═══ CORE THEORY ══════════════════════════════════════════ -->
+  <div class="section-head">
+    Core Theory
+    <span class="section-hint">Assessment priority — LoRA mechanics and instruction tuning format</span>
+  </div>
+
+  <!-- 1. Fine-tuning Spectrum -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">Fine-Tuning Spectrum</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">The Fine-Tuning Spectrum — From Zero-Shot to Full Fine-Tuning</h3>
+    <div style="overflow-x:auto;margin-bottom:.75rem">
+      <table class="decision-table">
+        <thead><tr><th>Approach</th><th>Parameters updated</th><th>Cost</th><th>When to use</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Zero/few-shot prompting</strong></td>
+            <td>None</td>
+            <td>Minimal</td>
+            <td>Baseline; when no training data available</td>
+          </tr>
+          <tr>
+            <td><strong>Prefix / Prompt tuning</strong></td>
+            <td>~0.1% (soft tokens only)</td>
+            <td>Very low</td>
+            <td>Very constrained memory; task-specific prompts</td>
+          </tr>
+          <tr>
+            <td><strong>LoRA / PEFT</strong></td>
+            <td>~0.06–1%</td>
+            <td>Low</td>
+            <td>Adapting to domain/task with limited hardware</td>
+          </tr>
+          <tr>
+            <td><strong>Full fine-tuning</strong></td>
+            <td>100%</td>
+            <td>High (multi-GPU)</td>
+            <td>Maximum flexibility; large compute budget</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 2. LoRA -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">LoRA</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">LoRA — Low-Rank Adaptation</h3>
+    <p style="font-size:.875rem;line-height:1.6;margin-bottom:.75rem">
+      Instead of updating the full weight matrix W, LoRA learns two small matrices A and B whose product approximates the update:
+    </p>
+    <div style="background:var(--surface2);border-radius:8px;padding:1rem;font-family:monospace;font-size:.83rem;line-height:1.8;margin-bottom:.75rem;border:1px solid var(--border)">
+      W_new = W_pretrained + ΔW = W_pretrained + B × A<br>
+      W: (d_out × d_in) — FROZEN<br>
+      A: (r × d_in)     — trainable, initialised randomly<br>
+      B: (d_out × r)    — trainable, initialised to ZERO
+    </div>
+    <div style="overflow-x:auto;margin-bottom:.75rem">
+      <table class="concept-table">
+        <thead><tr><th>Hyperparameter</th><th>Effect</th><th>Typical values</th></tr></thead>
+        <tbody>
+          <tr><td><code>r</code> (rank)</td><td>Higher r = more parameters, more capacity, higher overfitting risk</td><td>4, 8, 16, 64</td></tr>
+          <tr><td><code>lora_alpha</code></td><td>Scaling factor; effective LR = alpha/r; typically set to 2×r</td><td>8, 16, 32</td></tr>
+          <tr><td><code>target_modules</code></td><td>Which weight matrices to apply LoRA to (Q, V projections most common)</td><td>q_proj, v_proj</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="insight ins-info">
+      <strong>B is initialised to zero</strong> so the LoRA contribution starts at zero. The model begins fine-tuning identical to the pretrained model and gradually learns the adaptation. At inference, B×A can be merged back into W — no added latency.
+    </div>
+  </div>
+
+  <!-- 3. Instruction Fine-Tuning -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">Instruction Tuning</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">Instruction Fine-Tuning — Format is Critical</h3>
+    <p style="font-size:.875rem;line-height:1.6;margin-bottom:.75rem">
+      Instruction tuning converts a base LM into an assistant by training on (instruction, response) pairs.
+      The data format must match exactly between training and inference.
+    </p>
+    <div style="overflow-x:auto;margin-bottom:.75rem">
+      <table class="concept-table">
+        <thead><tr><th>Format</th><th>Used by</th><th>Key feature</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Alpaca</strong></td>
+            <td>Early open-source models</td>
+            <td>instruction / input / output JSON fields</td>
+          </tr>
+          <tr>
+            <td><strong>ChatML</strong></td>
+            <td>OpenAI, many others</td>
+            <td>&lt;|system|&gt;, &lt;|user|&gt;, &lt;|assistant|&gt; role tags</td>
+          </tr>
+          <tr>
+            <td><strong>Llama 3</strong></td>
+            <td>Meta LLaMA 3</td>
+            <td>&lt;|begin_of_text|&gt;, &lt;|start_header_id|&gt; tags</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="insight ins-warn">
+      <strong>Compute loss on response tokens only.</strong>
+      Set prompt token labels to −100 (ignored by cross-entropy loss). Training on the instruction tokens wastes compute and confuses the model about what it should be generating.
+    </div>
+  </div>
+
+  <!-- 4. Catastrophic Forgetting -->
+  <div class="card" style="margin-bottom:2rem">
+    <div class="tag tag-blue">Forgetting</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">Catastrophic Forgetting — Why It Happens and How to Mitigate It</h3>
+    <p style="font-size:.875rem;line-height:1.6;margin-bottom:.75rem">
+      Fine-tuning on a narrow task can cause the model to "forget" its general capabilities — weights shift to serve the new task at the expense of previously learned knowledge.
+    </p>
+    <div style="overflow-x:auto">
+      <table class="concept-table">
+        <thead><tr><th>Mitigation</th><th>How it helps</th></tr></thead>
+        <tbody>
+          <tr><td>LoRA / PEFT</td><td>Most parameters frozen — forgetting is minimal; only adapters change</td></tr>
+          <tr><td>Small learning rate</td><td>Small updates preserve most pretrained knowledge</td></tr>
+          <tr><td>Multi-task training</td><td>Mix general data with task-specific data</td></tr>
+          <tr><td>EWC</td><td>Elastic Weight Consolidation — penalises changes to weights important for previous tasks</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══ MUST-KNOW CONCEPTS ════════════════════════════════════ -->
+  <div class="section-head">Must-Know Concepts</div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:2rem">
+    <table class="concept-table">
+      <thead><tr><th>Term</th><th>One-liner (assessment vocabulary)</th></tr></thead>
+      <tbody>
+        <tr><td>PEFT</td><td>Parameter-Efficient Fine-Tuning — update a small fraction of parameters while keeping most frozen; fits on consumer GPU</td></tr>
+        <tr><td>LoRA</td><td>Low-Rank Adaptation — learns ΔW = B×A (two small matrices) instead of full weight update; B initialised to zero</td></tr>
+        <tr><td>LoRA rank (r)</td><td>Hyperparameter controlling adapter size; larger r = more parameters, more capacity, higher overfitting risk</td></tr>
+        <tr><td>lora_alpha</td><td>Scaling factor for LoRA output; effective scale = alpha/r; NOT a learning rate; typically alpha = 2×r</td></tr>
+        <tr><td>target_modules</td><td>Which weight matrices to apply LoRA to (typically attention Q and V projections)</td></tr>
+        <tr><td>instruction tuning (SFT)</td><td>Supervised fine-tuning on (instruction, response) pairs; converts base LM into instruction-following assistant</td></tr>
+        <tr><td>chat template</td><td>Model-specific format for role-tagged conversations; must match at training AND inference time</td></tr>
+        <tr><td>label masking</td><td>Setting prompt token labels to −100 so loss is computed only on response tokens</td></tr>
+        <tr><td>catastrophic forgetting</td><td>Fine-tuning overwrites general knowledge; mitigated by LoRA, small LR, multi-task training</td></tr>
+        <tr><td>DataCollatorForLanguageModeling</td><td>HF utility; mlm=False for causal LM (shifts labels by one); mlm=True for BERT-style masked LM</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══ EXAM TRAPS ════════════════════════════════════════════ -->
+  <div class="section-head">Exam Traps</div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 1 — LoRA adds no parameters at inference</div>
+    <strong>After fine-tuning, LoRA matrices A and B can be merged back into W.</strong>
+    The merged model has the same architecture and parameter count as the original.
+    There is no inference overhead when the adapter is merged.
+    <code>model = model.merge_and_unload()</code> before deployment.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 2 — Instruction tuning ≠ RLHF</div>
+    <strong>Instruction tuning (SFT) is supervised learning on (instruction, response) pairs.</strong>
+    RLHF involves a separate reward model and reinforcement learning (PPO).
+    SFT teaches the model to follow instructions; RLHF teaches it to follow human preferences.
+    These are distinct stages — SFT always comes before RLHF.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 3 — Chat template mismatch</div>
+    <strong>Fine-tuning with one chat format and inferring with another is a common silent failure.</strong>
+    The model learns to expect specific role tokens. If you fine-tune with Alpaca format but prompt
+    with ChatML tokens, the model sees unfamiliar structure and produces degraded, confused output.
+    Always apply the same template used during training.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 4 — lora_alpha is not a learning rate</div>
+    <strong><code>lora_alpha</code> is a scaling factor, NOT the learning rate.</strong>
+    The LoRA output is scaled by alpha/r before being added to the frozen weight computation.
+    Higher alpha = more influence from LoRA adapters. The learning rate is a separate parameter
+    set in the TrainingArguments / optimiser.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 5 — Base model still must fit in memory</div>
+    <strong>PEFT reduces training memory but the base model must still load.</strong>
+    For a 7B model at fp16, that's ~14GB just for model weights — before gradients or optimiser state.
+    PEFT reduces the latter two significantly but does not compress the base weights.
+    QLoRA (Course 11) solves this by loading the base in 4-bit.
+  </div>
+
+  <!-- ═══ INTERACTIVE VIZ ══════════════════════════════════════ -->
+  <div class="section-head" style="margin-top:2rem">Interactive Visualisations</div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.875rem;margin-bottom:2rem">
+    <a class="viz-card" href="../viz/lora-decomposition.html">
+      <div class="viz-card-title">🔢 LoRA Decomposition</div>
+      <div class="viz-card-desc">Visualise how B×A approximates ΔW. See the effect of different rank values.</div>
+    </a>
+    <a class="viz-card" href="../viz/attention.html">
+      <div class="viz-card-title">🎯 Attention Visualiser</div>
+      <div class="viz-card-desc">LoRA typically targets Q and V attention projections — see what's being adapted.</div>
+    </a>
+  </div>
+
+  <!-- ═══ PRACTICAL NOTES (collapsed) ══════════════════════════ -->
+  <div style="margin-bottom:2rem">
+    <button class="collapse-toggle">
+      <span class="c-arrow">▶</span>
+      Practical Notes &amp; Code Patterns
+      <span style="margin-left:.5rem;font-size:.75rem;color:var(--muted)">(useful for application — not needed to pass the assessment)</span>
+    </button>
+    <div class="collapse-body">
+
+      <div class="card" style="margin-bottom:1rem">
+        <div class="tag tag-blue">Common Gotchas</div>
+        <ul style="font-size:.875rem;line-height:1.7;padding-left:1.25rem;color:var(--text)">
+          <li><strong>Chat template mismatch at inference</strong> — train and infer with the same format; use tokenizer.apply_chat_template()</li>
+          <li><strong>Loss on prompt tokens</strong> — set prompt token labels to −100 to compute loss on response only</li>
+          <li><strong>LoRA target modules vary by architecture</strong> — LLaMA: q_proj/v_proj; BERT: query/value; inspect model.named_modules()</li>
+          <li><strong>Not saving adapter separately</strong> — model.save_pretrained() with PEFT saves only the adapter (MB, not GB)</li>
+          <li><strong>Overfitting on small datasets</strong> — fine-tuning &lt;1000 examples without regularisation often overfits; use dropout, weight_decay, early stopping</li>
+        </ul>
+      </div>
+
+      <div class="card" style="margin-bottom:1rem">
+        <div class="tag tag-blue">LoRA Pattern</div>
+        <pre><code class="language-python">from peft import LoraConfig, get_peft_model, TaskType
+
+config = LoraConfig(
+    task_type=TaskType.CAUSAL_LM,
+    r=16,                          # rank
+    lora_alpha=32,                 # scaling (typically 2*r)
+    lora_dropout=0.1,
+    target_modules=['q_proj', 'v_proj']  # LLaMA attention layers
+)
+
+model = get_peft_model(base_model, config)
+model.print_trainable_parameters()
+# trainable params: 4,194,304 || all params: 6,742,609,920 || 0.0622%
+
+# Save adapter only (not full model)
+model.save_pretrained('lora_adapter/')
+
+# Merge for deployment (no inference overhead)
+merged_model = model.merge_and_unload()</code></pre>
+      </div>
+
+      <div class="card" style="margin-bottom:.5rem">
+        <div class="tag tag-blue">HuggingFace Trainer Pattern</div>
+        <pre><code class="language-python">from transformers import TrainingArguments, Trainer
+
+training_args = TrainingArguments(
+    output_dir='./results',
+    num_train_epochs=3,
+    per_device_train_batch_size=16,
+    learning_rate=2e-5,           # small LR for fine-tuning
+    weight_decay=0.01,
+    evaluation_strategy='epoch',
+    load_best_model_at_end=True,
+)
+
+trainer = Trainer(
+    model=model,
+    args=training_args,
+    train_dataset=tokenised_train,
+    eval_dataset=tokenised_val,
+    compute_metrics=compute_metrics
+)
+trainer.train()</code></pre>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ STUDY GAMES (placeholder) ════════════════════════════ -->
+  <div class="section-head" style="margin-top:1rem">Study Games</div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.875rem;margin-bottom:2rem;opacity:.45">
+    <div class="card" style="cursor:not-allowed">
+      <div class="tag">🎮 LoRA Parameter Calculator</div>
+      <div style="font-size:.875rem">Given model size and rank, calculate trainable parameters — coming Phase 4</div>
+    </div>
+    <div class="card" style="cursor:not-allowed">
+      <div class="tag">🔧 Format Matcher</div>
+      <div style="font-size:.875rem">Match training format to inference format — spot template mismatches — coming Phase 4</div>
+    </div>
+  </div>
+
+  <!-- ═══ FULL NOTES LINK ══════════════════════════════════════ -->
+  <div class="card" style="margin-bottom:1.5rem;background:var(--surface2)">
+    <div style="font-size:.875rem;color:var(--muted)">
+      Full curated notes (Obsidian):
+      <a href="obsidian://open?vault=IBM%20Courses&file=claude-content%2F10-genai-engineering-finetuning-transformers"
+         style="color:var(--blue)">
+        claude-content/10-genai-engineering-finetuning-transformers →
+      </a>
+    </div>
+  </div>
+
+  <div class="footer">
+    <a href="../index.html">← VLE Home</a> ·
+    <a href="c09.html">← C9</a> ·
+    <a href="c11.html">C11 →</a> ·
+    <a href="../course-tracker.html" target="_blank">📊 Tracker</a>
+  </div>
+
+</div>
+</body>
+</html>

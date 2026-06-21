@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>C8 — Gen AI Foundational Models for NLP · VLE</title>
+  <link rel="stylesheet" href="../shared.css">
+  <script src="../shared.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</head>
+<body>
+<script>initNav('../');</script>
+
+<div class="container">
+
+  <!-- ═══ HEADER ══════════════════════════════════════════════ -->
+  <div style="margin-bottom:1.75rem">
+    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem;flex-wrap:wrap">
+      <span style="color:var(--muted);font-size:.83rem">Course 8 of 13</span>
+      <span class="badge badge-pending"><span class="dot dot-m"></span>Not Started</span>
+      <span class="badge badge-pending">10 hours</span>
+    </div>
+    <h1 style="font-size:1.5rem;font-weight:700;letter-spacing:-.02em;margin-bottom:.375rem">
+      Gen AI Foundational Models for NLP &amp; Language Understanding
+    </h1>
+    <p style="color:var(--muted);font-size:.875rem;line-height:1.55">
+      Embeddings, attention, and BERT. Bridges traditional NLP (word vectors) with the transformer era.
+      Understanding attention is non-negotiable — every LLM architecture after 2017 is built on it.
+    </p>
+  </div>
+
+  <!-- ═══ FLIPPED CLASSROOM ════════════════════════════════════ -->
+  <div class="flip-card" style="margin-bottom:2rem">
+    <div class="flip-header">
+      <span>📖</span>
+      Flipped Classroom — Before You Watch
+    </div>
+
+    <div class="flip-sublabel">Prime your thinking — bring these questions into the lectures</div>
+    <ul class="flip-questions">
+      <li>
+        <span class="flip-q-num">1</span>
+        <span>In scaled dot-product attention, Q, K, and V each have a specific role. Before you see it defined — given the names "query", "key", and "value", what do you think each one represents conceptually? What analogy to a database lookup might help?</span>
+      </li>
+      <li>
+        <span class="flip-q-num">2</span>
+        <span>Word2Vec gives "bank" the same embedding whether it appears in "river bank" or "bank account". Attention-based models solve this. Think through how — at a high level — a word's representation could depend on surrounding context.</span>
+      </li>
+      <li>
+        <span class="flip-q-num">3</span>
+        <span>Transformers process all tokens in parallel — unlike RNNs which process one at a time. If all tokens are processed simultaneously, how does the model know the order of words in a sentence?</span>
+      </li>
+    </ul>
+
+    <div class="flip-sublabel">Watch for…</div>
+    <div class="watch-for">
+      The √d_k scaling in attention — why dividing by the square root prevents softmax saturation.
+      Also: why raw BERT [CLS] embeddings are poor for semantic similarity tasks (they're trained for NSP, not similarity),
+      and the correct alternative (sentence transformers).
+    </div>
+  </div>
+
+  <!-- ═══ CORE THEORY ══════════════════════════════════════════ -->
+  <div class="section-head">
+    Core Theory
+    <span class="section-hint">Assessment priority — understanding attention is essential for all later courses</span>
+  </div>
+
+  <!-- 1. Attention Mechanism -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">Attention</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">Scaled Dot-Product Attention</h3>
+    <p style="font-size:.875rem;line-height:1.6;margin-bottom:.75rem">
+      Attention allows each token to look at every other token in the sequence and weight them by relevance.
+      The formula:
+    </p>
+    <div style="background:var(--surface2);border-radius:8px;padding:1rem;font-family:monospace;font-size:.9rem;text-align:center;margin-bottom:.75rem;border:1px solid var(--border)">
+      Attention(Q, K, V) = softmax(QKᵀ / √d_k) · V
+    </div>
+    <div style="overflow-x:auto;margin-bottom:.75rem">
+      <table class="concept-table">
+        <thead><tr><th>Component</th><th>Role</th><th>Intuition</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Q (Query)</strong></td><td>What am I looking for?</td><td>The token asking a question</td></tr>
+          <tr><td><strong>K (Key)</strong></td><td>What does each token offer?</td><td>What each token "advertises"</td></tr>
+          <tr><td><strong>V (Value)</strong></td><td>What information do I take?</td><td>The actual content retrieved</td></tr>
+          <tr><td><strong>√d_k scaling</strong></td><td>Prevent dot product magnitude growth</td><td>Large d_k → large dot products → softmax saturates → vanishing gradients</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="insight ins-warn">
+      <strong>Attention is O(n²)</strong> in time and memory with respect to sequence length. A sequence of 1000 tokens requires a 1000×1000 attention matrix. This is why long context windows are expensive.
+    </div>
+  </div>
+
+  <!-- 2. Multi-Head Attention + Transformer Block -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">Transformer</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">Multi-Head Attention &amp; The Transformer Block</h3>
+    <p style="font-size:.875rem;line-height:1.6;margin-bottom:.75rem">
+      Multi-head attention runs attention <em>h</em> times in parallel, each with different learned Q/K/V projections.
+      Each head can focus on different aspects (syntax, coreference, semantics).
+      With <code>d_model=512</code> and 8 heads, each head has <code>d_k = 64</code> (512/8).
+    </p>
+    <div style="background:var(--surface2);border-radius:8px;padding:.875rem;border:1px solid var(--border);margin-bottom:.75rem">
+      <div style="font-size:.78rem;font-family:monospace;line-height:2;color:var(--text)">
+        Input tokens<br>
+        &nbsp;&nbsp;↓ Token Embedding + Positional Encoding<br>
+        &nbsp;&nbsp;↓ Multi-Head Self-Attention<br>
+        &nbsp;&nbsp;↓ Add &amp; Norm (residual + LayerNorm)<br>
+        &nbsp;&nbsp;↓ Feed-Forward Network (Linear → ReLU → Linear)<br>
+        &nbsp;&nbsp;↓ Add &amp; Norm<br>
+        &nbsp;&nbsp;↓ Output
+      </div>
+    </div>
+    <p style="font-size:.83rem;color:var(--muted);line-height:1.5">
+      <strong>Why residual connections?</strong> Gradients flow directly from output to input — prevents vanishing gradients in deep models (12–96 layers).
+      <strong>LayerNorm vs BatchNorm:</strong> LayerNorm normalises per sample across features — better for variable-length sequences.
+    </p>
+  </div>
+
+  <!-- 3. Positional Encoding -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">Positional Encoding</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">Positional Encoding — How the Model Knows Word Order</h3>
+    <p style="font-size:.875rem;line-height:1.6;margin-bottom:.75rem">
+      Transformers process all tokens in parallel — they have no inherent sense of order. Positional encoding injects position information.
+    </p>
+    <div style="overflow-x:auto;margin-bottom:.625rem">
+      <table class="concept-table">
+        <thead><tr><th>Method</th><th>Used by</th><th>Properties</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Sinusoidal</strong> (fixed)</td>
+            <td>Original Transformer</td>
+            <td>Not learned; allows generalising to longer sequences than seen in training</td>
+          </tr>
+          <tr>
+            <td><strong>Learned</strong> (lookup table)</td>
+            <td>BERT, GPT</td>
+            <td>Trained with the model; limited to <code>max_position_embeddings</code></td>
+          </tr>
+          <tr>
+            <td><strong>RoPE</strong> (Rotary)</td>
+            <td>LLaMA, Mistral</td>
+            <td>Encodes relative positions via rotation; better extrapolation to longer sequences</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="insight ins-info">
+      <strong>Positional encoding is additive</strong> — added to the token embedding, NOT concatenated.
+    </div>
+  </div>
+
+  <!-- 4. BERT -->
+  <div class="card" style="margin-bottom:2rem">
+    <div class="tag tag-blue">BERT</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">BERT — Bidirectional Encoder</h3>
+    <div style="overflow-x:auto;margin-bottom:.75rem">
+      <table class="concept-table">
+        <thead><tr><th>Property</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>Architecture</td><td>Encoder-only transformer</td></tr>
+          <tr><td>Pretraining</td><td>MLM (15% masked) + Next Sentence Prediction (NSP)</td></tr>
+          <tr><td>Context</td><td>Bidirectional — sees full sequence</td></tr>
+          <tr><td>Input format</td><td><code>[CLS] sentence A [SEP] sentence B [SEP]</code></td></tr>
+          <tr><td>Classification token</td><td>[CLS] output → sentence-level tasks</td></tr>
+          <tr><td>NOT for</td><td>Text generation — encoder-only, no autoregressive mechanism</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="insight ins-warn">
+      <strong>Raw [CLS] embeddings are poor for semantic similarity.</strong>
+      The [CLS] vector is trained for NSP (predicting if sentences are adjacent), not general similarity.
+      For retrieval and clustering, use a sentence transformer model trained specifically for similarity.
+    </div>
+  </div>
+
+  <!-- ═══ MUST-KNOW CONCEPTS ════════════════════════════════════ -->
+  <div class="section-head">Must-Know Concepts</div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:2rem">
+    <table class="concept-table">
+      <thead><tr><th>Term</th><th>One-liner (assessment vocabulary)</th></tr></thead>
+      <tbody>
+        <tr><td>Word2Vec</td><td>Static word embeddings where semantic similarity = geometric proximity; one vector per word regardless of context</td></tr>
+        <tr><td>contextual embeddings</td><td>Transformer outputs — same word gets different vector in different contexts; solves polysemy (bank = financial / river)</td></tr>
+        <tr><td>attention</td><td>Weighted sum over value vectors, where weights are softmax of query-key dot products scaled by √d_k</td></tr>
+        <tr><td>self-attention</td><td>Q, K, V all come from the same sequence — tokens attend to each other within the same sequence</td></tr>
+        <tr><td>multi-head attention</td><td>h parallel attention operations with different learned projections; outputs concatenated and projected back</td></tr>
+        <tr><td>residual connection</td><td>Adds layer input directly to its output (x + sublayer(x)); prevents vanishing gradients in deep transformers</td></tr>
+        <tr><td>LayerNorm</td><td>Normalises per-sample across features; preferred over BatchNorm for variable-length sequences</td></tr>
+        <tr><td>[CLS] token</td><td>Prepended to every BERT input; its output vector represents the whole sequence for classification tasks</td></tr>
+        <tr><td>[SEP] token</td><td>Separates sentence A from sentence B in BERT's two-sentence input format</td></tr>
+        <tr><td>attention mask</td><td>Binary mask: 1 = attend, 0 = ignore (for padding tokens); critical when batching sequences of different lengths</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══ EXAM TRAPS ════════════════════════════════════════════ -->
+  <div class="section-head">Exam Traps</div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 1 — Self-attention is O(n²)</div>
+    <strong>Attention complexity scales quadratically with sequence length.</strong>
+    Doubling the sequence length quadruples the attention computation and memory.
+    This is the core reason why efficient attention variants (FlashAttention, sparse attention) were developed.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 2 — [CLS] token is always first</div>
+    <strong>In BERT, [CLS] is prepended to the input — it is always token position 0.</strong>
+    Its output embedding is used for sentence-level classification tasks.
+    [SEP] separates sentences. The model uses token_type_ids (0 or 1) to distinguish which sentence a token belongs to.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 3 — attention_mask is not optional when batching</div>
+    <strong>When batching sequences of different lengths, padding tokens must be masked.</strong>
+    Attention mask: 1 = attend, 0 = ignore. Without it, the model attends to padding tokens,
+    which produces nonsensical context mixing and degrades performance. The intuition is counterintuitive:
+    1 means "pay attention", 0 means "mask out".
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 4 — RoBERTa removes NSP</div>
+    <strong>RoBERTa improves on BERT by removing Next Sentence Prediction (NSP).</strong>
+    NSP turned out to be unhelpful or even harmful to performance. RoBERTa also uses
+    dynamic masking, larger batches, and more data. It is NOT architecturally different — same encoder-only transformer.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 5 — Multi-head dimension arithmetic</div>
+    <strong>With d_model=512 and 8 heads, each head has d_k = 64 (512/8).</strong>
+    The total computation is the same as a single attention head with d_model=512.
+    Multi-head attention does not increase parameters proportional to heads — the final projection keeps the output size constant.
+  </div>
+
+  <!-- ═══ INTERACTIVE VIZ ══════════════════════════════════════ -->
+  <div class="section-head" style="margin-top:2rem">Interactive Visualisations</div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.875rem;margin-bottom:2rem">
+    <a class="viz-card" href="../viz/attention.html">
+      <div class="viz-card-title">🎯 Attention Visualiser</div>
+      <div class="viz-card-desc">See attention weights between tokens. Understand Q/K/V intuitively.</div>
+    </a>
+    <a class="viz-card" href="../viz/tokenisation.html">
+      <div class="viz-card-title">🔤 Tokenisation Explorer</div>
+      <div class="viz-card-desc">See WordPiece vs BPE. Observe how BERT tokenises with ## subword markers.</div>
+    </a>
+  </div>
+
+  <!-- ═══ PRACTICAL NOTES (collapsed) ══════════════════════════ -->
+  <div style="margin-bottom:2rem">
+    <button class="collapse-toggle">
+      <span class="c-arrow">▶</span>
+      Practical Notes &amp; Code Patterns
+      <span style="margin-left:.5rem;font-size:.75rem;color:var(--muted)">(useful for application — not needed to pass the assessment)</span>
+    </button>
+    <div class="collapse-body">
+
+      <div class="card" style="margin-bottom:1rem">
+        <div class="tag tag-blue">Common Gotchas</div>
+        <ul style="font-size:.875rem;line-height:1.7;padding-left:1.25rem;color:var(--text)">
+          <li><strong>BERT cannot generate text</strong> — encoder-only; for generation use GPT (decoder) or T5 (encoder-decoder)</li>
+          <li><strong>attention_mask is mandatory when batching</strong> — padding tokens get mask=0 so attention ignores them</li>
+          <li><strong>Truncation loses information</strong> — 512-token BERT limit discards the second half of long documents; chunk or use long-context model</li>
+          <li><strong>Raw [CLS] ≠ good sentence embedding</strong> — use sentence-transformers (all-MiniLM-L6-v2) for retrieval/clustering</li>
+          <li><strong>Word2Vec embeddings are static</strong> — "bank" gets the same vector regardless of context; polysemy is unsolvable</li>
+          <li><strong>Tokenisation is model-specific</strong> — BERT uses WordPiece, GPT-2 uses BPE; token counts are not comparable</li>
+        </ul>
+      </div>
+
+      <div class="card" style="margin-bottom:1rem">
+        <div class="tag tag-blue">Hugging Face BERT Pattern</div>
+        <pre><code class="language-python">from transformers import AutoTokenizer, AutoModel
+import torch
+
+tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased')
+inputs = tokenizer(
+    "Hello, world!",
+    return_tensors='pt',
+    padding=True,
+    truncation=True,
+    max_length=512
+)
+# inputs: {'input_ids', 'attention_mask', 'token_type_ids'}
+
+model = AutoModel.from_pretrained('bert-base-uncased')
+with torch.no_grad():
+    outputs = model(**inputs)
+# outputs.last_hidden_state: (batch, seq_len, 768)
+# outputs.pooler_output:     (batch, 768)  — [CLS] representation</code></pre>
+      </div>
+
+      <div class="card" style="margin-bottom:.5rem">
+        <div class="tag tag-blue">Sentence Embeddings (Correct Approach)</div>
+        <pre><code class="language-python"># Don't use raw BERT [CLS] for similarity — use sentence-transformers
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
+
+model = SentenceTransformer('all-MiniLM-L6-v2')
+sentences = ["The cat sat on the mat", "A feline rested on the rug"]
+embeddings = model.encode(sentences)   # (2, 384)
+
+sim = cosine_similarity(embeddings[0:1], embeddings[1:2])
+print(f"Similarity: {sim[0][0]:.3f}")  # should be high (~0.85+)</code></pre>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ STUDY GAMES (placeholder) ════════════════════════════ -->
+  <div class="section-head" style="margin-top:1rem">Study Games</div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.875rem;margin-bottom:2rem;opacity:.45">
+    <div class="card" style="cursor:not-allowed">
+      <div class="tag">🎮 Attention Quiz</div>
+      <div style="font-size:.875rem">Q/K/V role identification and dimension arithmetic — coming Phase 4</div>
+    </div>
+    <div class="card" style="cursor:not-allowed">
+      <div class="tag">🔤 BERT Format Checker</div>
+      <div style="font-size:.875rem">Identify correctly and incorrectly formatted BERT inputs — coming Phase 4</div>
+    </div>
+  </div>
+
+  <!-- ═══ FULL NOTES LINK ══════════════════════════════════════ -->
+  <div class="card" style="margin-bottom:1.5rem;background:var(--surface2)">
+    <div style="font-size:.875rem;color:var(--muted)">
+      Full curated notes (Obsidian):
+      <a href="obsidian://open?vault=IBM%20Courses&file=claude-content%2F08-genai-foundational-models-nlp"
+         style="color:var(--blue)">
+        claude-content/08-genai-foundational-models-nlp →
+      </a>
+    </div>
+  </div>
+
+  <div class="footer">
+    <a href="../index.html">← VLE Home</a> ·
+    <a href="c07.html">← C7</a> ·
+    <a href="c09.html">C9 →</a> ·
+    <a href="../course-tracker.html" target="_blank">📊 Tracker</a>
+  </div>
+
+</div>
+</body>
+</html>

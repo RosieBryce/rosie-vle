@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VLE — IBM AI Engineering</title>
+  <link rel="stylesheet" href="shared.css">
+  <script src="shared.js"></script>
+</head>
+<body>
+<script>initNav('');</script>
+
+<div class="container">
+
+  <!-- Page header -->
+  <div style="margin-bottom:1.75rem">
+    <h1 style="font-size:1.4rem;font-weight:700;letter-spacing:-.02em;margin-bottom:.3rem">
+      IBM AI Engineering — Flipped Classroom
+    </h1>
+    <p style="color:var(--muted);font-size:.875rem">
+      13 courses · 165 hours · Speedrun to 31 July 2026
+    </p>
+  </div>
+
+  <!-- ═══ TODAY'S FLIP CARD ════════════════════════════════════ -->
+  <div class="flip-card">
+
+    <div class="flip-header">
+      <span>📖</span>
+      Today's Flip &nbsp;·&nbsp; Course 5 — Deep Learning with PyTorch
+      <span class="badge badge-active" style="margin-left:auto"><span class="dot dot-b pulsing"></span>In Progress</span>
+    </div>
+
+    <div class="flip-sublabel">Before you watch, think about…</div>
+    <ul class="flip-questions">
+      <li>
+        <span class="flip-q-num">1</span>
+        <span>You've built a logistic regression model in PyTorch — one linear layer plus sigmoid. What do you think happens when you stack two or three of those layers? What new capability does depth give you?</span>
+      </li>
+      <li>
+        <span class="flip-q-num">2</span>
+        <span>In C4 you used MSE loss for regression. Classification predicts a category, not a number. Why do you think MSE isn't the right choice — and what property should a classification loss have?</span>
+      </li>
+      <li>
+        <span class="flip-q-num">3</span>
+        <span>CNNs dominate image tasks. A plain neural network could technically process pixel values too. What do you think CNNs do differently that makes them so much better at spatial data?</span>
+      </li>
+    </ul>
+
+    <div class="flip-sublabel">Watch for…</div>
+    <div class="watch-for">
+      How <strong>activation functions</strong> (especially ReLU) are what allow deep networks to learn non-linear decision boundaries — without them, stacking layers is mathematically equivalent to one layer.
+      Also watch for <strong>softmax</strong>: the multi-class generalisation of sigmoid, and how cross-entropy loss is designed to punish confident wrong answers far more than MSE ever could.
+    </div>
+
+    <div class="flip-links">
+      <a class="flip-btn" href="viz/activation-functions.html">⚡ Activation Functions viz</a>
+      <a class="flip-btn" href="viz/backprop.html">🔁 Backprop viz</a>
+      <a class="flip-btn" href="courses/c05.html">📚 Course 5 Notes</a>
+    </div>
+
+    <div class="flip-divider"></div>
+
+    <!-- Coming up -->
+    <div class="flip-next">
+      <span style="font-size:1.25rem;line-height:1.3">👀</span>
+      <div class="flip-next-body">
+        <div class="flip-next-title">
+          Coming up: Course 6 — AI Capstone Project with Deep Learning
+        </div>
+        <div class="flip-next-peek">
+          C6 is the first capstone — applying CNNs and Vision Transformers to a real image classification problem.
+          Less new theory, more putting the pieces together. Good consolidation before the GenAI block.
+        </div>
+        <a class="flip-btn-sm" href="courses/c06.html">📚 Preview Course 6</a>
+      </div>
+    </div>
+
+  </div><!-- /flip-card -->
+
+  <!-- ═══ PRIZE COUNTDOWN ══════════════════════════════════════ -->
+  <div class="section-head">Prize Countdown</div>
+  <div class="prize-grid">
+
+    <div class="card card-yellow">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div class="tag tag-gold">🏆 Grand Prize</div>
+          <div style="font-size:1.3rem;font-weight:700;margin-bottom:.2rem">Nintendo Switch 2 + Pokopia</div>
+          <div style="font-size:.85rem;color:var(--muted)">Deadline: <strong style="color:var(--text)">31 July 2026</strong></div>
+        </div>
+        <span style="font-size:2.25rem;line-height:1;margin-left:1rem;flex-shrink:0">🎮</span>
+      </div>
+      <div class="countdown" id="countdown"></div>
+    </div>
+
+    <div class="card">
+      <div class="tag tag-silver">🥈 Runner-up</div>
+      <div style="font-size:1.1rem;font-weight:700;margin-bottom:.2rem">Prize TBD</div>
+      <div style="font-size:.85rem;color:var(--muted)">Deadline: <strong>31 August 2026</strong></div>
+      <div style="margin-top:1rem;padding:.75rem;background:var(--surface2);border-radius:6px;font-size:.82rem;color:var(--muted);font-style:italic;line-height:1.5">
+        Don't settle for this.<br>Go get the Switch 2. 🎮
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══ STATS ════════════════════════════════════════════════ -->
+  <div class="stats-grid">
+    <div class="stat">
+      <div class="stat-val">4 <span class="stat-sub">/ 13</span></div>
+      <div class="stat-lbl">Courses Done</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val">71<span class="stat-sub">h / 165h</span></div>
+      <div class="stat-lbl">Hours Done</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val" style="color:var(--yellow);font-size:1rem">⚡ Aug 31</div>
+      <div class="stat-lbl">Prize Status</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val" style="font-size:1rem">C5</div>
+      <div class="stat-lbl">Active Course</div>
+    </div>
+  </div>
+
+  <!-- ═══ COURSE PROGRESS STRIP ════════════════════════════════ -->
+  <div class="section-head">
+    Course Progress
+    <span class="section-hint">Click a circle to open course notes</span>
+  </div>
+
+  <div class="course-strip">
+    <a href="courses/c01.html" class="c-dot c-dot-done"    title="C1 — Machine Learning with Python (Complete)">1</a>
+    <a href="courses/c02.html" class="c-dot c-dot-done"    title="C2 — Intro Deep Learning & Keras (Complete)">2</a>
+    <a href="courses/c03.html" class="c-dot c-dot-done" title="C3 — Deep Learning with Keras & TF (Complete)">3</a>
+    <a href="courses/c04.html" class="c-dot c-dot-done" title="C4 — Intro Neural Networks & PyTorch (Complete)">4</a>
+    <a href="courses/c05.html" class="c-dot c-dot-active pulsing" title="C5 — Deep Learning with PyTorch (In Progress)">5<span class="c-dot-badge">5</span></a>
+    <a href="courses/c06.html" class="c-dot c-dot-pending" title="C6 — AI Capstone Project with Deep Learning">6</a>
+    <a href="courses/c07.html" class="c-dot c-dot-pending" title="C7 — GenAI & LLMs: Architecture & Data Prep">7</a>
+    <a href="courses/c08.html" class="c-dot c-dot-pending" title="C8 — Gen AI Foundational Models for NLP">8</a>
+    <a href="courses/c09.html" class="c-dot c-dot-pending" title="C9 — Language Modeling with Transformers">9</a>
+    <a href="courses/c10.html" class="c-dot c-dot-pending" title="C10 — Gen AI Engineering & Fine-Tuning">10</a>
+    <a href="courses/c11.html" class="c-dot c-dot-pending" title="C11 — Advanced Fine-Tuning for LLMs">11</a>
+    <a href="courses/c12.html" class="c-dot c-dot-pending" title="C12 — AI Agents Using RAG & LangChain">12</a>
+    <a href="courses/c13.html" class="c-dot c-dot-pending" title="C13 — GenAI Applications with RAG & LangChain">13</a>
+  </div>
+
+  <!-- Progress bars -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.25rem;margin-bottom:1.5rem">
+    <div class="prog-row">
+      <div class="prog-header"><span>Courses</span><span>3 / 13 · 23%</span></div>
+      <div class="prog-track"><div class="prog-fill" style="width:23%"></div></div>
+    </div>
+    <div class="prog-row">
+      <div class="prog-header"><span>Hours</span><span>53h / 165h · 32%</span></div>
+      <div class="prog-track"><div class="prog-fill" style="width:32%"></div></div>
+    </div>
+  </div>
+
+  <!-- ═══ QUICK NAV ════════════════════════════════════════════ -->
+  <div class="section-head">Quick Access</div>
+  <div class="quick-grid">
+
+    <a class="quick-card" href="courses/c04.html">
+      <div class="quick-card-icon">📚</div>
+      <div class="quick-card-title">Course Notes</div>
+      <div class="quick-card-desc" id="qcd-courses">Curated highlights for all 13 courses. Theory-first, assessment-ready. Exam traps and key distinctions front and centre.</div>
+    </a>
+
+    <a class="quick-card" href="viz/index.html">
+      <div class="quick-card-icon">📊</div>
+      <div class="quick-card-title">Visualisations</div>
+      <div class="quick-card-desc" id="qcd-viz">Interactive charts: gradient descent, activation functions, backprop, bias–variance. Gen AI viz coming with courses 7–9.</div>
+    </a>
+
+    <a class="quick-card" href="games/index.html">
+      <div class="quick-card-icon">🎮</div>
+      <div class="quick-card-title">Study Games</div>
+      <div class="quick-card-desc" id="qcd-games">C3 &amp; C4 games live — quiz, flashcards, odd one out, true/false sprint. 70% theory, 30% code comprehension.</div>
+    </a>
+
+    <a class="quick-card" href="library/index.html">
+      <div class="quick-card-icon">📖</div>
+      <div class="quick-card-title">Code Library</div>
+      <div class="quick-card-desc" id="qcd-library">Every model from the certificate, annotated from first principles. C3 live: Functional API, CNN, VAE, GAN, DQN and more.</div>
+    </a>
+
+  </div>
+
+  <!-- ═══ PACE INSIGHT ══════════════════════════════════════════ -->
+  <div class="insight ins-good" style="margin-bottom:1.5rem">
+    ✓ <strong>On track for the Switch 2.</strong>
+    10 courses remaining. Double up on C7 (6h) and C10 (8h) — that's all you need to finish by July 26, 5 days clear.
+    PyTorch block (C4–C6) is the grind. Get through it steady, then sprint the Gen AI courses.
+  </div>
+
+  <div class="footer">
+    IBM AI Engineering Professional Certificate · Personal VLE ·
+    <a href="course-tracker.html" target="_blank">Full Tracker →</a>
+  </div>
+
+</div><!-- /container -->
+
+<script>startCountdown('countdown');</script>
+
+<script>
+(function () {
+  var pairs = [
+    ['VLE_lastCourse', 'qcd-courses'],
+    ['VLE_lastGame',   'qcd-games'],
+    ['VLE_lastViz',    'qcd-viz'],
+    ['VLE_lastLib',    'qcd-library'],
+  ];
+  pairs.forEach(function(pair) {
+    var val = localStorage.getItem(pair[0]);
+    if (!val) return;
+    var el = document.getElementById(pair[1]);
+    if (!el) return;
+    var lv = document.createElement('div');
+    lv.className = 'lv-line';
+    lv.textContent = '↩ Resume: ' + val;
+    el.parentElement.appendChild(lv);
+  });
+})();
+</script>
+</body>
+</html>

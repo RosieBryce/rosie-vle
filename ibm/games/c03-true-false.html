@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>C3 True/False Sprint — Deep Learning with Keras & TF · VLE</title>
+  <link rel="stylesheet" href="../shared.css">
+  <script src="../shared.js"></script>
+  <style>
+    .game-shell { max-width: 680px; margin: 0 auto; }
+
+    .intro-card { text-align:center; padding:2.5rem 2rem; }
+    .intro-badge { display:inline-block; font-size:.75rem; font-weight:700; text-transform:uppercase;
+      letter-spacing:.08em; padding:.3rem .75rem; border-radius:99px;
+      background:var(--yellow-bg); color:var(--yellow); border:1px solid rgba(210,153,34,.3); margin-bottom:1.25rem; }
+    .intro-title { font-size:1.3rem; font-weight:700; letter-spacing:-.02em; margin-bottom:.5rem; }
+    .intro-meta { color:var(--muted); font-size:.875rem; margin-bottom:1.75rem; line-height:1.6; }
+    .btn-start { padding:.65rem 2rem; border-radius:8px;
+      background:var(--yellow); color:#000; font-weight:700; font-size:.9rem;
+      border:none; cursor:pointer; transition:opacity .15s; }
+    .btn-start:hover { opacity:.85; }
+
+    .sprint-header { display:flex; justify-content:space-between; align-items:center;
+      margin-bottom:1.25rem; }
+    .sprint-counter { font-size:.875rem; color:var(--muted); font-weight:600; }
+    .sprint-timer { font-size:.875rem; font-weight:700; font-variant-numeric:tabular-nums;
+      color:var(--yellow); }
+    .score-chips { display:flex; gap:.5rem; }
+    .chip { font-size:.75rem; font-weight:700; padding:.15rem .55rem; border-radius:99px; }
+    .chip-g { background:var(--green-bg); color:var(--green); }
+    .chip-r { background:rgba(248,81,73,.1); color:var(--red); }
+
+    .q-bar { height:4px; background:var(--surface2); border-radius:99px; overflow:hidden; margin-bottom:1.25rem; }
+    .q-bar-fill { height:100%; background:var(--yellow); border-radius:99px; transition:width .3s ease; }
+
+    .statement-card { background:var(--surface); border:2px solid var(--border); border-radius:12px;
+      padding:2rem 1.75rem; margin-bottom:1rem; transition:border-color .2s; min-height:120px;
+      display:flex; align-items:center; }
+    .statement-card.correct-border { border-color:var(--green); }
+    .statement-card.wrong-border   { border-color:var(--red); }
+    .statement-text { font-size:1rem; line-height:1.6; font-weight:500; }
+    .statement-text code { background:var(--surface2); padding:.1em .35em; border-radius:4px;
+      font-size:.85em; color:var(--blue); font-family:"SFMono-Regular",Consolas,monospace; }
+
+    .tf-buttons { display:grid; grid-template-columns:1fr 1fr; gap:.75rem; margin-bottom:1rem; }
+    .tf-btn { padding:1rem; border-radius:10px; font-size:1rem; font-weight:700;
+      border:2px solid; cursor:pointer; transition:opacity .15s, background .12s; }
+    .tf-btn:disabled { cursor:default; opacity:.45; }
+    .tf-btn.true-btn  { background:var(--green-bg); border-color:rgba(63,185,80,.4); color:var(--green); }
+    .tf-btn.false-btn { background:rgba(248,81,73,.08); border-color:rgba(248,81,73,.35); color:var(--red); }
+    .tf-btn.true-btn:hover:not(:disabled)  { background:rgba(63,185,80,.2); }
+    .tf-btn.false-btn:hover:not(:disabled) { background:rgba(248,81,73,.15); }
+
+    .feedback-row { display:flex; align-items:flex-start; gap:.75rem; padding:.875rem 1rem;
+      border-radius:8px; font-size:.875rem; line-height:1.55; margin-bottom:.75rem; display:none; }
+    .feedback-row.fb-correct { background:var(--green-bg); border:1px solid rgba(63,185,80,.3); }
+    .feedback-row.fb-wrong   { background:rgba(248,81,73,.07); border:1px solid rgba(248,81,73,.3); }
+    .fb-icon { font-size:1rem; flex-shrink:0; margin-top:.1rem; }
+    .fb-text code { background:rgba(0,0,0,.15); padding:.1em .3em; border-radius:3px;
+      font-size:.85em; font-family:"SFMono-Regular",Consolas,monospace; }
+
+    .btn-next { padding:.6rem 1.5rem; border-radius:8px;
+      background:var(--yellow); color:#000; font-weight:700; font-size:.875rem;
+      border:none; cursor:pointer; transition:opacity .15s; display:none; }
+    .btn-next:hover { opacity:.85; }
+
+    .result-row { display:flex; gap:.75rem; justify-content:center; flex-wrap:wrap; margin-bottom:1.5rem; }
+    .result-badge { text-align:center; padding:1rem 1.5rem; border-radius:10px; min-width:90px; }
+    .result-badge .rnum { font-size:2rem; font-weight:700; }
+    .result-badge .rlbl { font-size:.75rem; font-weight:600; text-transform:uppercase;
+      letter-spacing:.06em; margin-top:.2rem; }
+    .result-badge.g { background:var(--green-bg); color:var(--green); }
+    .result-badge.r { background:rgba(248,81,73,.08); color:var(--red); }
+    .result-badge.y { background:var(--yellow-bg); color:var(--yellow); }
+    .results-actions { display:flex; gap:.75rem; justify-content:center; flex-wrap:wrap; margin-top:1.25rem; }
+    .btn-action { padding:.55rem 1.25rem; border-radius:8px; font-size:.875rem; font-weight:600;
+      cursor:pointer; border:1px solid var(--border); background:var(--surface2);
+      color:var(--text); text-decoration:none; transition:border-color .12s; }
+    .btn-action:hover { border-color:var(--yellow); color:var(--yellow); }
+    .btn-action.primary { background:var(--yellow); border-color:var(--yellow); color:#000; }
+    .btn-action.primary:hover { opacity:.85; }
+  </style>
+</head>
+<body>
+<script>initNav('../'); localStorage.setItem('VLE_lastGame', 'C3 True/False Sprint — Keras & TF');</script>
+
+<div class="container">
+  <div class="game-shell">
+
+    <div style="margin-bottom:1.25rem">
+      <div class="tag" style="background:var(--yellow-bg);color:var(--yellow);border:1px solid rgba(210,153,34,.3);margin-bottom:.4rem">
+        Study Game · True/False Sprint
+      </div>
+      <h1 style="font-size:1.3rem;font-weight:700;letter-spacing:-.02em">C3 True/False Sprint — Keras &amp; TensorFlow</h1>
+    </div>
+
+    <div id="game-root"></div>
+
+  </div>
+</div>
+
+<script>
+const STATEMENTS = [
+  // TRUE statements
+  {
+    text: "The Functional API can express any architecture that Sequential can, but not vice versa.",
+    answer: true,
+    explanation: "Sequential is a strict subset of the Functional API — any linear stack of layers can be expressed with either. But Sequential cannot handle branching, multiple inputs/outputs, or skip connections. Functional can express all of these."
+  },
+  {
+    text: "When a base model is frozen, it should be called with training=False to prevent BatchNorm from updating its running statistics.",
+    answer: true,
+    explanation: "Even with base.trainable=False, if you pass training=True, BatchNorm layers inside the base will update their running mean and variance using your (probably small) dataset — overwriting the carefully calibrated ImageNet statistics. Always pass training=False when the base is frozen."
+  },
+  {
+    text: "A VAE encoder outputs two values per latent dimension — a mean (μ) and a log-variance — not a single latent vector.",
+    answer: true,
+    explanation: "This is what distinguishes the VAE from a plain autoencoder. The encoder parameterises a Gaussian distribution: z_mean and z_log_var. The actual latent vector z is then sampled from N(μ, σ²) via the reparameterisation trick: z = μ + ε·σ where ε ~ N(0,1)."
+  },
+  {
+    text: "The KL divergence term in the VAE loss pushes the latent distribution toward N(0,1).",
+    answer: true,
+    explanation: "The KL term penalises any departure of the encoded distribution from the standard normal N(0,1). This regularises the latent space, making it smooth and continuous. The result: you can sample any z ~ N(0,1) and decode it to get a plausible output — which is what enables generation."
+  },
+  {
+    text: "In a GAN, the generator never directly sees real training data — it only receives gradient signal through the discriminator.",
+    answer: true,
+    explanation: "The generator takes random noise as input and produces fake samples. It has no direct access to real images. Its only learning signal is the discriminator's response — gradients that flow back through D telling G how to make its fakes more convincing."
+  },
+  {
+    text: "Self-attention allows any token to attend to any other token in the sequence regardless of how far apart they are.",
+    answer: true,
+    explanation: "Self-attention computes relationships between all token pairs in a single matrix operation — there is no recurrence and no concept of 'distance'. Token 1 and token 100 relate just as directly as token 1 and token 2. This is the key advantage over RNNs, which must pass information through every intermediate hidden state."
+  },
+  {
+    text: "The DQN target network is updated less frequently than the Q-network to provide stable training targets.",
+    answer: true,
+    explanation: "The Q-network is updated every training step. The target network is a frozen copy updated every N steps (e.g. every 1000 steps). This separation is critical: if both updated every step, the Bellman equation targets would shift with every weight update — the network would chase a moving target, causing oscillation and often divergence."
+  },
+  {
+    text: "Experience replay in DQN breaks the temporal correlation between consecutive training transitions.",
+    answer: true,
+    explanation: "Consecutive game frames are highly correlated — same environment, very similar states. Training on them in order means each batch of updates pulls the network in a consistent but biased direction. The replay buffer stores many past transitions; random sampling gives a more independent, diverse set of updates, closer to i.i.d. training."
+  },
+  {
+    text: "Positional encoding is added to token embeddings, not concatenated — so the embedding dimension does not increase.",
+    answer: true,
+    explanation: "The positional encoding vector has the same dimension as the token embedding. They are summed element-wise: embedding + positional_encoding. This injects position information without changing the dimension that the rest of the model expects. Concatenation would double the dimension and break the architecture."
+  },
+  {
+    text: "EarlyStopping halts training when a monitored metric shows no improvement for `patience` consecutive epochs.",
+    answer: true,
+    explanation: "Exactly. If val_loss doesn't improve for patience=5 epochs, training stops at epoch N rather than waiting for the full epoch count. With restore_best_weights=True, the weights from the best epoch are restored rather than keeping the weights from the final (likely worse) epoch."
+  },
+  // FALSE statements
+  {
+    text: "A Sequential model can be used for any architecture, as long as you define the layers carefully.",
+    answer: false,
+    explanation: "False. Sequential can only express a single linear chain: one tensor in, one tensor out, each layer feeding the next. It structurally cannot represent branching, multiple inputs or outputs, or skip connections — these require the Functional API. The constraint is architectural, not a matter of careful configuration."
+  },
+  {
+    text: "Setting training=True on a frozen base model is safe if you use a very small learning rate.",
+    answer: false,
+    explanation: "False. The learning rate controls weight updates — but with base.trainable=False, the frozen weights are not updated regardless of learning rate. The problem with training=True is that BatchNorm layers inside the base update their running statistics (mean, variance) even when weights are frozen. Those statistics corrupt the pretrained normalisation. The fix is training=False, not a smaller LR."
+  },
+  {
+    text: "A plain autoencoder can generate new images by sampling random points from its latent space.",
+    answer: false,
+    explanation: "False. A plain autoencoder learns a deterministic, unstructured mapping from inputs to latent points. Only the specific points encoded from training data have meaningful decodings — random samples produce noise. The VAE solves this with the KL divergence term, which regularises the latent space toward N(0,1) and ensures random samples decode to plausible outputs."
+  },
+  {
+    text: "The GAN generator's loss is computed by directly comparing its outputs to real training images.",
+    answer: false,
+    explanation: "False. The generator never sees real images directly. Its loss is based entirely on the discriminator's response: G is trained to maximise D(G(z)) — to produce outputs that the discriminator classifies as real. The 'comparison' to reality is indirect, mediated through D."
+  },
+  {
+    text: "Mode collapse in GAN training means the discriminator has stopped learning to distinguish real from fake.",
+    answer: false,
+    explanation: "False. Mode collapse is a failure of the generator, not the discriminator. The generator learns to produce only one or a few convincing outputs — limited variety — because it found a 'safe zone' that consistently fools D. D may still be discriminating, but G exploits a narrow part of the data distribution. The loss for diversity comes from G's objective having no diversity signal."
+  },
+  {
+    text: "In Keras MultiHeadAttention, the key_dim argument sets the total attention dimension across all heads.",
+    answer: false,
+    explanation: "False. key_dim is the dimension per head. The total attention output dimension is num_heads × key_dim. For example, with num_heads=8 and key_dim=64, the total is 512. A common mistake is setting key_dim=512 intending a 512-dimensional model — this actually gives 8×512 = 4096, an 8× larger computation than intended."
+  },
+  {
+    text: "Epsilon in DQN epsilon-greedy exploration should remain constant throughout training for consistent behaviour.",
+    answer: false,
+    explanation: "False. Epsilon must decay from high (e.g. 1.0) toward a small value (e.g. 0.01) as training progresses. Early on, the Q-network knows nothing — random exploration is the right behaviour. As it matures, exploitation of learned Q-values becomes more reliable. A constant epsilon means the agent either always explores randomly (never converges) or always exploits (never discovers better strategies)."
+  },
+  {
+    text: "@tf.function retraces and recompiles the computation graph on every function call.",
+    answer: false,
+    explanation: "False. @tf.function traces once per unique input signature (shape and dtype combination) and caches the compiled graph. On subsequent calls with the same signature, TensorFlow runs the compiled graph directly — no Python execution, no retracing. This is the source of the print-inside-@tf.function gotcha: print runs once on trace, never again on subsequent calls."
+  },
+  {
+    text: "Residual connections in transformer blocks are optional improvements that can be removed in smaller models.",
+    answer: false,
+    explanation: "False. Residual connections are essential for training, not optional improvements. Without them, gradients in deep stacks (even 6-12 layers) vanish before reaching early layers. The addition x + sublayer(x) provides a direct gradient path that bypasses the sublayer entirely, allowing deep transformers to train reliably. Removing them typically causes training to fail or dramatically slow."
+  },
+  {
+    text: "GlobalAveragePooling2D produces a larger output tensor than Flatten when applied to the same convolutional feature map.",
+    answer: false,
+    explanation: "False — the opposite is true. For a feature map of shape (H, W, C), Flatten produces H×W×C values. GlobalAveragePooling2D averages each channel spatially, producing just C values (one per filter). For a 7×7×512 feature map: Flatten → 25,088 values; GAP → 512 values. This is why GAP dramatically reduces parameter count in the final Dense layer."
+  }
+];
+
+let currentIdx = 0;
+let correct = 0;
+let wrong = 0;
+let answered = false;
+let startTime = null;
+let timerInterval = null;
+let activeStatements = [];
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+const root = document.getElementById('game-root');
+
+function showIntro() {
+  root.innerHTML = `
+    <div class="card intro-card">
+      <div class="intro-badge">True/False Sprint</div>
+      <div class="intro-title">Course 3 — Keras &amp; TensorFlow</div>
+      <div class="intro-meta">
+        ${STATEMENTS.length} statements · timed · ~8 minutes<br>
+        10 true statements, 10 common misconceptions.<br>
+        Read carefully — the false ones are designed to sound plausible.
+      </div>
+      <button class="btn-start" onclick="startGame()">Start →</button>
+    </div>`;
+}
+
+function startGame() {
+  currentIdx = 0; correct = 0; wrong = 0;
+  activeStatements = shuffle(STATEMENTS);
+  startTime = Date.now();
+  timerInterval = setInterval(updateTimer, 1000);
+  showStatement();
+}
+
+function updateTimer() {
+  const el = document.getElementById('timer');
+  if (!el) return;
+  el.textContent = formatTime(Date.now() - startTime);
+}
+
+function formatTime(ms) {
+  const s = Math.floor(ms / 1000);
+  const m = Math.floor(s / 60);
+  return `${m}:${String(s % 60).padStart(2, '0')}`;
+}
+
+function showStatement() {
+  answered = false;
+  const s = activeStatements[currentIdx];
+  const pct = Math.round((currentIdx / activeStatements.length) * 100);
+
+  root.innerHTML = `
+    <div class="sprint-header">
+      <span class="sprint-counter">${currentIdx + 1} / ${activeStatements.length}</span>
+      <div class="score-chips">
+        <span class="chip chip-g">✓ ${correct}</span>
+        <span class="chip chip-r">✗ ${wrong}</span>
+      </div>
+      <span class="sprint-timer" id="timer">${formatTime(Date.now() - startTime)}</span>
+    </div>
+    <div class="q-bar"><div class="q-bar-fill" style="width:${pct}%"></div></div>
+
+    <div class="statement-card" id="stmt-card">
+      <div class="statement-text">${formatText(s.text)}</div>
+    </div>
+
+    <div class="tf-buttons">
+      <button class="tf-btn true-btn"  onclick="answer(true)">✓ True</button>
+      <button class="tf-btn false-btn" onclick="answer(false)">✗ False</button>
+    </div>
+
+    <div class="feedback-row" id="feedback">
+      <span class="fb-icon" id="fb-icon"></span>
+      <span id="fb-text"></span>
+    </div>
+
+    <button class="btn-next" id="btn-next" onclick="nextStatement()">Next →</button>`;
+}
+
+function answer(userAnswer) {
+  if (answered) return;
+  answered = true;
+
+  const s = activeStatements[currentIdx];
+  const isCorrect = userAnswer === s.answer;
+  if (isCorrect) correct++; else wrong++;
+
+  // Style statement card
+  const card = document.getElementById('stmt-card');
+  card.classList.add(isCorrect ? 'correct-border' : 'wrong-border');
+
+  // Disable buttons
+  document.querySelectorAll('.tf-btn').forEach(b => b.disabled = true);
+
+  // Show feedback
+  const fb = document.getElementById('feedback');
+  const correctLabel = s.answer ? 'True' : 'False';
+  fb.className = `feedback-row ${isCorrect ? 'fb-correct' : 'fb-wrong'}`;
+  document.getElementById('fb-icon').textContent = isCorrect ? '✓' : '✗';
+  document.getElementById('fb-text').innerHTML =
+    `<strong>${isCorrect ? 'Correct' : `Wrong — this is ${correctLabel}`}.</strong> ${formatText(s.explanation)}`;
+  fb.style.display = 'flex';
+
+  document.getElementById('btn-next').style.display = 'inline-block';
+}
+
+function nextStatement() {
+  currentIdx++;
+  if (currentIdx >= activeStatements.length) showResults();
+  else showStatement();
+}
+
+function showResults() {
+  clearInterval(timerInterval);
+  const elapsed = formatTime(Date.now() - startTime);
+  const total = activeStatements.length;
+  const pct = correct / total;
+  let msg;
+  if (pct >= 0.9) msg = "Excellent — you're reliably distinguishing true statements from plausible misconceptions. Strong assessment readiness.";
+  else if (pct >= 0.75) msg = "Good. Review the explanations for statements you missed — pay attention to which ones were false.";
+  else msg = "Several misconceptions slipped through. Work through the explanations and retry — these are common exam traps.";
+
+  const histKey = 'VLE_scores_c03_tf';
+  let hist = JSON.parse(localStorage.getItem(histKey) || '[]');
+  hist.unshift({score: correct, total: total});
+  if (hist.length > 3) hist = hist.slice(0, 3);
+  localStorage.setItem(histKey, JSON.stringify(hist));
+  const histHtml = hist.length > 1
+    ? '<div style="font-size:.8rem;color:var(--muted);margin-top:.5rem">Previous: '
+      + hist.slice(1).map(function(h) { return h.score + '/' + h.total; }).join(' · ')
+      + '</div>'
+    : '';
+
+  root.innerHTML = `
+    <div class="card intro-card">
+      <div class="intro-title" style="margin-bottom:1rem">Sprint complete</div>
+      <div class="result-row">
+        <div class="result-badge g"><div class="rnum">${correct}</div><div class="rlbl">Correct</div></div>
+        <div class="result-badge r"><div class="rnum">${wrong}</div><div class="rlbl">Wrong</div></div>
+        <div class="result-badge y"><div class="rnum">${elapsed}</div><div class="rlbl">Time</div></div>
+      </div>
+      <div class="intro-meta">${msg}${histHtml}</div>
+      <div class="results-actions">
+        <button class="btn-action primary" onclick="startGame()">Play again</button>
+        <a class="btn-action" href="index.html">← Games Hub</a>
+        <a class="btn-action" href="../courses/c03.html">← Back to C3</a>
+        <a class="btn-action" href="c03-quiz.html">Try the quiz →</a>
+      </div>
+    </div>`;
+}
+
+function formatText(text) {
+  return text.replace(/`([^`]+)`/g, '<code>$1</code>');
+}
+
+showIntro();
+</script>
+</body>
+</html>

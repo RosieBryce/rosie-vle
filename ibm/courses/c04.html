@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>C4 — Intro to Neural Networks and PyTorch · VLE</title>
+  <link rel="stylesheet" href="../shared.css">
+  <script src="../shared.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</head>
+<body>
+<script>initNav('../');</script>
+
+<div class="container">
+
+  <!-- ═══ HEADER ══════════════════════════════════════════════ -->
+  <div style="margin-bottom:1.75rem">
+    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem;flex-wrap:wrap">
+      <span style="color:var(--muted);font-size:.83rem">Course 4 of 13</span>
+      <span class="badge badge-done"><span class="dot dot-g"></span>Complete</span>
+      <span class="badge badge-pending">18 hours</span>
+    </div>
+    <h1 style="font-size:1.5rem;font-weight:700;letter-spacing:-.02em;margin-bottom:.375rem">
+      Introduction to Neural Networks and PyTorch
+    </h1>
+    <p style="color:var(--muted);font-size:.875rem;line-height:1.55">
+      PyTorch is the research-first framework — more explicit than Keras, more Pythonic than TF1.
+      The learning curve is steeper but the control is worth it.
+      The training loop is <em>manual</em> here, which forces you to actually understand what's happening.
+    </p>
+  </div>
+
+  <!-- ═══ FLIPPED CLASSROOM ════════════════════════════════════ -->
+  <div class="flip-card" style="margin-bottom:2rem">
+    <div class="flip-header">
+      <span>📖</span>
+      Flipped Classroom — Before You Watch
+    </div>
+
+    <div class="flip-sublabel">Prime your thinking — bring these questions into the lectures</div>
+    <ul class="flip-questions">
+      <li>
+        <span class="flip-q-num">1</span>
+        <span>Keras has <code>model.fit()</code> which handles the entire training loop. In PyTorch you write this yourself. Before you see it — what steps do you think a training loop needs to perform, in order, for each batch?</span>
+      </li>
+      <li>
+        <span class="flip-q-num">2</span>
+        <span>PyTorch gradients <em>accumulate by default</em> across batches. Why might that be a design choice? What must you do at the start of each batch to prevent this accumulation?</span>
+      </li>
+      <li>
+        <span class="flip-q-num">3</span>
+        <span><code>nn.CrossEntropyLoss</code> applies softmax internally. So if your model's final layer <em>also</em> applies softmax — what's the consequence? What output should the model produce instead?</span>
+      </li>
+    </ul>
+
+    <div class="flip-sublabel">Watch for…</div>
+    <div class="watch-for">
+      The 6-step training loop pattern — every step has a specific reason. Notice the order:
+      zero gradients → forward pass → compute loss → backward → update weights → (repeat).
+      Also: watch for <code>model.train()</code> and <code>model.eval()</code> — they do more than toggle a flag.
+    </div>
+  </div>
+
+  <!-- ═══ CORE THEORY ══════════════════════════════════════════ -->
+  <div class="section-head">
+    Core Theory
+    <span class="section-hint">Assessment priority — understand the why, not just the what</span>
+  </div>
+
+  <!-- 1. PyTorch vs Keras -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">Mental Model</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.75rem">PyTorch vs Keras/TensorFlow — The Key Differences</h3>
+    <div style="overflow-x:auto;margin-bottom:.75rem">
+      <table class="decision-table">
+        <thead>
+          <tr><th></th><th>PyTorch</th><th>Keras/TF</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Training loop</strong></td>
+            <td>Manual — you write every step</td>
+            <td><code>model.fit()</code> handles everything</td>
+          </tr>
+          <tr>
+            <td><strong>Graph type</strong></td>
+            <td>Dynamic (defined by execution)</td>
+            <td>Dynamic default; static with <code>@tf.function</code></td>
+          </tr>
+          <tr>
+            <td><strong>Gradient computation</strong></td>
+            <td><code>tensor.backward()</code></td>
+            <td><code>tf.GradientTape</code></td>
+          </tr>
+          <tr>
+            <td><strong>Feel</strong></td>
+            <td>NumPy-like, Pythonic, explicit</td>
+            <td>Declarative, higher-level abstraction</td>
+          </tr>
+          <tr>
+            <td><strong>Community</strong></td>
+            <td>Research, cutting-edge papers</td>
+            <td>Industry deployment, production</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="insight ins-info" style="margin-top:.5rem">
+      The explicit manual loop in PyTorch is a <em>feature</em>, not a limitation. It forces you to understand
+      what happens at every step — useful when debugging, customising, or reading research code.
+    </div>
+  </div>
+
+  <!-- 2. Autograd -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">Autograd</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">How PyTorch Autograd Works</h3>
+    <p style="font-size:.875rem;line-height:1.6;margin-bottom:.625rem">
+      PyTorch builds a <strong>dynamic computation graph</strong> as operations execute.
+      When you call <code>.backward()</code>, it traverses this graph in reverse to compute gradients
+      (the chain rule, applied automatically).
+    </p>
+    <div style="overflow-x:auto;margin-bottom:.625rem">
+      <table class="concept-table">
+        <thead><tr><th>Concept</th><th>What it means</th></tr></thead>
+        <tbody>
+          <tr><td><code>requires_grad=True</code></td><td>Marks a tensor: "track operations on me for gradient computation"</td></tr>
+          <tr><td><code>tensor.backward()</code></td><td>Computes ∂loss/∂w for all tensors with <code>requires_grad=True</code>; results stored in <code>.grad</code></td></tr>
+          <tr><td><code>tensor.grad</code></td><td>Accumulated gradient — <strong>not reset automatically between batches</strong></td></tr>
+          <tr><td><code>torch.no_grad()</code></td><td>Context manager: disables graph building; use during evaluation to save memory</td></tr>
+          <tr><td><code>tensor.detach()</code></td><td>Removes one tensor from the graph; the rest of the graph still exists</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:.83rem;color:var(--muted);line-height:1.5">
+      <strong>Key design choice:</strong> Gradients accumulate — they add to <code>.grad</code> on each
+      <code>.backward()</code> call without being reset. You must call <code>optimizer.zero_grad()</code>
+      to clear them before the next batch.
+    </p>
+  </div>
+
+  <!-- 3. The Training Loop -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">Training Loop</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.75rem">The 6-Step PyTorch Training Loop</h3>
+    <p style="font-size:.875rem;line-height:1.6;margin-bottom:.75rem">
+      Every PyTorch training loop follows the same pattern. Each step exists for a reason:
+    </p>
+    <div style="display:flex;flex-direction:column;gap:.5rem;margin-bottom:.75rem">
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <span style="flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--blue-bg);border:1px solid rgba(88,166,255,.3);color:var(--blue);font-size:.75rem;font-weight:700;display:flex;align-items:center;justify-content:center">1</span>
+        <div style="font-size:.875rem"><code>model.train()</code> — enable dropout and BatchNorm batch-stats mode for the training epoch</div>
+      </div>
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <span style="flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--blue-bg);border:1px solid rgba(88,166,255,.3);color:var(--blue);font-size:.75rem;font-weight:700;display:flex;align-items:center;justify-content:center">2</span>
+        <div style="font-size:.875rem"><code>optimizer.zero_grad()</code> — <strong>clear accumulated gradients</strong> from the previous batch</div>
+      </div>
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <span style="flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--blue-bg);border:1px solid rgba(88,166,255,.3);color:var(--blue);font-size:.75rem;font-weight:700;display:flex;align-items:center;justify-content:center">3</span>
+        <div style="font-size:.875rem"><code>outputs = model(X_batch)</code> — forward pass; builds the computation graph</div>
+      </div>
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <span style="flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--blue-bg);border:1px solid rgba(88,166,255,.3);color:var(--blue);font-size:.75rem;font-weight:700;display:flex;align-items:center;justify-content:center">4</span>
+        <div style="font-size:.875rem"><code>loss = criterion(outputs, y_batch)</code> — compute scalar loss</div>
+      </div>
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <span style="flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--blue-bg);border:1px solid rgba(88,166,255,.3);color:var(--blue);font-size:.75rem;font-weight:700;display:flex;align-items:center;justify-content:center">5</span>
+        <div style="font-size:.875rem"><code>loss.backward()</code> — backprop: compute ∂loss/∂w for all parameters</div>
+      </div>
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <span style="flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--blue-bg);border:1px solid rgba(88,166,255,.3);color:var(--blue);font-size:.75rem;font-weight:700;display:flex;align-items:center;justify-content:center">6</span>
+        <div style="font-size:.875rem"><code>optimizer.step()</code> — update weights using the computed gradients</div>
+      </div>
+    </div>
+    <div class="insight ins-warn">
+      <strong>Zero_grad must come before forward, not after backward.</strong>
+      If you call it after <code>optimizer.step()</code>, gradients from the current batch persist
+      until the next batch starts, contaminating the next batch's gradients.
+      The safe pattern: zero → forward → backward → step.
+    </div>
+  </div>
+
+  <!-- 4. Loss Functions and Softmax -->
+  <div class="card" style="margin-bottom:2rem">
+    <div class="tag tag-blue">Loss Functions</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">CrossEntropyLoss and the Double-Softmax Trap</h3>
+    <p style="font-size:.875rem;line-height:1.6;margin-bottom:.625rem">
+      <code>nn.CrossEntropyLoss</code> is <strong>LogSoftmax + NLLLoss combined</strong>.
+      It expects <strong>raw logits</strong> (unnormalised scores) from your model — it applies softmax internally.
+    </p>
+    <div style="overflow-x:auto;margin-bottom:.75rem">
+      <table class="decision-table">
+        <thead><tr><th>Task</th><th>Loss function</th><th>Model's last layer</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Multi-class classification</td>
+            <td><code>nn.CrossEntropyLoss</code></td>
+            <td>Raw logits (no softmax!)</td>
+          </tr>
+          <tr>
+            <td>Binary classification</td>
+            <td><code>nn.BCEWithLogitsLoss</code></td>
+            <td>Raw logits (no sigmoid!)</td>
+          </tr>
+          <tr>
+            <td>Regression</td>
+            <td><code>nn.MSELoss</code></td>
+            <td>Linear output (no activation)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="insight ins-bad">
+      If you add <code>nn.Softmax</code> to your model output AND use <code>CrossEntropyLoss</code>,
+      you're applying softmax twice. The loss function receives already-squashed probabilities,
+      then squashes them again — gradients become numerically wrong and training fails silently.
+    </div>
+  </div>
+
+  <!-- ═══ MUST-KNOW CONCEPTS ════════════════════════════════════ -->
+  <div class="section-head">Must-Know Concepts</div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:2rem">
+    <table class="concept-table">
+      <thead><tr><th>Term</th><th>One-liner (assessment vocabulary)</th></tr></thead>
+      <tbody>
+        <tr><td><code>requires_grad=True</code></td><td>Marks tensor for gradient tracking; parameter tensors have this set by default</td></tr>
+        <tr><td><code>tensor.backward()</code></td><td>Computes gradients via backprop; accumulates into <code>.grad</code> (does not reset)</td></tr>
+        <tr><td><code>optimizer.zero_grad()</code></td><td>Clears accumulated gradients; <strong>must</strong> be called before each batch's forward pass</td></tr>
+        <tr><td><code>model.train()</code></td><td>Enables dropout; BatchNorm uses current-batch statistics</td></tr>
+        <tr><td><code>model.eval()</code></td><td>Disables dropout; BatchNorm uses running statistics. Always use during evaluation</td></tr>
+        <tr><td><code>torch.no_grad()</code></td><td>Context manager: no gradient graph built; use during evaluation for efficiency</td></tr>
+        <tr><td><code>nn.CrossEntropyLoss</code></td><td>LogSoftmax + NLLLoss; expects raw logits — never pair with a softmax output layer</td></tr>
+        <tr><td><code>state_dict()</code></td><td>Returns ordered dict of model weights; preferred save format over saving full model</td></tr>
+        <tr><td><code>.to(device)</code></td><td>Moves tensor or model to specified device; model and data must be on the same device</td></tr>
+        <tr><td><code>nn.ModuleList</code></td><td>Registers submodules properly (they appear in <code>model.parameters()</code>); plain Python list does not</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══ EXAM TRAPS ════════════════════════════════════════════ -->
+  <div class="section-head">Exam Traps</div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 1 — Forgetting zero_grad()</div>
+    <strong>Gradients accumulate by default in PyTorch.</strong>
+    If you don't call <code>optimizer.zero_grad()</code> at the start of each batch,
+    gradients from all previous batches pile up. This is the #1 PyTorch mistake.
+    The gradient each step sees is the sum of every gradient computed so far — training becomes incorrect.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 2 — CrossEntropyLoss with Softmax output</div>
+    <strong><code>nn.CrossEntropyLoss</code> applies softmax internally.</strong>
+    If your model also applies softmax, you double-apply it. The result is a probability distribution
+    passed through softmax again — the distribution becomes near-uniform for large values,
+    and gradients vanish. Model output should be <strong>raw logits</strong>.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 3 — model.eval() vs model.train()</div>
+    <strong>Forgetting to switch between train and eval modes causes incorrect evaluation scores.</strong>
+    <code>model.train()</code> enables dropout (randomly zeroes neurons) and uses per-batch BatchNorm stats.
+    <code>model.eval()</code> disables dropout and uses stored running statistics.
+    Evaluating with <code>model.train()</code> active means dropout randomly degrades your results.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 4 — loss without .item()</div>
+    <strong>Accumulating <code>total_loss += loss</code> keeps the entire computation graph alive.</strong>
+    Each loss tensor holds a reference to the graph that produced it. Accumulating tensors directly
+    causes a memory leak that grows with each batch. Use <code>total_loss += loss.item()</code>
+    to extract the Python float and release the graph.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 5 — view vs reshape</div>
+    <strong><code>view</code> requires contiguous memory; <code>reshape</code> always works.</strong>
+    After operations like <code>permute</code> or <code>transpose</code>, a tensor's memory may not be
+    contiguous. Calling <code>.view()</code> on it raises a RuntimeError.
+    <code>.reshape()</code> copies if necessary — use it when you're unsure about contiguity.
+  </div>
+
+  <!-- ═══ INTERACTIVE VIZ ══════════════════════════════════════ -->
+  <div class="section-head" style="margin-top:2rem">Interactive Visualisations</div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.875rem;margin-bottom:2rem">
+    <a class="viz-card" href="../viz/gradient-descent.html">
+      <div class="viz-card-title">📊 Gradient Descent</div>
+      <div class="viz-card-desc">See how learning rate affects convergence. The manual loop makes this very concrete.</div>
+    </a>
+    <a class="viz-card" href="../viz/backprop.html">
+      <div class="viz-card-title">🔁 Backpropagation</div>
+      <div class="viz-card-desc">Step through a network's forward and backward pass. Maps directly to PyTorch's autograd.</div>
+    </a>
+  </div>
+
+  <!-- ═══ PRACTICAL NOTES (collapsed) ══════════════════════════ -->
+  <div style="margin-bottom:2rem">
+    <button class="collapse-toggle">
+      <span class="c-arrow">▶</span>
+      Practical Notes &amp; Code Patterns
+      <span style="margin-left:.5rem;font-size:.75rem;color:var(--muted)">(useful for application — not needed to pass the assessment)</span>
+    </button>
+    <div class="collapse-body">
+
+      <div class="card" style="margin-bottom:1rem">
+        <div class="tag tag-blue">Common Gotchas</div>
+        <ul style="font-size:.875rem;line-height:1.7;padding-left:1.25rem">
+          <li><strong>Forgetting <code>optimizer.zero_grad()</code></strong> — gradient accumulation, #1 PyTorch mistake</li>
+          <li><strong>Using <code>model.train()</code> during evaluation</strong> — dropout randomly degrades scores</li>
+          <li><strong>Not calling <code>.item()</code></strong> when accumulating loss — memory leak from retaining computation graphs</li>
+          <li><strong>Double softmax</strong> — model output + <code>CrossEntropyLoss</code></li>
+          <li><strong>Forgetting <code>.to(device)</code></strong> on data tensors — device mismatch error</li>
+          <li><strong>Integer vs float tensors</strong> — loss functions expect <code>dtype=torch.float</code> for inputs, <code>torch.long</code> for class labels</li>
+          <li><strong><code>nn.ModuleList</code> vs Python list</strong> — only <code>ModuleList</code> registers parameters in <code>model.parameters()</code></li>
+        </ul>
+      </div>
+
+      <div class="card" style="margin-bottom:1rem">
+        <div class="tag tag-blue">Full Training Loop</div>
+        <pre><code class="language-python">def train_one_epoch(model, loader, optimizer, criterion, device):
+    model.train()                            # 1. training mode
+    total_loss = 0.0
+    for X_batch, y_batch in loader:
+        X_batch, y_batch = X_batch.to(device), y_batch.to(device)
+        optimizer.zero_grad()                # 2. clear gradients
+        outputs = model(X_batch)             # 3. forward pass
+        loss    = criterion(outputs, y_batch)# 4. compute loss
+        loss.backward()                      # 5. backprop
+        optimizer.step()                     # 6. update weights
+        total_loss += loss.item()            # .item() to avoid memory leak
+    return total_loss / len(loader)
+
+def evaluate(model, loader, criterion, device):
+    model.eval()
+    total_loss = 0.0
+    with torch.no_grad():
+        for X_batch, y_batch in loader:
+            X_batch, y_batch = X_batch.to(device), y_batch.to(device)
+            outputs = model(X_batch)
+            total_loss += criterion(outputs, y_batch).item()
+    return total_loss / len(loader)</code></pre>
+      </div>
+
+      <div class="card" style="margin-bottom:1rem">
+        <div class="tag tag-blue">nn.Module Pattern</div>
+        <pre><code class="language-python">class MLP(nn.Module):
+    def __init__(self, input_dim, hidden_dim, output_dim):
+        super().__init__()              # ALWAYS call super().__init__() first
+        self.fc1 = nn.Linear(input_dim, hidden_dim)
+        self.fc2 = nn.Linear(hidden_dim, output_dim)
+        self.relu    = nn.ReLU()
+        self.dropout = nn.Dropout(0.3)
+
+    def forward(self, x):               # defines the computation
+        x = self.relu(self.fc1(x))
+        x = self.dropout(x)
+        return self.fc2(x)              # raw logits — no softmax
+
+model = MLP(784, 256, 10).to(device)</code></pre>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ STUDY GAMES ═══════════════════════════════════════════ -->
+  <div class="section-head">Study Games</div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.875rem;margin-bottom:2rem">
+    <a class="viz-card" href="../games/c04-quiz.html" style="text-decoration:none">
+      <div class="viz-card-title">❓ Multiple Choice Quiz</div>
+      <div class="viz-card-desc">10 questions · ~8 min. Training loop, loss functions, autograd, model definition, DataLoaders. Immediate explanatory feedback.</div>
+    </a>
+    <a class="viz-card" href="../games/c04-flashcards.html" style="text-decoration:none">
+      <div class="viz-card-title">🃏 Flashcard Game</div>
+      <div class="viz-card-desc">12 cards · ~8 min. Training loop, autograd, loss functions, model patterns. Self-assessed with replay-missed.</div>
+    </a>
+    <a class="viz-card" href="../games/c04-odd-one-out.html" style="text-decoration:none">
+      <div class="viz-card-title">🔍 Odd One Out</div>
+      <div class="viz-card-desc">10 questions · ~6 min. Pick the concept that doesn't belong — tests category discrimination across autograd, training loop, loss functions, and DataLoader.</div>
+    </a>
+    <a class="viz-card" href="../games/c04-true-false.html" style="text-decoration:none">
+      <div class="viz-card-title">⚡ True/False Sprint</div>
+      <div class="viz-card-desc">20 statements · timed · ~8 min. 10 true statements, 10 plausible misconceptions. Common exam traps with explanatory feedback.</div>
+    </a>
+  </div>
+
+  <!-- Full notes -->
+  <div class="card" style="margin-bottom:1.5rem;background:var(--surface2)">
+    <div style="font-size:.875rem;color:var(--muted)">
+      Full curated notes (Obsidian):
+      <a href="obsidian://open?vault=IBM%20Courses&file=claude-content%2F04-intro-neural-networks-pytorch" style="color:var(--blue)">
+        claude-content/04-intro-neural-networks-pytorch →
+      </a>
+    </div>
+  </div>
+
+  <div class="footer">
+    <a href="../index.html">← VLE Home</a> ·
+    <a href="c03.html">← C3</a> ·
+    <a href="c05.html">C5 →</a> ·
+    <a href="../course-tracker.html" target="_blank">📊 Tracker</a>
+  </div>
+
+</div>
+</body>
+</html>

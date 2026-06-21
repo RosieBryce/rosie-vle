@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>C6 — AI Capstone Project with Deep Learning · VLE</title>
+  <link rel="stylesheet" href="../shared.css">
+  <script src="../shared.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+</head>
+<body>
+<script>initNav('../');</script>
+
+<div class="container">
+
+  <!-- ═══ HEADER ══════════════════════════════════════════════ -->
+  <div style="margin-bottom:1.75rem">
+    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem;flex-wrap:wrap">
+      <span style="color:var(--muted);font-size:.83rem">Course 6 of 13</span>
+      <span class="badge badge-pending"><span class="dot dot-m"></span>Not Started</span>
+      <span class="badge badge-pending">15 hours</span>
+    </div>
+    <h1 style="font-size:1.5rem;font-weight:700;letter-spacing:-.02em;margin-bottom:.375rem">
+      AI Capstone Project with Deep Learning
+    </h1>
+    <p style="color:var(--muted);font-size:.875rem;line-height:1.55">
+      A project course — less new theory, more applying Courses 1–5 to a real problem.
+      Typically image classification using transfer learning. The marks are in the methodology:
+      proper splitting, correct preprocessing, meaningful evaluation, and clear reporting.
+    </p>
+  </div>
+
+  <!-- ═══ FLIPPED CLASSROOM ════════════════════════════════════ -->
+  <div class="flip-card" style="margin-bottom:2rem">
+    <div class="flip-header">
+      <span>📖</span>
+      Flipped Classroom — Before You Watch
+    </div>
+
+    <div class="flip-sublabel">Prime your thinking — bring these questions into the lectures</div>
+    <ul class="flip-questions">
+      <li>
+        <span class="flip-q-num">1</span>
+        <span>In a two-phase transfer learning approach, why do you use a <em>much smaller</em> learning rate in Phase 2 (fine-tuning) than in Phase 1 (head training)? What specifically breaks if the learning rate is too large during fine-tuning?</span>
+      </li>
+      <li>
+        <span class="flip-q-num">2</span>
+        <span>Your capstone evaluation reports 92% accuracy on the validation set after 30 epochs with early stopping. Why is reporting this number as your final result a methodological error?</span>
+      </li>
+      <li>
+        <span class="flip-q-num">3</span>
+        <span>You choose VGG16 as your backbone but forget to call <code>vgg16.preprocess_input(x)</code> before passing images in. Why does this silently degrade performance rather than throwing an error?</span>
+      </li>
+    </ul>
+
+    <div class="flip-sublabel">Watch for…</div>
+    <div class="watch-for">
+      The distinction between val set and test set in evaluation — the val set is used implicitly during training
+      (through early stopping and hyperparameter choices), so it is not truly held-out. Only the test set, never
+      seen during any part of training or selection, is the honest measure. Also: the preprocessing mismatch gotcha —
+      each pretrained model has its own expected normalisation.
+    </div>
+  </div>
+
+  <!-- ═══ CORE THEORY ══════════════════════════════════════════ -->
+  <div class="section-head">
+    Core Theory
+    <span class="section-hint">Assessment priority — process and methodology over implementation</span>
+  </div>
+
+  <!-- 1. Capstone Process -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">Methodology</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">The Capstone Process — What Examiners Look For</h3>
+    <p style="font-size:.875rem;line-height:1.6;margin-bottom:.75rem">
+      This course tests process correctness, not model performance. The correct steps, in order:
+    </p>
+    <div style="display:flex;flex-direction:column;gap:.5rem;margin-bottom:.75rem">
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <span style="flex-shrink:0;min-width:24px;height:24px;border-radius:50%;background:var(--blue-bg);border:1px solid rgba(88,166,255,.3);color:var(--blue);font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center">1</span>
+        <div style="font-size:.875rem"><strong>Load &amp; Explore</strong> — class distribution, sample visualisations, image dimensions and formats</div>
+      </div>
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <span style="flex-shrink:0;min-width:24px;height:24px;border-radius:50%;background:var(--blue-bg);border:1px solid rgba(88,166,255,.3);color:var(--blue);font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center">2</span>
+        <div style="font-size:.875rem"><strong>Preprocess</strong> — resize to model's expected input, normalise with correct mean/std, augment training data only</div>
+      </div>
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <span style="flex-shrink:0;min-width:24px;height:24px;border-radius:50%;background:var(--blue-bg);border:1px solid rgba(88,166,255,.3);color:var(--blue);font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center">3</span>
+        <div style="font-size:.875rem"><strong>Phase 1 — Feature Extraction</strong> — freeze base, train head only with large LR (1e-3), 5–10 epochs</div>
+      </div>
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <span style="flex-shrink:0;min-width:24px;height:24px;border-radius:50%;background:var(--blue-bg);border:1px solid rgba(88,166,255,.3);color:var(--blue);font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center">4</span>
+        <div style="font-size:.875rem"><strong>Phase 2 — Fine-tuning</strong> — unfreeze top N layers, very small LR (1e-5), more epochs with early stopping</div>
+      </div>
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <span style="flex-shrink:0;min-width:24px;height:24px;border-radius:50%;background:var(--blue-bg);border:1px solid rgba(88,166,255,.3);color:var(--blue);font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center">5</span>
+        <div style="font-size:.875rem"><strong>Evaluate on Test Set</strong> — accuracy, precision, recall, F1, confusion matrix, error analysis</div>
+      </div>
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <span style="flex-shrink:0;min-width:24px;height:24px;border-radius:50%;background:var(--blue-bg);border:1px solid rgba(88,166,255,.3);color:var(--blue);font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center">6</span>
+        <div style="font-size:.875rem"><strong>Report &amp; Compare</strong> — compare against a baseline; conclusions; what you'd try next</div>
+      </div>
+    </div>
+    <div class="insight ins-warn">
+      <strong>The test set must be completely held out.</strong> Evaluating on validation inflates performance — you've implicitly optimised for val through early stopping and hyperparameter choices. Only the test set is an honest estimate of real-world performance.
+    </div>
+  </div>
+
+  <!-- 2. Backbone Selection -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="tag tag-blue">Architecture</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">Choosing a Pretrained Backbone</h3>
+    <div style="overflow-x:auto;margin-bottom:.75rem">
+      <table class="decision-table">
+        <thead><tr><th>Model</th><th>Size</th><th>Speed</th><th>When to use</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>MobileNetV2/V3</td>
+            <td>Small</td>
+            <td>Fast</td>
+            <td>Mobile, edge, small datasets, prototype</td>
+          </tr>
+          <tr>
+            <td>ResNet-50</td>
+            <td>Medium</td>
+            <td>Medium</td>
+            <td>General purpose — safe default</td>
+          </tr>
+          <tr>
+            <td>EfficientNetB0–B7</td>
+            <td>Varies</td>
+            <td>Medium</td>
+            <td>When accuracy per parameter is priority</td>
+          </tr>
+          <tr>
+            <td>VGG16</td>
+            <td>Large</td>
+            <td>Slow</td>
+            <td>Older benchmark; avoid for new projects</td>
+          </tr>
+          <tr>
+            <td>ViT (Vision Transformer)</td>
+            <td>Large</td>
+            <td>Slow</td>
+            <td>SOTA quality when data is abundant</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="insight ins-info">
+      <strong>Transfer learning works best when</strong> your dataset is small and the source domain (ImageNet) is similar to your target domain. Feature extraction (frozen) trains faster; fine-tuning achieves higher accuracy when you have enough data.
+    </div>
+  </div>
+
+  <!-- 3. Evaluation -->
+  <div class="card" style="margin-bottom:2rem">
+    <div class="tag tag-blue">Evaluation</div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:.625rem">Required Evaluation Components</h3>
+    <div style="overflow-x:auto;margin-bottom:.75rem">
+      <table class="concept-table">
+        <thead><tr><th>Component</th><th>Purpose / What to look for</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Training curves</strong> (loss + accuracy)</td><td>Divergence between train/val = overfitting; flat curves = underfitting or LR issue</td></tr>
+          <tr><td><strong>Classification report</strong></td><td>Per-class precision, recall, F1 — not just overall accuracy</td></tr>
+          <tr><td><strong>Confusion matrix</strong></td><td>Which classes are confused with which — reveals systematic errors</td></tr>
+          <tr><td><strong>Error analysis</strong></td><td>Display wrong predictions — are confused classes visually similar?</td></tr>
+          <tr><td><strong>Baseline comparison</strong></td><td>Compare against random, logistic regression, or shallow CNN from scratch</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:.83rem;color:var(--muted)">
+      If classes are imbalanced, report per-class F1 and recall, not just accuracy. Consider <code>class_weight</code> in Keras or weighted sampling in PyTorch.
+    </p>
+  </div>
+
+  <!-- ═══ MUST-KNOW CONCEPTS ════════════════════════════════════ -->
+  <div class="section-head">Must-Know Concepts</div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:2rem">
+    <table class="concept-table">
+      <thead><tr><th>Term</th><th>One-liner (assessment vocabulary)</th></tr></thead>
+      <tbody>
+        <tr><td>feature extraction</td><td>Frozen pretrained base acts as fixed feature extractor; only new classification head is trained</td></tr>
+        <tr><td>fine-tuning</td><td>Unfreeze top N layers of pretrained model; retrain with very small LR (1e-5) to preserve pretrained features</td></tr>
+        <tr><td>held-out test set</td><td>Never seen during training or hyperparameter selection; the only honest estimate of real-world performance</td></tr>
+        <tr><td>preprocessing mismatch</td><td>Each pretrained model has its own expected normalisation — using wrong preprocessing silently degrades accuracy</td></tr>
+        <tr><td>data augmentation</td><td>Applies only to training data (flips, rotations); val/test see only standard preprocessing</td></tr>
+        <tr><td>baseline comparison</td><td>Any good project reports performance against something simpler — random, linear model, or scratch CNN</td></tr>
+        <tr><td><code>include_top=False</code></td><td>Removes ImageNet classification head (1000-class softmax); retains convolutional feature extraction base</td></tr>
+        <tr><td>confusion matrix</td><td>N×N table of predicted vs true labels; reveals which classes the model confuses systematically</td></tr>
+        <tr><td>class imbalance</td><td>When one class dominates — accuracy is misleading; use F1/recall per class and consider class weighting</td></tr>
+        <tr><td>error analysis</td><td>Inspecting wrong predictions to identify patterns; shows whether confused classes are visually similar</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══ EXAM TRAPS ════════════════════════════════════════════ -->
+  <div class="section-head">Exam Traps</div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 1 — Evaluating on val, not test</div>
+    <strong>Reporting validation set performance as the final result is a methodological error.</strong>
+    The val set was used during training (early stopping monitors it; hyperparameters are tuned against it).
+    It is not held-out — only the test set, never seen during any training decision, is the honest estimate.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 2 — Preprocessing mismatch</div>
+    <strong>Each pretrained model requires its own specific preprocessing function.</strong>
+    VGG16 expects BGR channels with ImageNet mean subtracted. MobileNetV2 expects [-1, 1].
+    Using the wrong preprocessing produces no error — images are valid tensors — but accuracy silently degrades.
+    Always use the model's accompanying <code>preprocess_input()</code> function.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 3 — Fine-tuning LR must be much smaller</div>
+    <strong>Fine-tuning learning rate should be ~10–100× smaller than training from scratch.</strong>
+    A high LR during fine-tuning destroys the pretrained feature representations (catastrophic forgetting).
+    The typical pattern: 1e-3 for head training, 1e-5 for fine-tuning.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 4 — Augmentation on training data only</div>
+    <strong>Data augmentation must be applied to training data only.</strong>
+    Val and test sets should receive only standard preprocessing (resize + normalise).
+    Augmenting val/test introduces randomness into your evaluation metrics.
+  </div>
+
+  <div class="trap-box">
+    <div class="trap-label">⚠ Trap 5 — No baseline = incomplete project</div>
+    <strong>A project without a baseline comparison cannot demonstrate whether transfer learning helped.</strong>
+    At minimum, compare against logistic regression on flattened pixel values or a shallow CNN trained from scratch.
+    Without a reference point, a 90% accuracy number is meaningless.
+  </div>
+
+  <!-- ═══ INTERACTIVE VIZ ══════════════════════════════════════ -->
+  <div class="section-head" style="margin-top:2rem">Interactive Visualisations</div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.875rem;margin-bottom:2rem">
+    <a class="viz-card" href="../viz/gradient-descent.html">
+      <div class="viz-card-title">📊 Gradient Descent</div>
+      <div class="viz-card-desc">Learning rate effects — critical for understanding why fine-tuning LR must be small.</div>
+    </a>
+    <a class="viz-card" href="../viz/bias-variance.html">
+      <div class="viz-card-title">⚖ Bias-Variance</div>
+      <div class="viz-card-desc">Diagnose training curves — underfitting vs overfitting patterns in capstone results.</div>
+    </a>
+  </div>
+
+  <!-- ═══ PRACTICAL NOTES (collapsed) ══════════════════════════ -->
+  <div style="margin-bottom:2rem">
+    <button class="collapse-toggle">
+      <span class="c-arrow">▶</span>
+      Practical Notes &amp; Code Patterns
+      <span style="margin-left:.5rem;font-size:.75rem;color:var(--muted)">(useful for application — not needed to pass the assessment)</span>
+    </button>
+    <div class="collapse-body">
+
+      <div class="card" style="margin-bottom:1rem">
+        <div class="tag tag-blue">Common Gotchas</div>
+        <ul style="font-size:.875rem;line-height:1.7;padding-left:1.25rem;color:var(--text)">
+          <li><strong>Evaluating on val instead of test</strong> — test set must be completely held out until final evaluation</li>
+          <li><strong>Preprocessing mismatch</strong> — each pretrained model has its own preprocess_input; using wrong one silently degrades accuracy</li>
+          <li><strong>Augmenting val/test</strong> — augmentation must be training-only; evaluation should be deterministic</li>
+          <li><strong>shuffle=False in test DataLoader</strong> — if you shuffle test set, y_pred and y_true arrays won't align</li>
+          <li><strong>No baseline</strong> — always compare against something simpler to show transfer learning actually helps</li>
+          <li><strong>Class imbalance ignored</strong> — report F1/recall per class, not just accuracy</li>
+        </ul>
+      </div>
+
+      <div class="card" style="margin-bottom:1rem">
+        <div class="tag tag-blue">Two-Phase Transfer Learning (Keras)</div>
+        <pre><code class="language-python"># Phase 1: Feature extraction
+base_model.trainable = False
+optimizer = Adam(lr=1e-3)
+model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+model.fit(train_ds, epochs=5, validation_data=val_ds)
+
+# Phase 2: Fine-tuning
+base_model.trainable = True
+for layer in base_model.layers[:-30]:    # freeze all but top 30
+    layer.trainable = False
+
+optimizer = Adam(lr=1e-5)               # MUCH smaller LR
+model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+model.fit(train_ds, epochs=20,
+          validation_data=val_ds,
+          callbacks=[EarlyStopping(patience=5, restore_best_weights=True)])</code></pre>
+      </div>
+
+      <div class="card" style="margin-bottom:.5rem">
+        <div class="tag tag-blue">Evaluation Pattern</div>
+        <pre><code class="language-python">from sklearn.metrics import classification_report, confusion_matrix
+import seaborn as sns
+
+y_pred = np.argmax(model.predict(test_ds), axis=1)
+y_true = np.concatenate([y for _, y in test_ds])
+
+print(classification_report(y_true, y_pred, target_names=class_names))
+
+cm = confusion_matrix(y_true, y_pred)
+sns.heatmap(cm, annot=True, fmt='d',
+            xticklabels=class_names,
+            yticklabels=class_names)
+
+# Error analysis
+errors = np.where(y_pred != y_true)[0]
+for idx in errors[:5]:
+    print(f"True: {class_names[y_true[idx]]} | Pred: {class_names[y_pred[idx]]}")</code></pre>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ STUDY GAMES (placeholder) ════════════════════════════ -->
+  <div class="section-head" style="margin-top:1rem">Study Games</div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.875rem;margin-bottom:2rem;opacity:.45">
+    <div class="card" style="cursor:not-allowed">
+      <div class="tag">🎮 Process Ordering</div>
+      <div style="font-size:.875rem">Put the capstone methodology steps in the correct order — coming Phase 4</div>
+    </div>
+    <div class="card" style="cursor:not-allowed">
+      <div class="tag">🔍 Error Diagnostics</div>
+      <div style="font-size:.875rem">Identify methodological errors in capstone submissions — coming Phase 4</div>
+    </div>
+  </div>
+
+  <!-- ═══ FULL NOTES LINK ══════════════════════════════════════ -->
+  <div class="card" style="margin-bottom:1.5rem;background:var(--surface2)">
+    <div style="font-size:.875rem;color:var(--muted)">
+      Full curated notes (Obsidian):
+      <a href="obsidian://open?vault=IBM%20Courses&file=claude-content%2F06-ai-capstone-deep-learning"
+         style="color:var(--blue)">
+        claude-content/06-ai-capstone-deep-learning →
+      </a>
+    </div>
+  </div>
+
+  <div class="footer">
+    <a href="../index.html">← VLE Home</a> ·
+    <a href="c05.html">← C5</a> ·
+    <a href="c07.html">C7 →</a> ·
+    <a href="../course-tracker.html" target="_blank">📊 Tracker</a>
+  </div>
+
+</div>
+</body>
+</html>

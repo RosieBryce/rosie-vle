@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visualisations · VLE</title>
+  <link rel="stylesheet" href="../shared.css">
+  <script src="../shared.js"></script>
+  <style>
+    .viz-hub-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .viz-hub-card {
+      display: block;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem 1.5rem;
+      text-decoration: none;
+      color: var(--text);
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .viz-hub-card:hover {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(88,166,255,.12);
+    }
+    .viz-hub-card.dim {
+      opacity: .45;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    .viz-hub-card-top {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      margin-bottom: .6rem;
+    }
+    .viz-icon { font-size: 1.3rem; }
+    .phase-badge {
+      font-size: .7rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; padding: .2rem .55rem; border-radius: 99px;
+      margin-left: auto;
+    }
+    .phase-1 { background: var(--blue-bg); color: var(--blue); border: 1px solid rgba(88,166,255,.3); }
+    .phase-2 { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+
+    .viz-hub-card-title { font-weight: 700; font-size: .975rem; margin-bottom: .3rem; }
+    .viz-hub-card-meta  { font-size: .8rem; color: var(--muted); line-height: 1.5; }
+
+    .phase-label {
+      font-size: .75rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--muted);
+      margin: 1.75rem 0 .75rem;
+    }
+    .phase-label:first-of-type { margin-top: 0; }
+  </style>
+</head>
+<body>
+<script>initNav('../');</script>
+
+<div class="container">
+
+  <div style="margin-bottom:1.75rem">
+    <h1 style="font-size:1.4rem;font-weight:700;letter-spacing:-.02em;margin-bottom:.3rem">Visualisations</h1>
+    <p style="color:var(--muted);font-size:.875rem">
+      Interactive charts for the key mathematical concepts in the certificate.
+      Phase 1 is live now; Phase 2 builds alongside the Gen AI courses.
+    </p>
+  </div>
+
+  <!-- ── Phase 1 ── -->
+  <div class="phase-label">Phase 1 — Core ML (Courses 1–5) · Live now</div>
+  <div class="viz-hub-grid">
+
+    <a class="viz-hub-card" href="gradient-descent.html">
+      <div class="viz-hub-card-top">
+        <span class="viz-icon">📉</span>
+        <span class="phase-badge phase-1">Live</span>
+      </div>
+      <div class="viz-hub-card-title">Gradient Descent</div>
+      <div class="viz-hub-card-meta">α slider · loss curve animation · good/too-high/too-low LR presets</div>
+    </a>
+
+    <a class="viz-hub-card" href="activation-functions.html">
+      <div class="viz-hub-card-top">
+        <span class="viz-icon">⚡</span>
+        <span class="phase-badge phase-1">Live</span>
+      </div>
+      <div class="viz-hub-card-title">Activation Functions</div>
+      <div class="viz-hub-card-meta">Sigmoid, tanh, ReLU, Leaky ReLU, ELU · derivative overlay · saturation zones</div>
+    </a>
+
+    <a class="viz-hub-card" href="backprop.html">
+      <div class="viz-hub-card-top">
+        <span class="viz-icon">🔄</span>
+        <span class="phase-badge phase-1">Live</span>
+      </div>
+      <div class="viz-hub-card-title">Backpropagation</div>
+      <div class="viz-hub-card-meta">Step through forward + backward pass · editable weights · gradient values shown</div>
+    </a>
+
+    <a class="viz-hub-card" href="bias-variance.html">
+      <div class="viz-hub-card-top">
+        <span class="viz-icon">📊</span>
+        <span class="phase-badge phase-1">Live</span>
+      </div>
+      <div class="viz-hub-card-title">Bias–Variance Tradeoff</div>
+      <div class="viz-hub-card-meta">Polynomial degree slider · noise slider · train/test error curves · over/underfitting zones</div>
+    </a>
+
+  </div>
+
+  <!-- ── Phase 2 ── -->
+  <div class="phase-label">Phase 2 — Gen AI (Courses 7–10) · Build as you reach each course</div>
+  <div class="viz-hub-grid">
+
+    <div class="viz-hub-card dim">
+      <div class="viz-hub-card-top">
+        <span class="viz-icon">🌡️</span>
+        <span class="phase-badge phase-2">C9</span>
+      </div>
+      <div class="viz-hub-card-title">Temperature &amp; Sampling</div>
+      <div class="viz-hub-card-meta">Probability bar chart · temperature slider · top-k / top-p cutoff visualised</div>
+    </div>
+
+    <div class="viz-hub-card dim">
+      <div class="viz-hub-card-top">
+        <span class="viz-icon">🔍</span>
+        <span class="phase-badge phase-2">C8</span>
+      </div>
+      <div class="viz-hub-card-title">Attention Mechanism</div>
+      <div class="viz-hub-card-meta">Token × token heatmap · sentence selector · head selector · hardcoded demos</div>
+    </div>
+
+    <div class="viz-hub-card dim">
+      <div class="viz-hub-card-top">
+        <span class="viz-icon">🔢</span>
+        <span class="phase-badge phase-2">C10</span>
+      </div>
+      <div class="viz-hub-card-title">LoRA Decomposition</div>
+      <div class="viz-hub-card-meta">Rank r slider · W vs B×A heatmaps · parameter count comparison</div>
+    </div>
+
+    <div class="viz-hub-card dim">
+      <div class="viz-hub-card-top">
+        <span class="viz-icon">✂️</span>
+        <span class="phase-badge phase-2">C7</span>
+      </div>
+      <div class="viz-hub-card-title">Tokenisation</div>
+      <div class="viz-hub-card-meta">Text input · colour-coded BPE boundaries · token count vs word count</div>
+    </div>
+
+  </div>
+
+</div>
+</body>
+</html>
