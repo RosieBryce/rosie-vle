@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plurals · Swedish</title>
+<style>
+:root { --bg:#faf6f0; --surface:#ffffff; --surface2:#f2ece2; --border:#e8ddd0; --text:#2c1f12; --muted:#8a7a68; --blue:#b85430; --green:#3d6e30; --red:#b03428; --yellow:#a06820; }
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,sans-serif; min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:2.5rem 1rem; }
+h1 { font-size:1rem; font-weight:600; color:var(--muted); letter-spacing:.12em; text-transform:uppercase; margin-bottom:.5rem; }
+.subtitle { font-size:.8rem; color:var(--muted); opacity:.6; margin-bottom:2rem; }
+
+/* setup */
+.setup { background:var(--surface); border:1px solid var(--border); border-radius:1rem; padding:1.5rem; width:100%; max-width:460px; }
+.setup h2 { font-size:.8rem; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); margin-bottom:1rem; }
+.filter-grid { display:grid; gap:.5rem; margin-bottom:1.2rem; }
+.filter-row { display:flex; align-items:center; gap:.75rem; background:var(--surface2); border-radius:.5rem; padding:.6rem .9rem; cursor:pointer; user-select:none; }
+.filter-row input[type=checkbox] { accent-color:var(--blue); width:1rem; height:1rem; }
+.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:.5rem; margin-bottom:1.2rem; }
+.btn { background:var(--blue); color:var(--bg); border:none; border-radius:.5rem; padding:.75rem 1.4rem; font-size:1rem; font-weight:700; cursor:pointer; transition:opacity .15s; }
+.btn:hover { opacity:.85; }
+.btn-ghost { background:var(--surface2); color:var(--text); }
+.btn-full { width:100%; }
+
+/* quiz */
+.quiz { display:none; width:100%; max-width:460px; }
+.topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; font-size:.85rem; color:var(--muted); }
+.card { background:var(--surface); border:1px solid var(--border); border-radius:1rem; padding:2.5rem 2rem; text-align:center; margin-bottom:1.2rem; }
+.form-label { font-size:.75rem; text-transform:uppercase; letter-spacing:.1em; color:var(--blue); margin-bottom:.25rem; }
+.form-hint { font-size:.78rem; color:var(--muted); opacity:.7; margin-bottom:.9rem; }
+.noun-big { font-size:2.4rem; font-weight:700; margin-bottom:.3rem; }
+.en-gloss { font-size:.9rem; color:var(--muted); margin-bottom:.25rem; }
+.group-badge { font-size:.72rem; color:var(--muted); opacity:.5; }
+.row { display:flex; gap:.5rem; margin-bottom:.75rem; }
+input[type=text] { flex:1; background:var(--surface); border:1.5px solid var(--border); border-radius:.5rem; padding:.75rem 1rem; color:var(--text); font-size:1.1rem; outline:none; transition:border-color .15s; }
+input[type=text]:focus { border-color:var(--blue); }
+input[type=text]:disabled { opacity:.4; }
+.result { padding:.9rem 1.1rem; border-radius:.6rem; margin-bottom:.75rem; display:none; }
+.result.correct { background:#2d3f2d; border:1px solid var(--green); }
+.result.wrong   { background:#3f2d2d; border:1px solid var(--red); }
+.result-lbl { font-weight:700; margin-bottom:.3rem; }
+.result.correct .result-lbl { color:var(--green); }
+.result.wrong   .result-lbl { color:var(--red); }
+.result-ans { color:var(--muted); font-size:.88rem; }
+.tip { font-size:.82rem; color:var(--muted); margin-top:.4rem; line-height:1.5; }
+
+/* end */
+.end { display:none; text-align:center; max-width:460px; }
+.score-big { font-size:5rem; font-weight:700; color:var(--blue); line-height:1; }
+.score-sub { color:var(--muted); margin-bottom:2rem; }
+.nav-home { display:block; width:100%; max-width:600px; font-size:.75rem; color:var(--muted); text-decoration:none; letter-spacing:.06em; margin-bottom:1.25rem; opacity:.7; transition:color .15s, opacity .15s; }
+.nav-home:hover { color:var(--blue); opacity:1; }
+.setup-err { background:#3f2d2d; border:1px solid var(--red); border-radius:.5rem; padding:.65rem 1rem; font-size:.85rem; color:var(--red); margin-top:.75rem; display:none; }
+</style>
+</head>
+<body>
+<nav style="background:var(--surface);border-bottom:1px solid var(--border);
+  padding:0 1.25rem;height:48px;display:flex;align-items:center;gap:1rem;
+  position:sticky;top:0;z-index:100;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <a href="../index.html" style="font-weight:700;font-size:.875rem;color:var(--text);text-decoration:none;">
+    🫎 Swedish
+  </a>
+  <span style="color:var(--border)">›</span>
+  <span style="font-size:.875rem;color:var(--muted)">Plurals</span>
+</nav>
+
+<a href="index.html" class="nav-home">← All tools</a>
+<h1>Plurals</h1>
+<div class="subtitle">Type the correct plural form</div>
+
+<div class="setup" id="setup">
+  <h2>Noun groups</h2>
+  <div class="filter-grid" id="groupGrid"></div>
+  <h2 style="margin-top:.5rem">Forms</h2>
+  <div class="form-grid" id="formGrid"></div>
+  <button class="btn btn-full" id="startBtn">Start →</button>
+  <div class="setup-err" id="setupErr"></div>
+</div>
+
+<div class="quiz" id="quiz">
+  <div class="topbar">
+    <span id="counter">1 / ?</span>
+    <span id="scoreBar">0 correct</span>
+    <button class="btn btn-ghost" style="padding:.3rem .8rem;font-size:.8rem" onclick="showSetup()">End</button>
+  </div>
+  <div class="card">
+    <div class="form-label" id="formLabel"></div>
+    <div class="form-hint" id="formHint"></div>
+    <div class="noun-big" id="nounBig"></div>
+    <div class="en-gloss" id="enGloss"></div>
+    <div class="group-badge" id="groupBadge"></div>
+  </div>
+  <div class="row">
+    <input type="text" id="inp" placeholder="Type the form…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+    <button class="btn" id="checkBtn">Check</button>
+  </div>
+  <div class="result" id="result">
+    <div class="result-lbl" id="rlbl"></div>
+    <div class="result-ans" id="rans"></div>
+    <div class="tip" id="rtip"></div>
+  </div>
+  <button class="btn btn-ghost" id="nextBtn" style="display:none;width:100%">Next →</button>
+</div>
+
+<div class="end" id="end">
+  <div class="score-big" id="sBig"></div>
+  <div class="score-sub" id="sSub"></div>
+  <button class="btn" onclick="startQuiz()" style="margin-right:.5rem">Again</button>
+  <button class="btn btn-ghost" onclick="showSetup()">Settings</button>
+</div>
+
+<script>
+// sv = dictionary form, en = English, sg = singular with article,
+// pl = indefinite plural, defpl = definite plural, g = group
+const NOUNS = [
+  // Group 1 (-or): en-words ending in -a, drop -a add -or
+  {sv:"blomma", en:"flower",   sg:"en blomma",  pl:"blommor",  defpl:"blommorna",  g:"1"},
+  {sv:"flicka",  en:"girl",    sg:"en flicka",  pl:"flickor",  defpl:"flickorna",  g:"1"},
+  {sv:"fråga",   en:"question",sg:"en fråga",   pl:"frågor",   defpl:"frågorna",   g:"1"},
+  {sv:"gata",    en:"street",  sg:"en gata",    pl:"gator",    defpl:"gatorna",    g:"1"},
+  {sv:"känsla",  en:"feeling", sg:"en känsla",  pl:"känslor",  defpl:"känslorna",  g:"1"},
+  {sv:"klocka",  en:"clock",   sg:"en klocka",  pl:"klockor",  defpl:"klockorna",  g:"1"},
+  {sv:"lampa",   en:"lamp",    sg:"en lampa",   pl:"lampor",   defpl:"lamporna",   g:"1"},
+  {sv:"skola",   en:"school",  sg:"en skola",   pl:"skolor",   defpl:"skolorna",   g:"1"},
+  {sv:"soffa",   en:"sofa",    sg:"en soffa",   pl:"soffor",   defpl:"sofforna",   g:"1"},
+  {sv:"vecka",   en:"week",    sg:"en vecka",   pl:"veckor",   defpl:"veckorna",   g:"1"},
+  // Group 2 (-ar): en-words (note: -el/-er/-en drop the e before -ar)
+  {sv:"arm",     en:"arm",     sg:"en arm",     pl:"armar",    defpl:"armarna",    g:"2"},
+  {sv:"bil",     en:"car",     sg:"en bil",     pl:"bilar",    defpl:"bilarna",    g:"2"},
+  {sv:"buss",    en:"bus",     sg:"en buss",    pl:"bussar",   defpl:"bussarna",   g:"2"},
+  {sv:"cykel",   en:"bike",    sg:"en cykel",   pl:"cyklar",   defpl:"cyklarna",   g:"2"},
+  {sv:"dag",     en:"day",     sg:"en dag",     pl:"dagar",    defpl:"dagarna",    g:"2"},
+  {sv:"dörr",    en:"door",    sg:"en dörr",    pl:"dörrar",   defpl:"dörrarna",   g:"2"},
+  {sv:"fågel",   en:"bird",    sg:"en fågel",   pl:"fåglar",   defpl:"fåglarna",   g:"2"},
+  {sv:"häst",    en:"horse",   sg:"en häst",    pl:"hästar",   defpl:"hästarna",   g:"2"},
+  {sv:"kniv",    en:"knife",   sg:"en kniv",    pl:"knivar",   defpl:"knivarna",   g:"2"},
+  {sv:"pojke",   en:"boy",     sg:"en pojke",   pl:"pojkar",   defpl:"pojkarna",   g:"2"},
+  {sv:"stol",    en:"chair",   sg:"en stol",    pl:"stolar",   defpl:"stolarna",   g:"2"},
+  {sv:"timme",   en:"hour",    sg:"en timme",   pl:"timmar",   defpl:"timmarna",   g:"2"},
+  // Group 3 (-er, some with umlaut): en- and ett-words
+  {sv:"bok",     en:"book",    sg:"en bok",     pl:"böcker",   defpl:"böckerna",   g:"3"},
+  {sv:"film",    en:"film",    sg:"en film",    pl:"filmer",   defpl:"filmerna",   g:"3"},
+  {sv:"fot",     en:"foot",    sg:"en fot",     pl:"fötter",   defpl:"fötterna",   g:"3"},
+  {sv:"hand",    en:"hand",    sg:"en hand",    pl:"händer",   defpl:"händerna",   g:"3"},
+  {sv:"land",    en:"country", sg:"ett land",   pl:"länder",   defpl:"länderna",   g:"3"},
+  {sv:"natt",    en:"night",   sg:"en natt",    pl:"nätter",   defpl:"nätterna",   g:"3"},
+  {sv:"sak",     en:"thing",   sg:"en sak",     pl:"saker",    defpl:"sakerna",    g:"3"},
+  {sv:"stad",    en:"city",    sg:"en stad",    pl:"städer",   defpl:"städerna",   g:"3"},
+  {sv:"tand",    en:"tooth",   sg:"en tand",    pl:"tänder",   defpl:"tänderna",   g:"3"},
+  {sv:"tid",     en:"time",    sg:"en tid",     pl:"tider",    defpl:"tiderna",    g:"3"},
+  {sv:"vän",     en:"friend",  sg:"en vän",     pl:"vänner",   defpl:"vännerna",   g:"3"},
+  // Group 5 (unchanged): ett-words ending in a consonant
+  {sv:"barn",    en:"child",   sg:"ett barn",   pl:"barn",     defpl:"barnen",     g:"5"},
+  {sv:"brev",    en:"letter",  sg:"ett brev",   pl:"brev",     defpl:"breven",     g:"5"},
+  {sv:"djur",    en:"animal",  sg:"ett djur",   pl:"djur",     defpl:"djuren",     g:"5"},
+  {sv:"hav",     en:"sea",     sg:"ett hav",    pl:"hav",      defpl:"haven",      g:"5"},
+  {sv:"hus",     en:"house",   sg:"ett hus",    pl:"hus",      defpl:"husen",      g:"5"},
+  {sv:"ord",     en:"word",    sg:"ett ord",    pl:"ord",      defpl:"orden",      g:"5"},
+  {sv:"rum",     en:"room",    sg:"ett rum",    pl:"rum",      defpl:"rummen",     g:"5"},
+  {sv:"tåg",     en:"train",   sg:"ett tåg",    pl:"tåg",      defpl:"tågen",      g:"5"},
+  {sv:"träd",    en:"tree",    sg:"ett träd",   pl:"träd",     defpl:"träden",     g:"5"},
+  {sv:"år",      en:"year",    sg:"ett år",     pl:"år",       defpl:"åren",       g:"5"},
+];
+
+const GROUPS = {
+  "1": "Group 1  —  -or  (blomma → blommor)",
+  "2": "Group 2  —  -ar  (dag → dagar)",
+  "3": "Group 3  —  -er / umlaut  (stad → städer)",
+  "5": "Group 5  —  unchanged  (hus → hus)",
+};
+const FORMS = {
+  pl:    {label:"INDEFINITE PLURAL", hint:"several ___ with no 'the'  e.g. många blommor"},
+  defpl: {label:"DEFINITE PLURAL",   hint:"the ___ — add suffix to plural  e.g. blommorna"},
+};
+
+let queue=[], cur=0, score=0, checked=false;
+
+function buildSetup(){
+  document.getElementById('groupGrid').innerHTML = Object.entries(GROUPS).map(([k,v])=>`
+    <label class="filter-row">
+      <input type="checkbox" value="${k}" checked>
+      <span>${v}</span>
+    </label>`).join('');
+  document.getElementById('formGrid').innerHTML = Object.entries(FORMS).map(([k,v])=>`
+    <label class="filter-row">
+      <input type="checkbox" name="form" value="${k}" checked>
+      <span>${v.label.charAt(0)+v.label.slice(1).toLowerCase()}</span>
+    </label>`).join('');
+  document.getElementById('startBtn').onclick = startQuiz;
+}
+
+function showSetup(){
+  document.getElementById('setup').style.display='';
+  document.getElementById('quiz').style.display='none';
+  document.getElementById('end').style.display='none';
+}
+
+function showErr(msg){ const e=document.getElementById('setupErr'); e.textContent=msg; e.style.display='block'; }
+
+function startQuiz(){
+  const gs=[...document.querySelectorAll('#groupGrid input:checked')].map(e=>e.value);
+  const fs=[...document.querySelectorAll('#formGrid input:checked')].map(e=>e.value);
+  if(!gs.length||!fs.length){ showErr('Select at least one group and one form.'); return; }
+  const items=[];
+  NOUNS.filter(n=>gs.includes(n.g)).forEach(n=>{ fs.forEach(f=>items.push({noun:n,form:f})); });
+  if(!items.length){ showErr('No nouns match those filters.'); return; }
+  document.getElementById('setupErr').style.display='none';
+  queue=shuffle(items).slice(0,20); cur=0; score=0; checked=false;
+  document.getElementById('setup').style.display='none';
+  document.getElementById('quiz').style.display='block';
+  document.getElementById('end').style.display='none';
+  showCard();
+}
+
+function shuffle(a){ const b=[...a]; for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];} return b; }
+
+function showCard(){
+  const {noun,form}=queue[cur];
+  const fd=FORMS[form];
+  document.getElementById('formLabel').textContent=fd.label;
+  document.getElementById('formHint').textContent=fd.hint;
+  document.getElementById('nounBig').textContent=noun.sg;
+  document.getElementById('enGloss').textContent=noun.en;
+  document.getElementById('groupBadge').textContent=GROUPS[noun.g];
+  document.getElementById('counter').textContent=`${cur+1} / ${queue.length}`;
+  document.getElementById('scoreBar').textContent=`${score} correct`;
+  const inp=document.getElementById('inp');
+  inp.value=''; inp.disabled=false; inp.focus();
+  document.getElementById('result').style.display='none';
+  document.getElementById('nextBtn').style.display='none';
+  document.getElementById('checkBtn').style.display='';
+  checked=false;
+}
+
+function doCheck(){
+  if(checked)return;
+  const {noun,form}=queue[cur];
+  const correct=noun[form];
+  const inp=document.getElementById('inp');
+  const userVal=inp.value.trim().toLowerCase();
+  const ok=userVal===correct.toLowerCase();
+  if(ok) score++;
+  checked=true;
+  inp.disabled=true;
+  document.getElementById('checkBtn').style.display='none';
+  const res=document.getElementById('result');
+  res.className='result '+(ok?'correct':'wrong');
+  res.style.display='block';
+  document.getElementById('rlbl').textContent=ok?'✓ Correct':'✗ Incorrect';
+  document.getElementById('rans').textContent=`${noun.sg} — ${FORMS[form].label.toLowerCase()}: ${correct}`;
+  document.getElementById('rtip').textContent=`${noun.sg}  →  ${noun.pl}  →  ${noun.defpl}`;
+  document.getElementById('nextBtn').style.display='block';
+  document.getElementById('scoreBar').textContent=`${score} correct`;
+}
+
+function doNext(){
+  cur++;
+  if(cur>=queue.length){
+    document.getElementById('quiz').style.display='none';
+    document.getElementById('end').style.display='block';
+    document.getElementById('sBig').textContent=score;
+    document.getElementById('sSub').textContent=`out of ${queue.length}`;
+  } else showCard();
+}
+
+document.getElementById('checkBtn').addEventListener('click',doCheck);
+document.getElementById('nextBtn').addEventListener('click',doNext);
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&!checked) doCheck();
+  else if(e.key==='Enter'&&checked) doNext();
+});
+
+buildSetup();
+</script>
+
+<script src="../../domains.js"></script>
+<script src="../../sr/engine.js"></script>
+<script src="../../sync.js"></script>
+<script>
+function swAddXP(amount) {
+  if (amount <= 0) return;
+  if (typeof engine !== 'undefined') engine.addXP(amount, 'swedish');
+  if (typeof sync   !== 'undefined' && sync.isConfigured()) sync.push().catch(function(){});
+  // Toast
+  var el = document.getElementById('xp-toast-sw');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'xp-toast-sw';
+    el.style.cssText = 'position:fixed;bottom:1.5rem;right:1rem;background:#b85430;color:#fff;'
+      + 'padding:.45rem .9rem;border-radius:8px;font-size:.85rem;font-weight:700;'
+      + 'opacity:0;transition:opacity .25s;pointer-events:none;z-index:9999;';
+    document.body.appendChild(el);
+  }
+  el.textContent = '+' + amount + ' XP';
+  el.style.opacity = '1';
+  setTimeout(function() { el.style.opacity = '0'; }, 2200);
+}
+</script>
+</body>
+</html>

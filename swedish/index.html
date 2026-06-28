@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Swedish · Rosie's VLE</title>
+  <style>
+    :root {
+      --bg:#faf6f0; --surface:#ffffff; --surface2:#f2ece2;
+      --border:#e8ddd0; --text:#2c1f12; --muted:#8a7a68;
+      --green:#3d6e30; --green-bg:rgba(61,110,48,.1);
+      --blue:#b85430;  --blue-bg:rgba(184,84,48,.1);
+      --yellow:#a06820; --yellow-bg:rgba(160,104,32,.1);
+      --red:#b03428;   --red-bg:rgba(176,52,40,.1);
+      --purple:#7048a0; --purple-bg:rgba(112,72,160,.1);
+    }
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    body { background:var(--bg); color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+      min-height:100vh; }
+
+    /* ── Nav ── */
+    nav { background:var(--surface); border-bottom:1px solid var(--border);
+      padding:0 1.25rem; height:48px; display:flex; align-items:center;
+      justify-content:space-between; position:sticky; top:0; z-index:100; }
+    .nav-brand { font-weight:700; font-size:.9rem; color:var(--text);
+      text-decoration:none; }
+    .nav-links { display:flex; gap:1.25rem; }
+    .nav-links a { color:var(--muted); font-size:.8rem; text-decoration:none; }
+    .nav-links a:hover { color:var(--text); }
+
+    /* ── Layout ── */
+    .page { max-width:700px; margin:0 auto; padding:1.5rem 1rem 4rem; }
+    .hub-back { font-size:.8rem; color:var(--muted); text-decoration:none;
+      display:inline-flex; align-items:center; gap:.3rem; margin-bottom:1.5rem; }
+    .hub-back:hover { color:var(--text); }
+
+    /* ── Domain hero ── */
+    .domain-hero { background:var(--surface); border:1px solid var(--border);
+      border-radius:14px; padding:1.5rem; margin-bottom:1.25rem; }
+    .hero-top { display:flex; justify-content:space-between; align-items:flex-start;
+      gap:1rem; flex-wrap:wrap; }
+    .domain-id { display:flex; align-items:center; gap:.75rem; }
+    .big-icon { font-size:2rem; }
+    .domain-title { font-size:1.3rem; font-weight:700; letter-spacing:-.02em; }
+    .domain-sub { font-size:.8rem; color:var(--muted); margin-top:.15rem; }
+    .domain-stats { display:flex; gap:.6rem; flex-wrap:wrap; margin-top:.25rem; }
+    .dstat { background:var(--surface2); border-radius:8px; padding:.45rem .75rem;
+      text-align:center; min-width:72px; }
+    .dstat-val { font-size:1.2rem; font-weight:700; }
+    .dstat-lbl { font-size:.65rem; color:var(--muted); text-transform:uppercase;
+      letter-spacing:.05em; margin-top:.1rem; }
+    .dstat.green .dstat-val { color:var(--green); }
+    .dstat.yellow .dstat-val { color:var(--yellow); }
+
+    /* ── Section head ── */
+    .sh { font-size:.72rem; font-weight:700; text-transform:uppercase;
+      letter-spacing:.09em; color:var(--muted); margin:1.5rem 0 .7rem; }
+
+    /* ── Study card ── */
+    .study-card { background:var(--surface); border:1px solid var(--border);
+      border-radius:12px; padding:1rem 1.25rem; display:flex;
+      align-items:center; justify-content:space-between; gap:1rem;
+      margin-bottom:.75rem; }
+    .study-count { font-size:1.2rem; font-weight:700; }
+    .study-count span { color:var(--green); }
+    .study-sub { font-size:.78rem; color:var(--muted); margin-top:.15rem; }
+    .btn-study { padding:.65rem 1.4rem; background:var(--green); color:#fff;
+      border:none; border-radius:9px; font-size:.9rem; font-weight:700;
+      cursor:pointer; text-decoration:none; white-space:nowrap;
+      display:inline-block; transition:opacity .15s; }
+    .btn-study:hover { opacity:.85; text-decoration:none; color:#fff; }
+    .btn-study.all-clear { background:var(--surface2); color:var(--muted);
+      border:1px solid var(--border); }
+
+    /* ── Game grid ── */
+    .game-grid { display:grid; grid-template-columns:1fr 1fr; gap:.7rem; }
+    @media (max-width:480px) { .game-grid { grid-template-columns:1fr; } }
+    .game-card { display:flex; align-items:flex-start; gap:.75rem;
+      padding:.9rem 1rem; background:var(--surface); border:1px solid var(--border);
+      border-radius:10px; text-decoration:none; color:var(--text);
+      transition:border-color .15s; }
+    .game-card:hover { border-color:var(--blue); text-decoration:none; color:var(--text); }
+    .game-icon { font-size:1.3rem; flex-shrink:0; line-height:1; margin-top:.1rem; }
+    .game-name { font-weight:600; font-size:.88rem; }
+    .game-desc { font-size:.72rem; color:var(--muted); margin-top:.2rem; line-height:1.4; }
+
+    /* ── Grammar ref grid ── */
+    .ref-grid { display:grid; grid-template-columns:1fr 1fr; gap:.6rem; }
+    @media (max-width:480px) { .ref-grid { grid-template-columns:1fr; } }
+    .ref-card { display:block; padding:.75rem 1rem; background:var(--surface);
+      border:1px dashed var(--border); border-radius:10px; text-decoration:none;
+      color:var(--text); transition:border-color .15s; }
+    .ref-card:hover { border-color:var(--blue); border-style:solid;
+      text-decoration:none; color:var(--text); }
+    .ref-name { font-size:.85rem; font-weight:600; }
+    .ref-desc { font-size:.72rem; color:var(--muted); margin-top:.15rem; line-height:1.4; }
+
+    .obsidian-note { font-size:.75rem; color:var(--muted); padding:.65rem .9rem;
+      background:var(--surface2); border-radius:8px; margin-bottom:.75rem;
+      line-height:1.5; }
+
+    /* ── TTS note ── */
+    .tts-badge { display:inline-flex; align-items:center; gap:.3rem;
+      background:var(--green-bg); border:1px solid rgba(61,110,48,.25);
+      border-radius:99px; padding:.2rem .65rem; font-size:.72rem;
+      color:var(--green); font-weight:600; margin-top:.65rem; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" href="../index.html">Rosie's VLE</a>
+  <div class="nav-links">
+    <a href="../sr/queue.html?domain=swedish">SR Queue</a>
+    <a href="../sync-setup.html">Sync</a>
+  </div>
+</nav>
+
+<div class="page">
+  <a class="hub-back" href="../index.html">← Command Centre</a>
+
+  <!-- ── Domain hero ── -->
+  <div class="domain-hero">
+    <div class="hero-top">
+      <div class="domain-id">
+        <span class="big-icon">🫎</span>
+        <div>
+          <div class="domain-title">Swedish</div>
+          <div class="domain-sub">6,803 vocabulary cards · grammar drills · TTS audio</div>
+          <div class="tts-badge">🔊 Audio enabled — Web Speech API</div>
+        </div>
+      </div>
+      <div class="domain-stats">
+        <div class="dstat green">
+          <div class="dstat-val" id="stat-due">—</div>
+          <div class="dstat-lbl">due today</div>
+        </div>
+        <div class="dstat yellow">
+          <div class="dstat-val" id="stat-xp">—</div>
+          <div class="dstat-lbl">domain XP</div>
+        </div>
+        <div class="dstat">
+          <div class="dstat-val" id="stat-streak">—</div>
+          <div class="dstat-lbl">day streak</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Spaced repetition ── -->
+  <div class="sh">Spaced repetition</div>
+  <div class="study-card">
+    <div>
+      <div class="study-count"><span id="due-count">—</span> cards due</div>
+      <div class="study-sub" id="due-sub">Loading…</div>
+    </div>
+    <a href="../sr/queue.html?domain=swedish" class="btn-study" id="btn-study">Study now</a>
+  </div>
+
+  <!-- ── Vocabulary games ── -->
+  <div class="sh">Vocabulary practice</div>
+  <div class="game-grid">
+    <a class="game-card" href="games/daily-challenge.html">
+      <span class="game-icon">⭐</span>
+      <div>
+        <div class="game-name">Daily Challenge</div>
+        <div class="game-desc">5 cards seeded to today's date — type the translation</div>
+      </div>
+    </a>
+    <a class="game-card" href="games/quiz.html">
+      <span class="game-icon">📝</span>
+      <div>
+        <div class="game-name">Quiz</div>
+        <div class="game-desc">Filter by source · SV→EN or EN→SV · set deck size</div>
+      </div>
+    </a>
+    <a class="game-card" href="games/speed-round.html">
+      <span class="game-icon">⚡</span>
+      <div>
+        <div class="game-name">Speed Round</div>
+        <div class="game-desc">How many correct in 30, 60, or 90 seconds?</div>
+      </div>
+    </a>
+    <a class="game-card" href="games/matching.html">
+      <span class="game-icon">🔀</span>
+      <div>
+        <div class="game-name">Matching</div>
+        <div class="game-desc">Click pairs from Swedish and English columns — beat the clock</div>
+      </div>
+    </a>
+    <a class="game-card" href="games/cloze.html">
+      <span class="game-icon">✏️</span>
+      <div>
+        <div class="game-name">Cloze</div>
+        <div class="game-desc">Fill gaps in short Swedish passages — crime story, grammar, general</div>
+      </div>
+    </a>
+    <a class="game-card" href="games/hangman.html">
+      <span class="game-icon">🧵</span>
+      <div>
+        <div class="game-name">Hangman</div>
+        <div class="game-desc">Guess the Swedish word letter by letter</div>
+      </div>
+    </a>
+  </div>
+
+  <!-- ── Grammar drills ── -->
+  <div class="sh">Grammar drills</div>
+  <div class="game-grid">
+    <a class="game-card" href="games/en-eller-ett.html">
+      <span class="game-icon">♂️</span>
+      <div>
+        <div class="game-name">En eller ett?</div>
+        <div class="game-desc">Rapid-fire noun gender drill — en-word or ett-word?</div>
+      </div>
+    </a>
+    <a class="game-card" href="games/conjugation.html">
+      <span class="game-icon">🔄</span>
+      <div>
+        <div class="game-name">Conjugation</div>
+        <div class="game-desc">Given the infinitive and tense, type the correct form</div>
+      </div>
+    </a>
+    <a class="game-card" href="games/adjective-agreement.html">
+      <span class="game-icon">📐</span>
+      <div>
+        <div class="game-name">Adjective Agreement</div>
+        <div class="game-desc">Complete the noun phrase with the right adjective form</div>
+      </div>
+    </a>
+    <a class="game-card" href="games/plurals.html">
+      <span class="game-icon">📚</span>
+      <div>
+        <div class="game-name">Plurals</div>
+        <div class="game-desc">Type the indefinite or definite plural — all four noun groups</div>
+      </div>
+    </a>
+    <a class="game-card" href="games/word-order.html">
+      <span class="game-icon">🔢</span>
+      <div>
+        <div class="game-name">Word Order</div>
+        <div class="game-desc">Tap words to build a V2-correct sentence</div>
+      </div>
+    </a>
+  </div>
+
+  <!-- ── Grammar reference ── -->
+  <div class="sh">Grammar reference</div>
+  <div class="obsidian-note">
+    📒 These notes live in your Obsidian vault. They open directly on desktop — on phone, open Obsidian and navigate to <strong>Grammar/</strong>.
+  </div>
+  <div class="ref-grid">
+    <a class="ref-card" href="obsidian://open?vault=Rosie&file=Grammar%2F01-noun-gender">
+      <div class="ref-name">Noun Gender</div>
+      <div class="ref-desc">en vs ett — patterns and common exceptions</div>
+    </a>
+    <a class="ref-card" href="obsidian://open?vault=Rosie&file=Grammar%2F02-articles">
+      <div class="ref-name">Articles</div>
+      <div class="ref-desc">Definite and indefinite — suffixes and free-standing forms</div>
+    </a>
+    <a class="ref-card" href="obsidian://open?vault=Rosie&file=Grammar%2F03-plurals">
+      <div class="ref-name">Plurals</div>
+      <div class="ref-desc">The five plural groups with examples</div>
+    </a>
+    <a class="ref-card" href="obsidian://open?vault=Rosie&file=Grammar%2F04-verb-groups">
+      <div class="ref-name">Verb Groups</div>
+      <div class="ref-desc">Groups 1–4 + irregular — principal parts at a glance</div>
+    </a>
+    <a class="ref-card" href="obsidian://open?vault=Rosie&file=Grammar%2F05-tenses">
+      <div class="ref-name">Tenses</div>
+      <div class="ref-desc">Present, preterite, perfect, pluperfect, future</div>
+    </a>
+    <a class="ref-card" href="obsidian://open?vault=Rosie&file=Grammar%2F06-word-order">
+      <div class="ref-name">Word Order</div>
+      <div class="ref-desc">V2 rule, BIFF rule, subordinate clause order</div>
+    </a>
+    <a class="ref-card" href="obsidian://open?vault=Rosie&file=Grammar%2F07-adjective-agreement">
+      <div class="ref-name">Adjective Agreement</div>
+      <div class="ref-desc">Indefinite, definite, and plural forms</div>
+    </a>
+    <a class="ref-card" href="obsidian://open?vault=Rosie&file=Grammar%2F08-pronouns">
+      <div class="ref-name">Pronouns</div>
+      <div class="ref-desc">Personal, reflexive, possessive, relative</div>
+    </a>
+    <a class="ref-card" href="obsidian://open?vault=Rosie&file=Grammar%2F09-prepositions">
+      <div class="ref-name">Prepositions</div>
+      <div class="ref-desc">Common prepositions and their idiomatic uses</div>
+    </a>
+    <a class="ref-card" href="obsidian://open?vault=Rosie&file=Grammar%2F10-comparative-superlative">
+      <div class="ref-name">Comparative &amp; Superlative</div>
+      <div class="ref-desc">Regular and irregular adjective comparison</div>
+    </a>
+  </div>
+
+</div>
+
+<script src="../domains.js"></script>
+<script src="../sr/engine.js"></script>
+<script src="../sync.js"></script>
+<script>
+async function loadStats() {
+  var progress = engine.getProgress();
+  var streaks  = engine.getStreak();
+  var domXP    = (progress.domains && progress.domains.swedish && progress.domains.swedish.xp) || 0;
+  var streak   = (streaks.byDomain && streaks.byDomain.swedish) || 0;
+
+  document.getElementById('stat-xp').textContent     = domXP.toLocaleString();
+  document.getElementById('stat-streak').textContent = streak;
+  if (streak > 0) document.getElementById('stat-streak').style.color = 'var(--yellow)';
+
+  try {
+    var res   = await fetch('../data/decks/swedish.json');
+    if (!res.ok) throw new Error();
+    var cards = await res.json();
+    var dueFresh = engine.getDueCards(cards, 'swedish', 20);
+    var total = dueFresh.due.length + dueFresh.fresh.length;
+
+    document.getElementById('stat-due').textContent  = total;
+    document.getElementById('due-count').textContent = total;
+    document.getElementById('due-sub').textContent   =
+      total > 0
+        ? dueFresh.due.length + ' reviews · ' + dueFresh.fresh.length + ' new · ~' + Math.ceil(total * 0.5) + ' min'
+        : 'All caught up — kom igen! 🎉';
+
+    if (total === 0) {
+      var btn = document.getElementById('btn-study');
+      btn.className   = 'btn-study all-clear';
+      btn.textContent = 'All clear ✓';
+    }
+  } catch(e) {
+    document.getElementById('stat-due').textContent  = '?';
+    document.getElementById('due-count').textContent = '?';
+    document.getElementById('due-sub').textContent   = 'Could not load deck';
+  }
+}
+
+if (sync.isConfigured()) { sync.pull().catch(function(){}).then(loadStats); } else { loadStats(); }
+</script>
+</body>
+</html>

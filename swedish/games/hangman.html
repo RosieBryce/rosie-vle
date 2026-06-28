@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hangman · Swedish</title>
+<script src="../flashcards.js"></script>
+<style>
+:root { --bg:#faf6f0; --surface:#ffffff; --surface2:#f2ece2; --border:#e8ddd0; --text:#2c1f12; --muted:#8a7a68; --blue:#b85430; --green:#3d6e30; --red:#b03428; }
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,sans-serif; min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:2.5rem 1rem; }
+h1 { font-size:1rem; font-weight:600; color:var(--muted); letter-spacing:.12em; text-transform:uppercase; margin-bottom:.5rem; }
+.subtitle { font-size:.8rem; color:var(--muted); opacity:.6; margin-bottom:2rem; }
+
+/* gallows */
+.gallows { margin-bottom:1.5rem; }
+svg .rope { stroke:var(--muted); stroke-width:2; opacity:.5; }
+svg .body { stroke:var(--text); stroke-width:3; stroke-linecap:round; }
+svg .dead { stroke:var(--red); }
+
+/* word display */
+.word-row { display:flex; gap:.6rem; flex-wrap:wrap; justify-content:center; margin-bottom:1.5rem; min-height:2.5rem; }
+.letter-box { width:2rem; height:2.5rem; border-bottom:2.5px solid var(--border); display:flex; align-items:flex-end; justify-content:center; font-size:1.5rem; font-weight:700; color:var(--text); }
+.letter-box.space { border-bottom-color:transparent; width:.8rem; }
+
+.hint { font-size:.85rem; color:var(--muted); text-align:center; margin-bottom:1.5rem; min-height:1.3rem; }
+
+/* keyboard */
+.keyboard { display:flex; flex-direction:column; gap:.4rem; align-items:center; margin-bottom:1.5rem; }
+.kb-row { display:flex; gap:.35rem; }
+.key { width:2.2rem; height:2.4rem; background:var(--surface); border:1.5px solid var(--border); border-radius:.35rem; color:var(--text); font-size:.9rem; font-weight:600; cursor:pointer; transition:all .1s; display:flex; align-items:center; justify-content:center; }
+.key:hover:not(:disabled) { border-color:var(--blue); background:var(--surface2); }
+.key:disabled { cursor:default; opacity:.3; }
+.key.hit  { background:#2d3f2d; border-color:var(--green); color:var(--green); }
+.key.miss { background:#3f2d2d; border-color:var(--red);   color:var(--red); }
+
+.status { font-size:1.1rem; font-weight:600; text-align:center; min-height:1.6rem; margin-bottom:1rem; }
+.status.win  { color:var(--green); }
+.status.lose { color:var(--red); }
+.wrong-count { font-size:.8rem; color:var(--muted); text-align:center; margin-bottom:1rem; }
+
+.btn { background:var(--blue); color:var(--bg); border:none; border-radius:.5rem; padding:.7rem 1.4rem; font-size:1rem; font-weight:700; cursor:pointer; }
+.btn:hover { opacity:.85; }
+.btn-ghost { background:var(--surface2); color:var(--text); margin-left:.5rem; }
+
+/* Setup */
+.setup { background:var(--surface); border:1px solid var(--border); border-radius:1rem; padding:1.5rem; width:100%; max-width:420px; margin-bottom:1rem; }
+.setup h2 { font-size:.8rem; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); margin-bottom:.8rem; }
+.setup select { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:.4rem; padding:.6rem .8rem; color:var(--text); font-size:.95rem; outline:none; margin-bottom:1rem; }
+.nav-home { display:block; width:100%; max-width:600px; font-size:.75rem; color:var(--muted); text-decoration:none; letter-spacing:.06em; margin-bottom:1.25rem; opacity:.7; transition:color .15s, opacity .15s; }
+.nav-home:hover { color:var(--blue); opacity:1; }
+.setup-err { background:#3f2d2d; border:1px solid var(--red); border-radius:.5rem; padding:.65rem 1rem; font-size:.85rem; color:var(--red); margin-top:.75rem; display:none; }
+</style>
+</head>
+<body>
+<nav style="background:var(--surface);border-bottom:1px solid var(--border);
+  padding:0 1.25rem;height:48px;display:flex;align-items:center;gap:1rem;
+  position:sticky;top:0;z-index:100;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <a href="../index.html" style="font-weight:700;font-size:.875rem;color:var(--text);text-decoration:none;">
+    🫎 Swedish
+  </a>
+  <span style="color:var(--border)">›</span>
+  <span style="font-size:.875rem;color:var(--muted)">Hangman</span>
+</nav>
+
+<a href="index.html" class="nav-home" id="navHome">← All tools</a>
+<h1>Hangman</h1>
+<div class="subtitle">Guess the Swedish word — letter by letter</div>
+
+<div class="setup">
+  <h2>Source</h2>
+  <select id="srcSel"></select>
+  <h2>Word length</h2>
+  <select id="lenSel">
+    <option value="any">Any length</option>
+    <option value="short">Short (3–5 letters)</option>
+    <option value="medium" selected>Medium (6–9 letters)</option>
+    <option value="long">Long (10+ letters)</option>
+  </select>
+  <div class="setup-err" id="setupErr"></div>
+</div>
+
+<svg class="gallows" width="160" height="180" viewBox="0 0 160 180">
+  <!-- Structure -->
+  <line x1="20" y1="170" x2="140" y2="170" class="rope"/>
+  <line x1="60" y1="170" x2="60" y2="10"  class="rope"/>
+  <line x1="60" y1="10"  x2="110" y2="10" class="rope"/>
+  <line x1="110" y1="10" x2="110" y2="30" class="rope"/>
+  <!-- Body parts: head, body, left arm, right arm, left leg, right leg -->
+  <circle id="p-head" cx="110" cy="42" r="12" fill="none" class="body" style="display:none"/>
+  <line   id="p-body" x1="110" y1="54" x2="110" y2="110" class="body" style="display:none"/>
+  <line   id="p-larm" x1="110" y1="70" x2="88"  y2="90"  class="body" style="display:none"/>
+  <line   id="p-rarm" x1="110" y1="70" x2="132" y2="90"  class="body" style="display:none"/>
+  <line   id="p-lleg" x1="110" y1="110" x2="90" y2="140" class="body" style="display:none"/>
+  <line   id="p-rleg" x1="110" y1="110" x2="130" y2="140" class="body" style="display:none"/>
+</svg>
+
+<div class="word-row" id="wordRow"></div>
+<div class="hint" id="hint"></div>
+<div class="wrong-count" id="wrongCount"></div>
+<div class="status" id="status"></div>
+
+<div class="keyboard" id="keyboard"></div>
+
+<button class="btn" onclick="newGame()">New word</button>
+<button class="btn btn-ghost" onclick="giveUp()">Give up</button>
+
+<script>
+function buildSrcDropdown(){
+  const counts={};
+  FLASHCARDS.forEach(c=>{counts[c.source]=(counts[c.source]||0)+1;});
+  const userSrcs=Object.keys(counts).filter(s=>s!=='anki').sort();
+  const urlSrc=new URLSearchParams(location.search).get('source')||'anki';
+  const sel=document.getElementById('srcSel');
+  sel.innerHTML=
+    `<option value="anki">Anki deck (all words)</option>`+
+    `<option value="all">All sources</option>`+
+    `<option value="my-words">My words</option>`+
+    userSrcs.map(s=>`<option value="${s}">${s.charAt(0).toUpperCase()+s.slice(1)} (${counts[s]})</option>`).join('');
+  sel.value=urlSrc;
+  if(!sel.querySelector(`option[value="${urlSrc}"]`)) sel.value='anki';
+}
+
+const PARTS = ['p-head','p-body','p-larm','p-rarm','p-lleg','p-rleg'];
+const MAX_WRONG = PARTS.length;
+const KB_ROWS = ['qwertyuiopå','asdfghjklöä','zxcvbnm'];
+
+let target='', targetWord='', targetHint='', guessed=new Set(), wrong=0, gameOver=false;
+
+function pickWord(){
+  const src = document.getElementById('srcSel').value;
+  const len = document.getElementById('lenSel').value;
+  let pool = FLASHCARDS.filter(c => {
+    if(src==='all') { /* no source filter */ }
+    else if(src==='my-words'&&c.source==='anki') return false;
+    else if(src!=='all'&&src!=='my-words'&&c.source!==src) return false;
+    // Single-word Swedish only (no spaces/phrases for hangman)
+    const w = c.swedish.replace(/\s*\(.*?\)/,'').trim();
+    if(w.includes(' ')) return false;
+    if(!/^[a-zA-ZåäöÅÄÖ]+$/.test(w)) return false;
+    const l = w.length;
+    if(len==='short'&&(l<3||l>5)) return false;
+    if(len==='medium'&&(l<6||l>9)) return false;
+    if(len==='long'&&l<10) return false;
+    return c.english.trim().length > 0;
+  });
+  if(!pool.length){ showErr('No words match those filters. Try a different source or length.'); return null; }
+  const card = pool[Math.floor(Math.random()*pool.length)];
+  const sv = card.swedish.replace(/\s*\(.*?\)/,'').trim().toLowerCase();
+  return { word: sv, hint: card.english };
+}
+
+function showErr(msg){const e=document.getElementById('setupErr');e.textContent=msg;e.style.display='block';}
+
+function newGame(){
+  document.getElementById('setupErr').style.display='none';
+  const result = pickWord();
+  if(!result) return;
+  target = result.word;
+  targetHint = result.hint;
+  guessed = new Set();
+  wrong = 0;
+  gameOver = false;
+  PARTS.forEach(id=>{ const el=document.getElementById(id); el.style.display='none'; el.className='body'; });
+  document.getElementById('status').textContent='';
+  document.getElementById('status').className='status';
+  document.getElementById('hint').textContent='';
+  renderWord();
+  renderKeyboard();
+  document.getElementById('wrongCount').textContent=`Wrong: 0 / ${MAX_WRONG}`;
+}
+
+function renderWord(){
+  const row = document.getElementById('wordRow');
+  row.innerHTML = target.split('').map(ch=>{
+    if(ch===' ') return '<div class="letter-box space"></div>';
+    const shown = guessed.has(ch) || gameOver;
+    return `<div class="letter-box">${shown?ch.toUpperCase():''}</div>`;
+  }).join('');
+}
+
+function renderKeyboard(){
+  const kb = document.getElementById('keyboard');
+  kb.innerHTML = KB_ROWS.map(row=>
+    `<div class="kb-row">${[...row].map(k=>{
+      let cls='key';
+      if(guessed.has(k)) cls+= target.includes(k)?' hit':' miss';
+      return `<button class="${cls}" onclick="guess('${k}')"${guessed.has(k)||gameOver?' disabled':''}>${k}</button>`;
+    }).join('')}</div>`
+  ).join('');
+}
+
+function guess(letter){
+  if(gameOver||guessed.has(letter)) return;
+  guessed.add(letter);
+  if(!target.includes(letter)){
+    wrong++;
+    const part=document.getElementById(PARTS[wrong-1]);
+    part.style.display='';
+    if(wrong===MAX_WRONG) part.className='body dead';
+    document.getElementById('wrongCount').textContent=`Wrong: ${wrong} / ${MAX_WRONG}`;
+  }
+  renderWord();
+  renderKeyboard();
+  checkGameOver();
+}
+
+function checkGameOver(){
+  const won = [...target].filter(c=>c!==' ').every(c=>guessed.has(c));
+  if(won){
+    gameOver=true;
+    document.getElementById('status').textContent='✓ Well done!';
+    document.getElementById('status').className='status win';
+    document.getElementById('hint').textContent=targetHint;
+    renderKeyboard();
+  } else if(wrong>=MAX_WRONG){
+    gameOver=true;
+    document.getElementById('status').textContent='✗ The word was: '+target.toUpperCase();
+    document.getElementById('status').className='status lose';
+    document.getElementById('hint').textContent=targetHint;
+    renderWord();
+    renderKeyboard();
+  }
+}
+
+function giveUp(){
+  if(gameOver) return;
+  gameOver=true;
+  document.getElementById('status').textContent='The word was: '+target.toUpperCase();
+  document.getElementById('status').className='status lose';
+  document.getElementById('hint').textContent=targetHint;
+  renderWord();
+  renderKeyboard();
+}
+
+document.addEventListener('keydown',e=>{
+  if(gameOver) return;
+  const k=e.key.toLowerCase();
+  if(/^[a-zåäö]$/.test(k)) guess(k);
+});
+
+buildSrcDropdown();
+(function(){var s=new URLSearchParams(location.search).get('source');if(s)document.getElementById('navHome').href='index.html?source='+encodeURIComponent(s);})();
+newGame();
+</script>
+
+<script src="../../domains.js"></script>
+<script src="../../sr/engine.js"></script>
+<script src="../../sync.js"></script>
+<script>
+function swAddXP(amount) {
+  if (amount <= 0) return;
+  if (typeof engine !== 'undefined') engine.addXP(amount, 'swedish');
+  if (typeof sync   !== 'undefined' && sync.isConfigured()) sync.push().catch(function(){});
+  // Toast
+  var el = document.getElementById('xp-toast-sw');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'xp-toast-sw';
+    el.style.cssText = 'position:fixed;bottom:1.5rem;right:1rem;background:#b85430;color:#fff;'
+      + 'padding:.45rem .9rem;border-radius:8px;font-size:.85rem;font-weight:700;'
+      + 'opacity:0;transition:opacity .25s;pointer-events:none;z-index:9999;';
+    document.body.appendChild(el);
+  }
+  el.textContent = '+' + amount + ' XP';
+  el.style.opacity = '1';
+  setTimeout(function() { el.style.opacity = '0'; }, 2200);
+}
+</script>
+</body>
+</html>

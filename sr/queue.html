@@ -237,12 +237,19 @@ async function boot() {
     await sync.pull().catch(() => {}); // silent fail — offline is fine
   }
 
+  // ?domain= param lets Quick Picks bypass the picker
+  const urlDomain = new URLSearchParams(location.search).get('domain');
+
   const active = DOMAINS.filter(d => d.status === 'active');
   if (!active.length) { showEmpty(); return; }
 
-  // Fetch all active decks
+  // Fetch all active decks (or just the requested one)
+  const domainsToLoad = urlDomain
+    ? active.filter(d => d.id === urlDomain)
+    : active;
+
   const loaded = [];
-  for (const domain of active) {
+  for (const domain of domainsToLoad) {
     try {
       const res = await fetch('../' + domain.deck);
       if (!res.ok) continue;
@@ -258,8 +265,8 @@ async function boot() {
   const withCards = loaded.filter(d => d.total > 0);
   if (!withCards.length) { showEmpty(); return; }
 
-  // If only one domain has cards, go straight in
-  if (withCards.length === 1) {
+  // If only one domain has cards (or domain pre-selected), go straight in
+  if (withCards.length === 1 || urlDomain) {
     startSession(withCards[0]);
     return;
   }

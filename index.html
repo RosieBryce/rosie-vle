@@ -106,19 +106,21 @@
     .badge-snoozed { background:var(--surface2); color:var(--muted); }
     .badge-done    { background:var(--blue-bg); color:var(--blue); }
 
-    /* ── Deadline countdown ── */
-    .deadline-card { background:var(--surface); border:1px solid var(--border);
-      border-radius:12px; padding:1rem 1.25rem; margin-bottom:.75rem; }
-    .deadline-top { display:flex; align-items:center; justify-content:space-between;
-      margin-bottom:.6rem; }
-    .deadline-label { font-size:.78rem; font-weight:700; color:var(--yellow); }
-    .deadline-prize { font-size:.75rem; color:var(--muted); }
-    .countdown-row { display:flex; gap:.5rem; }
-    .count-unit { background:var(--surface2); border-radius:7px; padding:.5rem .6rem;
-      text-align:center; flex:1; }
-    .count-num { font-size:1.2rem; font-weight:700; letter-spacing:-.02em; }
-    .count-lbl { font-size:.6rem; color:var(--muted); text-transform:uppercase;
-      letter-spacing:.05em; margin-top:.1rem; }
+    /* ── Quick picks ── */
+    .qp-card { background:var(--surface); border:1px solid var(--border);
+      border-radius:12px; padding:.85rem 1.1rem;
+      display:flex; align-items:center; justify-content:space-between; gap:.75rem; }
+    .qp-left { display:flex; align-items:center; gap:.65rem; }
+    .qp-icon { font-size:1.3rem; flex-shrink:0; }
+    .qp-name { font-weight:600; font-size:.9rem; }
+    .qp-sub  { font-size:.73rem; color:var(--muted); margin-top:.1rem; }
+    .qp-btn  { padding:.45rem 1rem; background:var(--green); color:#fff; border:none;
+      border-radius:7px; font-size:.8rem; font-weight:700; cursor:pointer;
+      text-decoration:none; white-space:nowrap; transition:opacity .15s;
+      display:inline-block; flex-shrink:0; }
+    .qp-btn:hover { opacity:.85; }
+    .qp-btn.empty { background:var(--surface2); color:var(--muted);
+      border:1px solid var(--border); }
 
     /* ── Sync note ── */
     .sync-note { text-align:center; font-size:.75rem; color:var(--muted);
@@ -183,22 +185,14 @@
       <div class="sr-count" id="sr-count"><span>—</span> cards due</div>
       <div class="sr-sub"  id="sr-sub">Loading…</div>
     </div>
-    <a href="sr/queue.html" class="btn-study" id="btn-study">Study now</a>
+    <a href="sr/queue.html" class="btn-study" id="btn-study">Study all</a>
   </div>
 
-  <!-- IBM Deadline -->
-  <div class="section-head">Deadline</div>
-  <div class="deadline-card">
-    <div class="deadline-top">
-      <span class="deadline-label">🎮 IBM AI Engineering</span>
-      <span class="deadline-prize">Prize: Nintendo Switch 2 + Pokopia · 1 Sep 2026</span>
-    </div>
-    <div class="countdown-row">
-      <div class="count-unit"><div class="count-num" id="cd-days">—</div><div class="count-lbl">days</div></div>
-      <div class="count-unit"><div class="count-num" id="cd-hours">—</div><div class="count-lbl">hours</div></div>
-      <div class="count-unit"><div class="count-num" id="cd-mins">—</div><div class="count-lbl">mins</div></div>
-      <div class="count-unit"><div class="count-num" id="cd-secs">—</div><div class="count-lbl">secs</div></div>
-    </div>
+  <!-- Quick Picks -->
+  <div class="section-head">Quick picks</div>
+  <div id="quick-picks" class="domain-grid">
+    <div class="skeleton" style="height:64px;border-radius:12px"></div>
+    <div class="skeleton" style="height:64px;border-radius:12px"></div>
   </div>
 
   <!-- Domain Cards -->
@@ -269,10 +263,11 @@ function renderStreaks(streakData) {
   });
 }
 
-/* ── SR count ────────────────────────────────────────────── */
+/* ── SR count + Quick Picks ──────────────────────────────── */
 async function renderSRCount() {
   let totalDue = 0, totalNew = 0;
   const active = DOMAINS.filter(d => d.status === 'active');
+  const perDomain = [];
 
   for (const domain of active) {
     try {
@@ -282,6 +277,7 @@ async function renderSRCount() {
       const { due, fresh } = engine.getDueCards(cards, domain.id, domain.newPerDay || 20);
       totalDue += due.length;
       totalNew += fresh.length;
+      perDomain.push({ domain, due: due.length, fresh: fresh.length });
     } catch {}
   }
 
@@ -298,6 +294,29 @@ async function renderSRCount() {
   if (total === 0) {
     btn.className = 'btn-study empty';
     btn.textContent = 'All clear ✓';
+  }
+
+  // Quick Picks
+  const qp = document.getElementById('quick-picks');
+  if (perDomain.length) {
+    qp.innerHTML = perDomain.map(({ domain, due, fresh }) => {
+      const n = due + fresh;
+      const sub = n > 0 ? `${due} reviews · ${fresh} new` : 'All clear today';
+      const btnClass = n > 0 ? 'qp-btn' : 'qp-btn empty';
+      const btnLabel = n > 0 ? `Study ${n} →` : 'All clear ✓';
+      return `<div class="qp-card">
+        <div class="qp-left">
+          <span class="qp-icon">${domain.icon}</span>
+          <div>
+            <div class="qp-name">${domain.name}</div>
+            <div class="qp-sub">${sub}</div>
+          </div>
+        </div>
+        <a href="sr/queue.html?domain=${domain.id}" class="${btnClass}">${btnLabel}</a>
+      </div>`;
+    }).join('');
+  } else {
+    qp.innerHTML = '<div style="color:var(--muted);font-size:.85rem">No active domains</div>';
   }
 
   return { totalDue, totalNew };
@@ -350,26 +369,6 @@ async function renderDomains() {
   }
 }
 
-/* ── Countdown ───────────────────────────────────────────── */
-function updateCountdown() {
-  const ibm = DOMAINS.find(d => d.id === 'ibm');
-  if (!ibm?.deadline) return;
-
-  const target = new Date(ibm.deadline + 'T23:59:59').getTime();
-  const now    = Date.now();
-  const diff   = Math.max(0, target - now);
-
-  const days  = Math.floor(diff / 86400000);
-  const hours = Math.floor((diff % 86400000) / 3600000);
-  const mins  = Math.floor((diff % 3600000)  / 60000);
-  const secs  = Math.floor((diff % 60000)    / 1000);
-
-  document.getElementById('cd-days').textContent  = days;
-  document.getElementById('cd-hours').textContent = String(hours).padStart(2,'0');
-  document.getElementById('cd-mins').textContent  = String(mins).padStart(2,'0');
-  document.getElementById('cd-secs').textContent  = String(secs).padStart(2,'0');
-}
-
 /* ── Sync note ───────────────────────────────────────────── */
 function renderSyncNote() {
   const note = document.getElementById('sync-note');
@@ -400,9 +399,6 @@ async function boot() {
   renderSRCount();
   renderDomains();
 
-  // Countdown — tick every second
-  updateCountdown();
-  setInterval(updateCountdown, 1000);
 }
 
 boot();

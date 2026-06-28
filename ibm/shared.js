@@ -147,7 +147,7 @@ function initNav(base) {
 }
 
 /* ── Prize countdown ───────────────────────────────────────── */
-const PRIZE_DL = new Date('2026-07-31T23:59:59');
+const PRIZE_DL = new Date('2026-09-01T23:59:59');
 
 function _renderCountdown(el) {
   const diff = PRIZE_DL - Date.now();

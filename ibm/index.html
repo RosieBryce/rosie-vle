@@ -3,227 +3,360 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VLE — IBM AI Engineering</title>
+  <title>IBM AI Engineering · Rosie's VLE</title>
   <link rel="stylesheet" href="shared.css">
   <script src="shared.js"></script>
+  <style>
+    .hub-back { font-size:.8rem; color:var(--muted); text-decoration:none;
+      display:inline-flex; align-items:center; gap:.3rem; margin-bottom:1.5rem; }
+    .hub-back:hover { color:var(--text); }
+
+    /* Domain hero */
+    .domain-hero { background:var(--surface); border:1px solid var(--border);
+      border-radius:14px; padding:1.5rem; margin-bottom:1.25rem; }
+    .domain-hero-top { display:flex; justify-content:space-between; align-items:flex-start;
+      gap:1rem; flex-wrap:wrap; margin-bottom:1rem; }
+    .domain-icon-name { display:flex; align-items:center; gap:.75rem; }
+    .domain-big-icon { font-size:2rem; }
+    .domain-title { font-size:1.3rem; font-weight:700; letter-spacing:-.02em; }
+    .domain-sub { font-size:.8rem; color:var(--muted); margin-top:.15rem; }
+    .domain-stats { display:flex; gap:.6rem; flex-wrap:wrap; }
+    .dstat { background:var(--surface2); border-radius:8px; padding:.45rem .75rem;
+      text-align:center; min-width:72px; }
+    .dstat-val { font-size:1.2rem; font-weight:700; }
+    .dstat-lbl { font-size:.65rem; color:var(--muted); text-transform:uppercase;
+      letter-spacing:.05em; margin-top:.1rem; }
+    .dstat.green .dstat-val { color:var(--green); }
+    .dstat.yellow .dstat-val { color:var(--yellow); }
+
+    /* Prize countdown */
+    .prize-row { display:flex; align-items:center; justify-content:space-between;
+      flex-wrap:wrap; gap:.75rem; padding:.85rem 1rem; background:var(--yellow-bg);
+      border:1px solid rgba(160,104,32,.25); border-radius:9px; margin-top:1rem; }
+    .prize-label { font-size:.82rem; font-weight:700; color:var(--yellow); }
+    .prize-name { font-size:.75rem; color:var(--muted); margin-top:.1rem; }
+    .cd-mini { display:flex; gap:.4rem; align-items:center; }
+    .cd-unit { background:var(--surface); border-radius:6px; padding:.35rem .5rem;
+      text-align:center; min-width:40px; }
+    .cd-val { font-size:1rem; font-weight:700; line-height:1; }
+    .cd-lbl { font-size:.55rem; color:var(--muted); text-transform:uppercase;
+      letter-spacing:.05em; margin-top:.15rem; }
+
+    /* Section heads */
+    .sh { font-size:.72rem; font-weight:700; text-transform:uppercase;
+      letter-spacing:.09em; color:var(--muted); margin:1.5rem 0 .7rem; }
+
+    /* Quick study */
+    .study-card { background:var(--surface); border:1px solid var(--border);
+      border-radius:12px; padding:1rem 1.25rem; display:flex;
+      align-items:center; justify-content:space-between; gap:1rem; }
+    .study-count { font-size:1.2rem; font-weight:700; }
+    .study-count span { color:var(--green); }
+    .study-sub { font-size:.78rem; color:var(--muted); margin-top:.15rem; }
+    .btn-study { padding:.65rem 1.4rem; background:var(--green); color:#fff;
+      border:none; border-radius:9px; font-size:.9rem; font-weight:700;
+      cursor:pointer; text-decoration:none; white-space:nowrap;
+      display:inline-block; transition:opacity .15s; }
+    .btn-study:hover { opacity:.85; text-decoration:none; color:#fff; }
+    .btn-study.all-clear { background:var(--surface2); color:var(--muted);
+      border:1px solid var(--border); }
+
+    /* Games grid */
+    .games-grid { display:grid; grid-template-columns:1fr 1fr; gap:.7rem; }
+    @media (max-width:500px) { .games-grid { grid-template-columns:1fr; } }
+    .game-card { display:flex; align-items:center; gap:.75rem; padding:.9rem 1rem;
+      background:var(--surface); border:1px solid var(--border); border-radius:10px;
+      text-decoration:none; color:var(--text); transition:border-color .15s; }
+    .game-card:hover { border-color:var(--blue); text-decoration:none; color:var(--text); }
+    .game-icon { font-size:1.3rem; flex-shrink:0; }
+    .game-name { font-weight:600; font-size:.88rem; }
+    .game-desc { font-size:.72rem; color:var(--muted); margin-top:.15rem; line-height:1.4; }
+    .game-badge { font-size:.62rem; font-weight:700; padding:.1rem .4rem;
+      border-radius:99px; background:var(--blue-bg); color:var(--blue);
+      margin-top:.25rem; display:inline-block; }
+
+    /* Course strip */
+    .course-strip { display:flex; gap:.4rem; flex-wrap:wrap; margin-bottom:1rem; }
+    .c-dot { width:36px; height:36px; border-radius:50%; display:flex;
+      align-items:center; justify-content:center; font-size:.78rem; font-weight:700;
+      text-decoration:none; border:2px solid var(--border); color:var(--muted);
+      transition:border-color .15s; flex-shrink:0; }
+    .c-dot:hover { border-color:var(--blue); text-decoration:none; }
+    .c-dot-done    { background:var(--green-bg); border-color:var(--green); color:var(--green); }
+    .c-dot-active  { background:var(--blue-bg); border-color:var(--blue); color:var(--blue); }
+    .c-dot-pending { background:var(--surface); }
+    @keyframes cdpulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+    .pulsing { animation:cdpulse 2s ease-in-out infinite; }
+
+    /* Progress bars */
+    .prog-block { background:var(--surface); border:1px solid var(--border);
+      border-radius:10px; padding:1rem 1.25rem; margin-bottom:.75rem; }
+    .prog-row { margin-bottom:.65rem; }
+    .prog-row:last-child { margin-bottom:0; }
+    .prog-header { display:flex; justify-content:space-between;
+      font-size:.78rem; margin-bottom:.35rem; color:var(--text); }
+    .prog-header .ph-right { color:var(--muted); }
+    .prog-track { height:5px; background:var(--surface2); border-radius:99px; overflow:hidden; }
+    .prog-fill { height:100%; background:var(--green); border-radius:99px; }
+
+    /* Resource grid */
+    .resource-grid { display:grid; grid-template-columns:1fr 1fr; gap:.6rem; }
+    @media (max-width:500px) { .resource-grid { grid-template-columns:1fr; } }
+    .rc { display:block; padding:.85rem 1rem; background:var(--surface);
+      border:1px solid var(--border); border-radius:10px; text-decoration:none;
+      color:var(--text); transition:border-color .15s; }
+    .rc:hover { border-color:var(--blue); text-decoration:none; color:var(--text); }
+    .rc-icon { font-size:1.1rem; margin-bottom:.3rem; }
+    .rc-name { font-size:.88rem; font-weight:600; }
+    .rc-desc { font-size:.72rem; color:var(--muted); margin-top:.15rem; line-height:1.4; }
+    .rc.dim { opacity:.45; }
+
+    .ins-note { padding:.85rem 1rem; border-radius:9px; font-size:.8rem;
+      line-height:1.55; margin-bottom:.75rem;
+      background:var(--blue-bg); border:1px solid rgba(184,84,48,.25); color:var(--blue); }
+  </style>
 </head>
 <body>
-<script>initNav('');</script>
+<script>initNav('../');</script>
 
-<div class="container">
+<div class="container" style="max-width:720px">
+  <a class="hub-back" href="../index.html">← Command Centre</a>
 
-  <!-- Page header -->
-  <div style="margin-bottom:1.75rem">
-    <h1 style="font-size:1.4rem;font-weight:700;letter-spacing:-.02em;margin-bottom:.3rem">
-      IBM AI Engineering — Flipped Classroom
-    </h1>
-    <p style="color:var(--muted);font-size:.875rem">
-      13 courses · 165 hours · Speedrun to 31 July 2026
-    </p>
-  </div>
-
-  <!-- ═══ TODAY'S FLIP CARD ════════════════════════════════════ -->
-  <div class="flip-card">
-
-    <div class="flip-header">
-      <span>📖</span>
-      Today's Flip &nbsp;·&nbsp; Course 5 — Deep Learning with PyTorch
-      <span class="badge badge-active" style="margin-left:auto"><span class="dot dot-b pulsing"></span>In Progress</span>
-    </div>
-
-    <div class="flip-sublabel">Before you watch, think about…</div>
-    <ul class="flip-questions">
-      <li>
-        <span class="flip-q-num">1</span>
-        <span>You've built a logistic regression model in PyTorch — one linear layer plus sigmoid. What do you think happens when you stack two or three of those layers? What new capability does depth give you?</span>
-      </li>
-      <li>
-        <span class="flip-q-num">2</span>
-        <span>In C4 you used MSE loss for regression. Classification predicts a category, not a number. Why do you think MSE isn't the right choice — and what property should a classification loss have?</span>
-      </li>
-      <li>
-        <span class="flip-q-num">3</span>
-        <span>CNNs dominate image tasks. A plain neural network could technically process pixel values too. What do you think CNNs do differently that makes them so much better at spatial data?</span>
-      </li>
-    </ul>
-
-    <div class="flip-sublabel">Watch for…</div>
-    <div class="watch-for">
-      How <strong>activation functions</strong> (especially ReLU) are what allow deep networks to learn non-linear decision boundaries — without them, stacking layers is mathematically equivalent to one layer.
-      Also watch for <strong>softmax</strong>: the multi-class generalisation of sigmoid, and how cross-entropy loss is designed to punish confident wrong answers far more than MSE ever could.
-    </div>
-
-    <div class="flip-links">
-      <a class="flip-btn" href="viz/activation-functions.html">⚡ Activation Functions viz</a>
-      <a class="flip-btn" href="viz/backprop.html">🔁 Backprop viz</a>
-      <a class="flip-btn" href="courses/c05.html">📚 Course 5 Notes</a>
-    </div>
-
-    <div class="flip-divider"></div>
-
-    <!-- Coming up -->
-    <div class="flip-next">
-      <span style="font-size:1.25rem;line-height:1.3">👀</span>
-      <div class="flip-next-body">
-        <div class="flip-next-title">
-          Coming up: Course 6 — AI Capstone Project with Deep Learning
-        </div>
-        <div class="flip-next-peek">
-          C6 is the first capstone — applying CNNs and Vision Transformers to a real image classification problem.
-          Less new theory, more putting the pieces together. Good consolidation before the GenAI block.
-        </div>
-        <a class="flip-btn-sm" href="courses/c06.html">📚 Preview Course 6</a>
-      </div>
-    </div>
-
-  </div><!-- /flip-card -->
-
-  <!-- ═══ PRIZE COUNTDOWN ══════════════════════════════════════ -->
-  <div class="section-head">Prize Countdown</div>
-  <div class="prize-grid">
-
-    <div class="card card-yellow">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+  <!-- ── Domain hero ── -->
+  <div class="domain-hero">
+    <div class="domain-hero-top">
+      <div class="domain-icon-name">
+        <span class="domain-big-icon">🤖</span>
         <div>
-          <div class="tag tag-gold">🏆 Grand Prize</div>
-          <div style="font-size:1.3rem;font-weight:700;margin-bottom:.2rem">Nintendo Switch 2 + Pokopia</div>
-          <div style="font-size:.85rem;color:var(--muted)">Deadline: <strong style="color:var(--text)">31 July 2026</strong></div>
+          <div class="domain-title">IBM AI Engineering</div>
+          <div class="domain-sub">Professional Certificate · 13 courses · 165 hours</div>
         </div>
-        <span style="font-size:2.25rem;line-height:1;margin-left:1rem;flex-shrink:0">🎮</span>
       </div>
-      <div class="countdown" id="countdown"></div>
-    </div>
-
-    <div class="card">
-      <div class="tag tag-silver">🥈 Runner-up</div>
-      <div style="font-size:1.1rem;font-weight:700;margin-bottom:.2rem">Prize TBD</div>
-      <div style="font-size:.85rem;color:var(--muted)">Deadline: <strong>31 August 2026</strong></div>
-      <div style="margin-top:1rem;padding:.75rem;background:var(--surface2);border-radius:6px;font-size:.82rem;color:var(--muted);font-style:italic;line-height:1.5">
-        Don't settle for this.<br>Go get the Switch 2. 🎮
+      <div class="domain-stats">
+        <div class="dstat green">
+          <div class="dstat-val" id="stat-due">—</div>
+          <div class="dstat-lbl">due today</div>
+        </div>
+        <div class="dstat yellow">
+          <div class="dstat-val" id="stat-xp">—</div>
+          <div class="dstat-lbl">domain XP</div>
+        </div>
+        <div class="dstat">
+          <div class="dstat-val" id="stat-streak">—</div>
+          <div class="dstat-lbl">day streak</div>
+        </div>
       </div>
     </div>
 
-  </div>
-
-  <!-- ═══ STATS ════════════════════════════════════════════════ -->
-  <div class="stats-grid">
-    <div class="stat">
-      <div class="stat-val">4 <span class="stat-sub">/ 13</span></div>
-      <div class="stat-lbl">Courses Done</div>
-    </div>
-    <div class="stat">
-      <div class="stat-val">71<span class="stat-sub">h / 165h</span></div>
-      <div class="stat-lbl">Hours Done</div>
-    </div>
-    <div class="stat">
-      <div class="stat-val" style="color:var(--yellow);font-size:1rem">⚡ Aug 31</div>
-      <div class="stat-lbl">Prize Status</div>
-    </div>
-    <div class="stat">
-      <div class="stat-val" style="font-size:1rem">C5</div>
-      <div class="stat-lbl">Active Course</div>
+    <div class="prize-row">
+      <div>
+        <div class="prize-label">🎮 Nintendo Switch 2 + Pokopia</div>
+        <div class="prize-name">Deadline: 1 September 2026</div>
+      </div>
+      <div class="cd-mini" id="cd-mini"></div>
     </div>
   </div>
 
-  <!-- ═══ COURSE PROGRESS STRIP ════════════════════════════════ -->
-  <div class="section-head">
-    Course Progress
-    <span class="section-hint">Click a circle to open course notes</span>
+  <!-- ── Spaced repetition ── -->
+  <div class="sh">Spaced repetition</div>
+  <div class="study-card">
+    <div>
+      <div class="study-count"><span id="due-count">—</span> cards due</div>
+      <div class="study-sub" id="due-sub">Loading…</div>
+    </div>
+    <a href="../sr/queue.html?domain=ibm" class="btn-study" id="btn-study">Study now</a>
+  </div>
+
+  <!-- ── Games ── -->
+  <div class="sh">Study games</div>
+  <div class="games-grid">
+    <a class="game-card" href="games/c03-flashcards.html">
+      <span class="game-icon">🃏</span>
+      <div>
+        <div class="game-name">C3 Flashcards</div>
+        <div class="game-desc">Self-assess key concepts</div>
+        <span class="game-badge">Keras & TF</span>
+      </div>
+    </a>
+    <a class="game-card" href="games/c03-quiz.html">
+      <span class="game-icon">📝</span>
+      <div>
+        <div class="game-name">C3 Quiz</div>
+        <div class="game-desc">4-choice multiple choice</div>
+        <span class="game-badge">Keras & TF</span>
+      </div>
+    </a>
+    <a class="game-card" href="games/c03-odd-one-out.html">
+      <span class="game-icon">🔍</span>
+      <div>
+        <div class="game-name">C3 Odd One Out</div>
+        <div class="game-desc">Spot the concept that doesn't fit</div>
+        <span class="game-badge">Keras & TF</span>
+      </div>
+    </a>
+    <a class="game-card" href="games/c03-true-false.html">
+      <span class="game-icon">⚡</span>
+      <div>
+        <div class="game-name">C3 True/False Sprint</div>
+        <div class="game-desc">Speed through 20 statements</div>
+        <span class="game-badge">Keras & TF</span>
+      </div>
+    </a>
+    <a class="game-card" href="games/c04-flashcards.html">
+      <span class="game-icon">🃏</span>
+      <div>
+        <div class="game-name">C4 Flashcards</div>
+        <div class="game-desc">PyTorch fundamentals</div>
+        <span class="game-badge">PyTorch</span>
+      </div>
+    </a>
+    <a class="game-card" href="games/c04-quiz.html">
+      <span class="game-icon">📝</span>
+      <div>
+        <div class="game-name">C4 Quiz</div>
+        <div class="game-desc">Tensors, autograd, training loops</div>
+        <span class="game-badge">PyTorch</span>
+      </div>
+    </a>
+    <a class="game-card" href="games/c04-odd-one-out.html">
+      <span class="game-icon">🔍</span>
+      <div>
+        <div class="game-name">C4 Odd One Out</div>
+        <div class="game-desc">PyTorch concepts — spot the impostor</div>
+        <span class="game-badge">PyTorch</span>
+      </div>
+    </a>
+    <a class="game-card" href="games/c04-true-false.html">
+      <span class="game-icon">⚡</span>
+      <div>
+        <div class="game-name">C4 True/False Sprint</div>
+        <div class="game-desc">Sprint through PyTorch statements</div>
+        <span class="game-badge">PyTorch</span>
+      </div>
+    </a>
+  </div>
+
+  <!-- ── Course progress ── -->
+  <div class="sh">Course progress</div>
+  <div class="prog-block">
+    <div class="prog-row">
+      <div class="prog-header"><span>Courses complete</span><span class="ph-right">4 / 13 · 31%</span></div>
+      <div class="prog-track"><div class="prog-fill" style="width:31%"></div></div>
+    </div>
+    <div class="prog-row">
+      <div class="prog-header"><span>Hours logged</span><span class="ph-right">71h / 165h · 43%</span></div>
+      <div class="prog-track"><div class="prog-fill" style="width:43%"></div></div>
+    </div>
   </div>
 
   <div class="course-strip">
-    <a href="courses/c01.html" class="c-dot c-dot-done"    title="C1 — Machine Learning with Python (Complete)">1</a>
-    <a href="courses/c02.html" class="c-dot c-dot-done"    title="C2 — Intro Deep Learning & Keras (Complete)">2</a>
-    <a href="courses/c03.html" class="c-dot c-dot-done" title="C3 — Deep Learning with Keras & TF (Complete)">3</a>
-    <a href="courses/c04.html" class="c-dot c-dot-done" title="C4 — Intro Neural Networks & PyTorch (Complete)">4</a>
-    <a href="courses/c05.html" class="c-dot c-dot-active pulsing" title="C5 — Deep Learning with PyTorch (In Progress)">5<span class="c-dot-badge">5</span></a>
-    <a href="courses/c06.html" class="c-dot c-dot-pending" title="C6 — AI Capstone Project with Deep Learning">6</a>
-    <a href="courses/c07.html" class="c-dot c-dot-pending" title="C7 — GenAI & LLMs: Architecture & Data Prep">7</a>
-    <a href="courses/c08.html" class="c-dot c-dot-pending" title="C8 — Gen AI Foundational Models for NLP">8</a>
+    <a href="courses/c01.html" class="c-dot c-dot-done"    title="C1 — Machine Learning with Python">1</a>
+    <a href="courses/c02.html" class="c-dot c-dot-done"    title="C2 — Intro Deep Learning & Keras">2</a>
+    <a href="courses/c03.html" class="c-dot c-dot-done"    title="C3 — Keras & TensorFlow">3</a>
+    <a href="courses/c04.html" class="c-dot c-dot-done"    title="C4 — Intro Neural Networks & PyTorch">4</a>
+    <a href="courses/c05.html" class="c-dot c-dot-active pulsing" title="C5 — Deep Learning with PyTorch">5</a>
+    <a href="courses/c06.html" class="c-dot c-dot-pending" title="C6 — AI Capstone">6</a>
+    <a href="courses/c07.html" class="c-dot c-dot-pending" title="C7 — GenAI & LLMs: Architecture">7</a>
+    <a href="courses/c08.html" class="c-dot c-dot-pending" title="C8 — Gen AI Foundational Models">8</a>
     <a href="courses/c09.html" class="c-dot c-dot-pending" title="C9 — Language Modeling with Transformers">9</a>
     <a href="courses/c10.html" class="c-dot c-dot-pending" title="C10 — Gen AI Engineering & Fine-Tuning">10</a>
     <a href="courses/c11.html" class="c-dot c-dot-pending" title="C11 — Advanced Fine-Tuning for LLMs">11</a>
     <a href="courses/c12.html" class="c-dot c-dot-pending" title="C12 — AI Agents Using RAG & LangChain">12</a>
-    <a href="courses/c13.html" class="c-dot c-dot-pending" title="C13 — GenAI Applications with RAG & LangChain">13</a>
+    <a href="courses/c13.html" class="c-dot c-dot-pending" title="C13 — GenAI Applications with RAG">13</a>
   </div>
 
-  <!-- Progress bars -->
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.25rem;margin-bottom:1.5rem">
-    <div class="prog-row">
-      <div class="prog-header"><span>Courses</span><span>3 / 13 · 23%</span></div>
-      <div class="prog-track"><div class="prog-fill" style="width:23%"></div></div>
-    </div>
-    <div class="prog-row">
-      <div class="prog-header"><span>Hours</span><span>53h / 165h · 32%</span></div>
-      <div class="prog-track"><div class="prog-fill" style="width:32%"></div></div>
-    </div>
+  <div class="ins-note">
+    📌 Update manually as you finish courses: edit the <code>c-dot-done</code> / <code>c-dot-active</code> classes above, and the progress bar percentages.
   </div>
 
-  <!-- ═══ QUICK NAV ════════════════════════════════════════════ -->
-  <div class="section-head">Quick Access</div>
-  <div class="quick-grid">
-
-    <a class="quick-card" href="courses/c04.html">
-      <div class="quick-card-icon">📚</div>
-      <div class="quick-card-title">Course Notes</div>
-      <div class="quick-card-desc" id="qcd-courses">Curated highlights for all 13 courses. Theory-first, assessment-ready. Exam traps and key distinctions front and centre.</div>
-    </a>
-
-    <a class="quick-card" href="viz/index.html">
-      <div class="quick-card-icon">📊</div>
-      <div class="quick-card-title">Visualisations</div>
-      <div class="quick-card-desc" id="qcd-viz">Interactive charts: gradient descent, activation functions, backprop, bias–variance. Gen AI viz coming with courses 7–9.</div>
-    </a>
-
-    <a class="quick-card" href="games/index.html">
-      <div class="quick-card-icon">🎮</div>
-      <div class="quick-card-title">Study Games</div>
-      <div class="quick-card-desc" id="qcd-games">C3 &amp; C4 games live — quiz, flashcards, odd one out, true/false sprint. 70% theory, 30% code comprehension.</div>
-    </a>
-
-    <a class="quick-card" href="library/index.html">
-      <div class="quick-card-icon">📖</div>
-      <div class="quick-card-title">Code Library</div>
-      <div class="quick-card-desc" id="qcd-library">Every model from the certificate, annotated from first principles. C3 live: Functional API, CNN, VAE, GAN, DQN and more.</div>
-    </a>
-
+  <!-- ── Course notes ── -->
+  <div class="sh">Course notes</div>
+  <div class="resource-grid">
+    <a class="rc" href="courses/c01.html"><div class="rc-icon">📚</div><div class="rc-name">C1 — Machine Learning with Python</div><div class="rc-desc">Complete · foundations</div></a>
+    <a class="rc" href="courses/c02.html"><div class="rc-icon">📚</div><div class="rc-name">C2 — Deep Learning & Keras</div><div class="rc-desc">Complete · neural net intro</div></a>
+    <a class="rc" href="courses/c03.html"><div class="rc-icon">📚</div><div class="rc-name">C3 — Keras & TensorFlow</div><div class="rc-desc">Complete · advanced Keras</div></a>
+    <a class="rc" href="courses/c04.html"><div class="rc-icon">📚</div><div class="rc-name">C4 — PyTorch Intro</div><div class="rc-desc">Complete · tensors, autograd</div></a>
+    <a class="rc" href="courses/c05.html"><div class="rc-icon">📖</div><div class="rc-name">C5 — Deep Learning with PyTorch</div><div class="rc-desc">In progress · CNNs, RNNs</div></a>
+    <a class="rc dim" href="courses/c06.html"><div class="rc-icon">📄</div><div class="rc-name">C6–C13</div><div class="rc-desc">Notes added as courses complete</div></a>
   </div>
 
-  <!-- ═══ PACE INSIGHT ══════════════════════════════════════════ -->
-  <div class="insight ins-good" style="margin-bottom:1.5rem">
-    ✓ <strong>On track for the Switch 2.</strong>
-    10 courses remaining. Double up on C7 (6h) and C10 (8h) — that's all you need to finish by July 26, 5 days clear.
-    PyTorch block (C4–C6) is the grind. Get through it steady, then sprint the Gen AI courses.
+  <!-- ── Visualisations ── -->
+  <div class="sh">Visualisations</div>
+  <div class="resource-grid">
+    <a class="rc" href="viz/gradient-descent.html"><div class="rc-icon">📉</div><div class="rc-name">Gradient Descent</div><div class="rc-desc">Interactive loss landscape</div></a>
+    <a class="rc" href="viz/activation-functions.html"><div class="rc-icon">⚡</div><div class="rc-name">Activation Functions</div><div class="rc-desc">ReLU, sigmoid, tanh, GELU</div></a>
+    <a class="rc" href="viz/backprop.html"><div class="rc-icon">🔁</div><div class="rc-name">Backpropagation</div><div class="rc-desc">Step-by-step gradient flow</div></a>
+    <a class="rc" href="viz/bias-variance.html"><div class="rc-icon">⚖️</div><div class="rc-name">Bias–Variance Tradeoff</div><div class="rc-desc">Underfitting vs overfitting</div></a>
+    <a class="rc dim" href="viz/temperature-sampling.html"><div class="rc-icon">🌡️</div><div class="rc-name">Temperature & Sampling</div><div class="rc-desc">Coming with C7–C9</div></a>
+    <a class="rc dim" href="viz/attention.html"><div class="rc-icon">👁️</div><div class="rc-name">Attention Mechanism</div><div class="rc-desc">Coming with C7–C9</div></a>
   </div>
 
-  <div class="footer">
-    IBM AI Engineering Professional Certificate · Personal VLE ·
-    <a href="course-tracker.html" target="_blank">Full Tracker →</a>
-  </div>
+  <!-- ── Code library ── -->
+  <div class="sh">Code library</div>
+  <a class="rc" href="library/index.html" style="display:block;margin-bottom:2rem">
+    <div class="rc-icon">📖</div>
+    <div class="rc-name">Model Library — C3 live</div>
+    <div class="rc-desc">Every model from the certificate, annotated from first principles: Functional API, CNN, VAE, GAN, DQN and more. More added with each course.</div>
+  </a>
 
-</div><!-- /container -->
+</div>
 
-<script>startCountdown('countdown');</script>
-
+<script src="../domains.js"></script>
+<script src="../sr/engine.js"></script>
+<script src="../sync.js"></script>
 <script>
-(function () {
-  var pairs = [
-    ['VLE_lastCourse', 'qcd-courses'],
-    ['VLE_lastGame',   'qcd-games'],
-    ['VLE_lastViz',    'qcd-viz'],
-    ['VLE_lastLib',    'qcd-library'],
-  ];
-  pairs.forEach(function(pair) {
-    var val = localStorage.getItem(pair[0]);
-    if (!val) return;
-    var el = document.getElementById(pair[1]);
-    if (!el) return;
-    var lv = document.createElement('div');
-    lv.className = 'lv-line';
-    lv.textContent = '↩ Resume: ' + val;
-    el.parentElement.appendChild(lv);
-  });
-})();
+async function loadStats() {
+  const progress = engine.getProgress();
+  const streaks  = engine.getStreak();
+  const domXP    = (progress.domains && progress.domains.ibm && progress.domains.ibm.xp) || 0;
+  const streak   = (streaks.byDomain && streaks.byDomain.ibm) || 0;
+
+  document.getElementById('stat-xp').textContent     = domXP.toLocaleString();
+  document.getElementById('stat-streak').textContent = streak;
+  if (streak > 0) document.getElementById('stat-streak').style.color = 'var(--yellow)';
+
+  try {
+    const res   = await fetch('../data/decks/ibm.json');
+    if (!res.ok) throw new Error();
+    const cards = await res.json();
+    const { due, fresh } = engine.getDueCards(cards, 'ibm', 10);
+    const total = due.length + fresh.length;
+
+    document.getElementById('stat-due').textContent  = total;
+    document.getElementById('due-count').textContent = total;
+    document.getElementById('due-sub').textContent   =
+      total > 0
+        ? `${due.length} reviews · ${fresh.length} new · ~${Math.ceil(total * 0.5)} min`
+        : 'All caught up — well done 🎉';
+
+    if (total === 0) {
+      var btn = document.getElementById('btn-study');
+      btn.className   = 'btn-study all-clear';
+      btn.textContent = 'All clear ✓';
+    }
+  } catch(e) {
+    document.getElementById('stat-due').textContent  = '?';
+    document.getElementById('due-count').textContent = '?';
+    document.getElementById('due-sub').textContent   = 'Could not load deck';
+  }
+}
+
+function tickCd() {
+  var diff = Math.max(0, new Date('2026-09-01T23:59:59').getTime() - Date.now());
+  var d = Math.floor(diff / 86400000);
+  var h = Math.floor((diff % 86400000) / 3600000);
+  var m = Math.floor((diff % 3600000)  / 60000);
+  var s = Math.floor((diff % 60000)    / 1000);
+  var p = function(n) { return String(n).padStart(2,'0'); };
+  var u = function(v,l) {
+    return '<div class="cd-unit"><div class="cd-val">'+v+'</div><div class="cd-lbl">'+l+'</div></div>';
+  };
+  document.getElementById('cd-mini').innerHTML = u(d,'d')+u(p(h),'h')+u(p(m),'m')+u(p(s),'s');
+}
+
+if (sync.isConfigured()) { sync.pull().catch(function(){}).then(loadStats); } else { loadStats(); }
+tickCd();
+setInterval(tickCd, 1000);
 </script>
 </body>
 </html>

@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cloze · Swedish</title>
+<style>
+:root { --bg:#faf6f0; --surface:#ffffff; --surface2:#f2ece2; --border:#e8ddd0; --text:#2c1f12; --muted:#8a7a68; --blue:#b85430; --green:#3d6e30; --red:#b03428; }
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,sans-serif; min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:2.5rem 1rem; }
+h1 { font-size:1rem; font-weight:600; color:var(--muted); letter-spacing:.12em; text-transform:uppercase; margin-bottom:2rem; }
+
+/* passage selector */
+.selector { display:flex; gap:.5rem; flex-wrap:wrap; justify-content:center; margin-bottom:2rem; width:100%; max-width:620px; }
+.tab { background:var(--surface); border:1.5px solid var(--border); border-radius:.5rem; padding:.5rem 1rem; font-size:.85rem; cursor:pointer; transition:all .15s; }
+.tab:hover { border-color:var(--blue); }
+.tab.active { border-color:var(--blue); background:var(--surface2); color:var(--blue); font-weight:600; }
+.source-tag { font-size:.65rem; opacity:.6; margin-left:.4rem; }
+
+/* passage */
+.passage-wrap { width:100%; max-width:620px; }
+.passage-title { font-size:1.2rem; font-weight:700; margin-bottom:.3rem; }
+.passage-meta { font-size:.75rem; color:var(--muted); opacity:.6; text-transform:uppercase; letter-spacing:.08em; margin-bottom:1.5rem; }
+.passage-text { font-size:1.05rem; line-height:2.2; background:var(--surface); border:1px solid var(--border); border-radius:1rem; padding:1.5rem; margin-bottom:1.5rem; }
+.cloze-input {
+  display:inline-block; border:none; border-bottom:2px solid var(--blue);
+  background:transparent; color:var(--blue); font-size:1rem; font-family:inherit;
+  outline:none; min-width:5rem; text-align:center; padding:.1rem .3rem;
+  transition:border-color .2s;
+}
+.cloze-input:focus { border-color:var(--yellow); color:var(--yellow); }
+.cloze-input.correct { border-color:var(--green); color:var(--green); }
+.cloze-input.wrong   { border-color:var(--red);   color:var(--red); }
+
+.btn-row { display:flex; gap:.75rem; margin-bottom:1rem; }
+.btn { background:var(--blue); color:var(--bg); border:none; border-radius:.5rem; padding:.7rem 1.3rem; font-size:.95rem; font-weight:700; cursor:pointer; transition:opacity .15s; }
+.btn:hover { opacity:.85; }
+.btn-ghost { background:var(--surface2); color:var(--text); }
+.score-bar { font-size:.9rem; color:var(--muted); margin-bottom:.5rem; }
+.hint-list { margin-top:1rem; font-size:.82rem; color:var(--muted); line-height:1.8; }
+.hint-list span.wrong-reveal { color:var(--red); }
+.hint-list span.correct-reveal { color:var(--green); }
+.cloze-hint { font-size:.76rem; color:var(--muted); opacity:.6; font-style:italic; margin-left:.2rem; pointer-events:none; }
+.nav-home { display:block; width:100%; max-width:600px; font-size:.75rem; color:var(--muted); text-decoration:none; letter-spacing:.06em; margin-bottom:1.25rem; opacity:.7; transition:color .15s, opacity .15s; }
+.nav-home:hover { color:var(--blue); opacity:1; }
+</style>
+</head>
+<body>
+<nav style="background:var(--surface);border-bottom:1px solid var(--border);
+  padding:0 1.25rem;height:48px;display:flex;align-items:center;gap:1rem;
+  position:sticky;top:0;z-index:100;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <a href="../index.html" style="font-weight:700;font-size:.875rem;color:var(--text);text-decoration:none;">
+    🫎 Swedish
+  </a>
+  <span style="color:var(--border)">›</span>
+  <span style="font-size:.875rem;color:var(--muted)">Cloze</span>
+</nav>
+
+<a href="index.html" class="nav-home" id="navHome">← All tools</a>
+<h1>Cloze Exercises</h1>
+
+<div class="selector" id="tabs"></div>
+
+<div class="passage-wrap" id="passageWrap" style="display:none">
+  <div class="passage-title" id="pTitle"></div>
+  <div class="passage-meta" id="pMeta"></div>
+  <div class="passage-text" id="pText"></div>
+  <div class="btn-row">
+    <button class="btn" id="checkBtn">Check answers</button>
+    <button class="btn btn-ghost" id="resetBtn">Reset</button>
+  </div>
+  <div class="score-bar" id="scoreBar"></div>
+  <div class="hint-list" id="hintList"></div>
+</div>
+
+<script>
+/*
+ * ═══════════════════════════════════════════════════════════════════
+ *  CLOZE PASSAGE CONVENTIONS — read before adding new passages
+ * ═══════════════════════════════════════════════════════════════════
+ *
+ *  FORMAT
+ *    Each passage is an object: { title, source, text }
+ *    Blanks use {answer|hint} inline in the text string.
+ *      answer  — the exact Swedish word(s) the user must type
+ *      hint    — English translation shown next to the blank,
+ *                and again in "Missed blanks" after checking
+ *    Example: "Sverige har en vacker {natur|nature} med många {sjöar|lakes}."
+ *
+ *  BLANK DESIGN RULES
+ *    • One correct answer only — no ambiguity. The hint should make
+ *      it clear enough that only one Swedish word fits.
+ *    • Blank the word you want practised, not every word.
+ *      Aim for 6–10 blanks per passage (~100–180 word passages).
+ *    • Target B1 vocabulary — words a learner would genuinely need
+ *      to look up or actively recall, not basic A1 words.
+ *    • Answers are checked case-insensitively; trim whitespace.
+ *      Multi-word answers (e.g. "kopplar av") work fine.
+ *
+ *  SOURCE VALUES  — must match exactly for tab filtering to work
+ *    "crime story"      — fiction passages (detective novel style)
+ *    "natural history"  — nature, wildlife, seasons, fishing
+ *    "general"          — everyday life, travel, food, routine
+ *    "grammar"          — passages that demonstrate a grammar rule;
+ *                         the blanks reinforce the rule itself
+ *
+ *  ADDING A NEW PASSAGE
+ *    1. Write natural Swedish prose at roughly B1 level.
+ *    2. Choose 6–10 words to blank; wrap each as {sv|en}.
+ *    3. Make sure every blank has a single unambiguous answer.
+ *    4. Add the object inside PASSAGES in the right source group.
+ *    5. No regeneration needed — cloze uses inline data only.
+ * ═══════════════════════════════════════════════════════════════════
+ */
+const PASSAGES = [
+  // ── CRIME STORY ──────────────────────────────────────────────────────────
+  {
+    title: "Detektiven",
+    source: "crime story",
+    text: "Detektiv Anders tog genast på sig att lösa {fallet|the case}. Han undersökte {brottsplatsen|the crime scene} noggrant och letade efter {ledtrådar|clues}. Grannarna i {området|the area} berättade att de hade sett tjuven lämna platsen sent på {kvällen|the evening}. Anders genomförde en {husrannsakan|house search} och hittade smycket gömt i en gömma. Den kände juveltjuven {greps|was arrested} och fördes till {polisstationen|the police station}."
+  },
+  {
+    title: "Förhöret",
+    source: "crime story",
+    text: "Anders ledde in {misstänkten|the suspect} i förhörsrummet och lade fram {bevisen|the evidence} på bordet. Mannen verkade {nervös|nervous} och undvek {ögonkontakt|eye contact}. \"Var var du på torsdagskvällen?\" frågade detektiven med {lugn|calm} röst. Mannen {stammade|stammered} och {påstod|claimed} att han hade sovit hemma. Men Anders visste att det var en {lögn|lie} — övervakningskameran hade fångat honom i {närheten|the vicinity} av brottsplatsen."
+  },
+  {
+    title: "Flykten",
+    source: "crime story",
+    text: "Tjuven sprang genom de smala {gränderna|the alleyways} med smycket i handen. Han hörde {polissirenerna|the police sirens} och hjärtat slog hårt i bröstet. Vid {hörnet|the corner} tvekade han — höger eller vänster? Han valde en smal passage och {gömde|hid} sig bakom en container. {Poliserna|The police officers} sprang förbi utan att {märka|notice} honom. Han tog ett djupt {andetag|breath} och väntade."
+  },
+  {
+    title: "Vittnet",
+    source: "crime story",
+    text: "Fru Lindgren hade sett allt från sitt {fönster|window}. Hon {beskrev|described} tjuven som lång och mörkhårig med en svart {ryggsäck|backpack}. Anders bad henne skriva ner sin {berättelse|account} och skriva under den. Hennes {vittnesmål|testimony} var avgörande för {utredningen|the investigation}. \"Jag är helt {säker|certain},\" sa hon. \"Jag kände igen honom från {grannskapet|the neighbourhood}.\""
+  },
+  // ── NATURAL HISTORY ───────────────────────────────────────────────────────
+  {
+    title: "Naturen",
+    source: "natural history",
+    text: "Sverige har en vacker {natur|nature} med många {sjöar|lakes}, skogar och {fjäll|mountains}. Landet är hem för djur som {älg|moose}, räv och {björn|bear}. I de svenska sjöarna simmar många fiskar, bland annat {öring|trout} och {abborre|perch}. Under {hösten|autumn} samlar djuren mat inför den långa {vintern|winter}. En av landets mest kända symboler är {vitsippan|the wood anemone}, som blommar på {våren|spring}."
+  },
+  {
+    title: "Skogen",
+    source: "natural history",
+    text: "Sverige täcks till stor del av {skog|forest}. Här lever {älgar|moose}, {rådjur|deer} och rävar. På {marken|the ground} växer {blåbär|blueberries}, lingon och mossor. Under {våren|spring} sjunger fåglarna och bygger {bon|nests} i trädens {grenar|branches}. På hösten plockar många {svamp|mushrooms} och bär i skogen. Skogen är viktig för {klimatet|the climate} och ger hem åt tusentals {arter|species}."
+  },
+  {
+    title: "Fisket",
+    source: "natural history",
+    text: "Sverige har tusentals {sjöar|lakes} och en lång {kust|coastline}. De vanligaste {fiskarterna|fish species} i sjöarna är {abborre|perch}, gädda och {lax|salmon}. {Sportfiskare|Sport fishermen} sitter vid stranden tidiga morgnar med sina {metspön|fishing rods} och väntar tålmodigt. Längs {västkusten|the west coast} fångas {sill|herring} och räkor i stora mängder. Att fiska är en gammal {tradition|tradition} och en populär {fritidssysselsättning|leisure activity} i Sverige."
+  },
+  {
+    title: "Årstiderna",
+    source: "natural history",
+    text: "Sverige har fyra tydliga {årstider|seasons}. Under {våren|spring} smälter snön och de första {blommorna|flowers} dyker upp. {Sommaren|Summer} är kort men varm, med långa {ljusa|bright} nätter. När {hösten|autumn} kommer skiftar {löven|the leaves} färg till rött och gult, och djuren samlar {förråd|stores} inför vintern. {Vintern|Winter} kan vara hård med mycket snö och {kyla|cold}, men den har också en speciell {stillhet|stillness}."
+  },
+  {
+    title: "Kusten",
+    source: "natural history",
+    text: "Sveriges {kust|coastline} sträcker sig tusentals kilometer. Längs {klipporna|the rocks} på västkusten häckar {sjöfåglar|seabirds} som måsar och {tärnor|terns}. I {havet|the sea} lever {sälar|seals} och {tumlare|porpoises}. De lugna {skärgårdsöarna|archipelago islands} i öster lockar {sommarturister|summer tourists}. {Havsbottnen|The seabed} är hem för {krabbor|crabs}, snäckor och {sjöstjärnor|starfish}."
+  },
+  // ── GENERAL ───────────────────────────────────────────────────────────────
+  {
+    title: "Stockholm",
+    source: "general",
+    text: "Stockholm är {huvudstaden|the capital} i Sverige och ligger vid {Mälaren|Lake Mälaren}. Varje morgon {pendlar|commute} hundratusentals människor med {tunnelbanan|the metro} till arbetet. Staden har {ungefär|approximately} en miljon {invånare|inhabitants}. Om {sommaren|summer} är det ljust nästan hela dygnet, men om {vintern|winter} är det mörkt och kallt."
+  },
+  {
+    title: "En vanlig dag",
+    source: "general",
+    text: "Maja {vaknar|wakes up} klockan sju varje morgon. Hon dricker kaffe och läser {tidningen|the newspaper} innan hon {åker|travels} till jobbet. På {lunchen|lunch} träffar hon sina {kollegor|colleagues} i matsalen och de pratar om allt möjligt. Efter arbetet {handlar|shops} hon mat och lagar en enkel {middag|dinner}. På kvällen sätter hon sig ner med en bok och {kopplar av|switches off}."
+  },
+  {
+    title: "Matlagning",
+    source: "general",
+    text: "Anna lagar mat hemma nästan varje kväll. Hon köper {råvaror|ingredients} på {marknaden|the market} — färska {grönsaker|vegetables} och kött. Hennes favorit är att göra {köttbullar|meatballs} med {gräddsås|cream sauce}. Medan {soppan|the soup} kokar på {spisen|the stove} läser hon ett {recept|recipe}. En vällagad {måltid|meal} gör hela {familjen|the family} glad, och matrester {sparar|saves} hon till lunchen dagen efter."
+  },
+  {
+    title: "På tåget",
+    source: "general",
+    text: "Erik {pendlar|commutes} med tåg till Stockholm varje dag. Han stiger på vid den lilla {stationen|the station} klockan sju och {anländer|arrives} en timme senare. Under resan {läser|reads} han {tidningen|the newspaper} eller lyssnar på {musik|music}. Landskapet utanför {fönstret|the window} är vackert — sjöar, skogar och {åkrar|fields}. Centralstationen är alltid full med {pendlare|commuters} under {rusningstid|rush hour}."
+  },
+  // ── GRAMMAR ───────────────────────────────────────────────────────────────
+  {
+    title: "Grammatik: ordföljd",
+    source: "grammar",
+    text: "I svenska {måste|must} det finita verbet alltid stå på {andra|second} plats i en huvudmening. Detta kallas {V2-regeln|the V2 rule}. Om en {bisats|subordinate clause} börjar med en konjunktion som att, när eller om, kommer negationen {inte|not} före verbet. Till exempel: Jag vet att han {inte|not} talar svenska. Men i en {huvudmening|main clause}: Han talar {inte|not} svenska."
+  },
+  {
+    title: "Grammatik: adjektiv",
+    source: "grammar",
+    text: "Svenska adjektiv {böjs|are inflected} efter {genus|gender} och bestämdhet. Med ett en-ord används {grundformen|the base form}: en stor bil, en ny bok. Med ett ett-ord läggs -{t|t} till: ett {stort|big} hus, ett {nytt|new} jobb. I bestämd form och {plural|plural} används alltid -{a|a}: den {stora|big} bilen, {nya|new} bilar. Adjektivet {bra|good} ändras aldrig — det är {oföränderligt|invariable}."
+  },
+];
+
+let currentPassage = null;
+
+function buildTabs(){
+  const urlSrc = new URLSearchParams(location.search).get('source') || 'all';
+  document.getElementById('tabs').innerHTML = PASSAGES.map((p,i)=>{
+    const visible = urlSrc==='all'
+      || (urlSrc==='my-words' && p.source!=='grammar')
+      || p.source===urlSrc;
+    if(!visible) return '';
+    return `<div class="tab" data-i="${i}" onclick="loadPassage(${i})">${p.title}<span class="source-tag">${p.source}</span></div>`;
+  }).join('');
+}
+
+function loadPassage(i){
+  currentPassage = i;
+  // Update tabs
+  document.querySelectorAll('.tab').forEach(t=>t.className='tab'+(parseInt(t.dataset.i)===i?' active':''));
+  const p = PASSAGES[i];
+  document.getElementById('pTitle').textContent = p.title;
+  document.getElementById('pMeta').textContent = 'Source: '+p.source;
+  document.getElementById('scoreBar').textContent = '';
+  document.getElementById('hintList').innerHTML = '';
+  renderText(p.text);
+  document.getElementById('passageWrap').style.display = 'block';
+}
+
+function renderText(raw){
+  const el = document.getElementById('pText');
+  // Parse {answer|hint} tokens
+  let html = '';
+  let idx = 0;
+  const re = /\{([^|]+)\|([^}]+)\}/g;
+  let m, last = 0;
+  while((m = re.exec(raw)) !== null){
+    html += escHtml(raw.slice(last, m.index));
+    html += `<input class="cloze-input" type="text" data-answer="${escAttr(m[1])}" data-hint="${escAttr(m[2])}" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" size="${Math.max(m[1].length+1,4)}"><span class="cloze-hint">(${escHtml(m[2])})</span>`;
+    last = m.index + m[0].length;
+    idx++;
+  }
+  html += escHtml(raw.slice(last));
+  el.innerHTML = html;
+}
+
+function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escAttr(s){ return s.replace(/"/g,'&quot;'); }
+
+function checkAll(){
+  const inputs = document.querySelectorAll('.cloze-input');
+  let correct = 0;
+  const hints = [];
+  inputs.forEach((inp,i) => {
+    const answer = inp.dataset.answer;
+    const hint = inp.dataset.hint;
+    const userVal = inp.value.trim().toLowerCase();
+    const ok = userVal === answer.toLowerCase();
+    inp.className = 'cloze-input ' + (ok ? 'correct' : 'wrong');
+    if(ok) correct++;
+    else hints.push({blank: i+1, answer, hint, userVal});
+  });
+  document.getElementById('scoreBar').textContent = `${correct} / ${inputs.length} correct`;
+  if(hints.length){
+    document.getElementById('hintList').innerHTML = '<strong>Missed blanks:</strong><br>' +
+      hints.map(h=>`Blank ${h.blank}: <span class="wrong-reveal">${h.userVal||'(empty)'}</span> → <span class="correct-reveal">${h.answer}</span> (${h.hint})`).join('<br>');
+  } else {
+    document.getElementById('hintList').innerHTML = '<span style="color:var(--green)">All correct!</span>';
+  }
+}
+
+function resetPassage(){
+  document.querySelectorAll('.cloze-input').forEach(inp=>{ inp.value=''; inp.className='cloze-input'; });
+  document.getElementById('scoreBar').textContent='';
+  document.getElementById('hintList').innerHTML='';
+  document.querySelector('.cloze-input')?.focus();
+}
+
+document.getElementById('checkBtn').addEventListener('click', checkAll);
+document.getElementById('resetBtn').addEventListener('click', resetPassage);
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.target.matches('button, a, .tab')) {
+    if (document.querySelectorAll('.cloze-input').length > 0) checkAll();
+  }
+});
+
+buildTabs();
+const firstTab = document.querySelector('#tabs .tab');
+if (firstTab) loadPassage(parseInt(firstTab.dataset.i));
+(function(){var s=new URLSearchParams(location.search).get('source');if(s)document.getElementById('navHome').href='index.html?source='+encodeURIComponent(s);})();
+</script>
+
+<script src="../../domains.js"></script>
+<script src="../../sr/engine.js"></script>
+<script src="../../sync.js"></script>
+<script>
+function swAddXP(amount) {
+  if (amount <= 0) return;
+  if (typeof engine !== 'undefined') engine.addXP(amount, 'swedish');
+  if (typeof sync   !== 'undefined' && sync.isConfigured()) sync.push().catch(function(){});
+  // Toast
+  var el = document.getElementById('xp-toast-sw');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'xp-toast-sw';
+    el.style.cssText = 'position:fixed;bottom:1.5rem;right:1rem;background:#b85430;color:#fff;'
+      + 'padding:.45rem .9rem;border-radius:8px;font-size:.85rem;font-weight:700;'
+      + 'opacity:0;transition:opacity .25s;pointer-events:none;z-index:9999;';
+    document.body.appendChild(el);
+  }
+  el.textContent = '+' + amount + ' XP';
+  el.style.opacity = '1';
+  setTimeout(function() { el.style.opacity = '0'; }, 2200);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quiz · Swedish</title>
+<script src="../flashcards.js"></script>
+<style>
+:root {
+  --bg:#faf6f0; --surface:#ffffff; --surface2:#f2ece2;
+  --border:#e8ddd0; --text:#2c1f12; --muted:#8a7a68;
+  --blue:#b85430; --green:#3d6e30; --red:#b03428; --yellow:#a06820;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: system-ui, -apple-system, sans-serif;
+  min-height: 100vh; display: flex; flex-direction: column;
+  align-items: center; padding: 2rem 1rem;
+}
+h1 { font-size: 1rem; font-weight: 600; color: var(--muted);
+  letter-spacing: .12em; text-transform: uppercase; margin-bottom: 1.5rem; }
+
+/* ── Setup screen ───────────────────────────────────────────────────────── */
+.setup {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 1rem; padding: 1.5rem; width: 100%; max-width: 500px;
+}
+.setup h2 { font-size: .8rem; text-transform: uppercase; letter-spacing: .1em;
+  color: var(--muted); margin-bottom: 1rem; }
+.filter-grid { display: grid; gap: .5rem; margin-bottom: 1.5rem; }
+.source-row {
+  display: flex; align-items: center; gap: .75rem;
+  background: var(--surface2); border-radius: .5rem;
+  padding: .6rem .9rem; cursor: pointer; user-select: none;
+}
+.source-row input[type=checkbox] { accent-color: var(--blue); width: 1rem; height: 1rem; cursor: pointer; }
+.source-name { flex: 1; font-size: .95rem; }
+.source-count { color: var(--muted); font-size: .8rem; }
+.setup-row { display: flex; gap: 1rem; margin-bottom: 1.5rem; align-items: flex-start; }
+.setup-group { flex: 1; }
+.setup-group label { display: block; font-size: .75rem; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--muted); margin-bottom: .5rem; }
+.setup-group select, .setup-group input[type=number] {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: .4rem; padding: .6rem .8rem; color: var(--text); font-size: .95rem; outline: none;
+}
+.btn { background: var(--blue); color: var(--bg); border: none; border-radius: .5rem;
+  padding: .75rem 1.4rem; font-size: 1rem; font-weight: 700; cursor: pointer; transition: opacity .15s; }
+.btn:hover { opacity: .85; }
+.btn:disabled { opacity: .35; cursor: default; }
+.btn-ghost { background: var(--surface2); color: var(--text); }
+.btn-full { width: 100%; }
+
+/* ── Quiz screen ────────────────────────────────────────────────────────── */
+.quiz { display: none; width: 100%; max-width: 500px; }
+.topbar { display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 1.5rem; font-size: .85rem; color: var(--muted); }
+.progress-bar { height: .25rem; background: var(--surface2); border-radius: 9999px;
+  margin-bottom: 1.5rem; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--blue); border-radius: 9999px; transition: width .3s; }
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 1rem; padding: 2.5rem 2rem 2rem; text-align: center; margin-bottom: 1.2rem;
+}
+.direction-hint { font-size: .72rem; color: var(--muted); opacity: .55;
+  text-transform: uppercase; letter-spacing: .08em; margin-bottom: .6rem; }
+.prompt { font-size: 2.2rem; font-weight: 700; margin-bottom: .3rem; }
+.badge { font-size: .72rem; color: var(--muted); opacity: .5; text-transform: uppercase; letter-spacing: .07em; }
+.row { display: flex; gap: .5rem; margin-bottom: .75rem; }
+input[type=text] {
+  flex: 1; background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: .5rem; padding: .75rem 1rem; color: var(--text);
+  font-size: 1rem; outline: none; transition: border-color .15s;
+}
+input[type=text]:focus { border-color: var(--blue); }
+input[type=text]:disabled { opacity: .5; }
+.result {
+  padding: .9rem 1.1rem; border-radius: .6rem; margin-bottom: .75rem;
+  display: none; font-size: .95rem; line-height: 1.5;
+}
+.result.correct { background: #2d3f2d; border: 1px solid var(--green); }
+.result.wrong   { background: #3f2d2d; border: 1px solid var(--red); }
+.result-label { font-weight: 700; margin-bottom: .3rem; }
+.result.correct .result-label { color: var(--green); }
+.result.wrong   .result-label { color: var(--red); }
+.result-answer { color: var(--muted); font-size: .88rem; }
+.action-row { display: flex; gap: .5rem; }
+
+/* ── End screen ─────────────────────────────────────────────────────────── */
+.end { display: none; text-align: center; max-width: 500px; }
+.score-big { font-size: 5rem; font-weight: 700; color: var(--blue); line-height: 1; }
+.score-sub { color: var(--muted); font-size: 1rem; margin-bottom: 2rem; }
+.nav-home { display:block; width:100%; max-width:600px; font-size:.75rem; color:var(--muted); text-decoration:none; letter-spacing:.06em; margin-bottom:1.25rem; opacity:.7; transition:color .15s, opacity .15s; }
+.nav-home:hover { color:var(--blue); opacity:1; }
+.setup-err { background:#3f2d2d; border:1px solid var(--red); border-radius:.5rem; padding:.65rem 1rem; font-size:.85rem; color:var(--red); margin-top:.75rem; display:none; }
+</style>
+</head>
+<body>
+<nav style="background:var(--surface);border-bottom:1px solid var(--border);
+  padding:0 1.25rem;height:48px;display:flex;align-items:center;gap:1rem;
+  position:sticky;top:0;z-index:100;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <a href="../index.html" style="font-weight:700;font-size:.875rem;color:var(--text);text-decoration:none;">
+    🫎 Swedish
+  </a>
+  <span style="color:var(--border)">›</span>
+  <span style="font-size:.875rem;color:var(--muted)">Quiz</span>
+</nav>
+
+<a href="index.html" class="nav-home" id="navHome">← All tools</a>
+<h1>Vocabulary Quiz</h1>
+
+<!-- Setup -->
+<div class="setup" id="setup">
+  <h2>Sources</h2>
+  <div class="filter-grid" id="sourceGrid"></div>
+
+  <div class="setup-row">
+    <div class="setup-group">
+      <label>Direction</label>
+      <select id="dirSelect">
+        <option value="sv-en">Swedish → English</option>
+        <option value="en-sv">English → Swedish</option>
+        <option value="mixed">Mixed</option>
+      </select>
+    </div>
+    <div class="setup-group">
+      <label>Cards per session</label>
+      <input type="number" id="countInput" value="20" min="5" max="200">
+    </div>
+  </div>
+
+  <button class="btn btn-full" id="startBtn">Start Quiz →</button>
+  <div class="setup-err" id="setupErr"></div>
+</div>
+
+<!-- Quiz -->
+<div class="quiz" id="quiz">
+  <div class="topbar">
+    <span id="counter">1 / 20</span>
+    <span id="scoreBar">Score: 0</span>
+    <button class="btn btn-ghost" style="padding:.3rem .8rem;font-size:.8rem" onclick="endQuiz()">End</button>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="fill" style="width:0%"></div></div>
+
+  <div class="card">
+    <div class="direction-hint" id="dirHint"></div>
+    <div class="prompt" id="prompt"></div>
+    <div class="badge" id="badge"></div>
+  </div>
+
+  <div class="row">
+    <input type="text" id="inp" placeholder="Type your answer…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+    <button class="btn" id="checkBtn">Check</button>
+  </div>
+  <div class="result" id="result">
+    <div class="result-label" id="rlabel"></div>
+    <div class="result-answer" id="ranswer"></div>
+  </div>
+  <div class="action-row">
+    <button class="btn btn-ghost" id="nextBtn" style="display:none;flex:1">Next →</button>
+  </div>
+</div>
+
+<!-- End -->
+<div class="end" id="end">
+  <div class="score-big" id="sBig"></div>
+  <div class="score-sub" id="sSub"></div>
+  <button class="btn" onclick="showSetup()" style="margin-right:.5rem">New quiz</button>
+  <button class="btn btn-ghost" onclick="restartQuiz()">Retry same cards</button>
+</div>
+
+<script>
+let pool = [], queue = [], cur = 0, score = 0, checked = false, direction = 'sv-en', lastQueue = [];
+
+/* ── Helpers ─────────────────────────────────────────────────────────────── */
+function core(s) {
+  return s.replace(/\*[^*]+\*/g, '')
+          .split(' — ')[0].split(';')[0].split('(')[0].split('[')[0]
+          .replace(/^\d+\.\s*/, '').trim();
+}
+function norm(s) {
+  return s.toLowerCase().replace(/^(the|a|an)\s+/, '')
+          .replace(/[^a-zåäö\s\-]/g, '').replace(/\s+/g, ' ').trim();
+}
+function checkAns(input, answer) {
+  const u = norm(input), c = norm(core(answer));
+  if (!u) return false;
+  if (u === c) return true;
+  for (const p of c.split(/[,\/]/)) if (norm(p.trim()) === u) return true;
+  if (u.length >= 4 && c.includes(u)) return true;
+  return false;
+}
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function sources() {
+  const counts = {};
+  FLASHCARDS.forEach(c => { counts[c.source] = (counts[c.source] || 0) + 1; });
+  return counts;
+}
+
+/* ── Setup screen ─────────────────────────────────────────────────────────── */
+function buildSetup() {
+  const grid = document.getElementById('sourceGrid');
+  const counts = sources();
+  const order = ['anki', ...Object.keys(counts).filter(s => s !== 'anki').sort()];
+  grid.innerHTML = order.map(src => `
+    <label class="source-row">
+      <input type="checkbox" value="${src}" ${src !== 'anki' ? 'checked' : ''}>
+      <span class="source-name">${src}</span>
+      <span class="source-count">${counts[src]} cards</span>
+    </label>`).join('');
+  // Pre-select from URL param if present
+  const urlSrc = new URLSearchParams(location.search).get('source');
+  if (urlSrc) {
+    grid.querySelectorAll('input[type=checkbox]').forEach(cb => {
+      if (urlSrc === 'my-words') cb.checked = cb.value !== 'anki';
+      else cb.checked = cb.value === urlSrc;
+    });
+  }
+  document.getElementById('startBtn').addEventListener('click', startQuiz);
+}
+
+function showSetup() {
+  document.getElementById('setup').style.display = '';
+  document.getElementById('quiz').style.display = 'none';
+  document.getElementById('end').style.display = 'none';
+}
+
+/* ── Quiz ─────────────────────────────────────────────────────────────────── */
+function showErr(msg){const e=document.getElementById('setupErr');e.textContent=msg;e.style.display='block';}
+
+function startQuiz() {
+  const checked_sources = [...document.querySelectorAll('#sourceGrid input:checked')].map(el => el.value);
+  if (!checked_sources.length) { showErr('Select at least one source.'); return; }
+  const n = Math.max(1, parseInt(document.getElementById('countInput').value) || 20);
+  direction = document.getElementById('dirSelect').value;
+  pool = FLASHCARDS.filter(c => checked_sources.includes(c.source) && c.english.trim());
+  if (!pool.length) { showErr('No cards for those sources — try selecting more.'); return; }
+  document.getElementById('setupErr').style.display = 'none';
+  queue = shuffle(pool).slice(0, n);
+  lastQueue = queue;
+  launchQuiz();
+}
+function restartQuiz() {
+  queue = shuffle(lastQueue);
+  launchQuiz();
+}
+function launchQuiz() {
+  cur = 0; score = 0;
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('quiz').style.display = 'block';
+  document.getElementById('end').style.display = 'none';
+  showCard();
+}
+function cardDir(card) {
+  if (direction === 'sv-en') return 'sv-en';
+  if (direction === 'en-sv') return 'en-sv';
+  return Math.random() < .5 ? 'sv-en' : 'en-sv';
+}
+let curDir = 'sv-en';
+function showCard() {
+  const c = queue[cur];
+  curDir = cardDir(c);
+  document.getElementById('dirHint').textContent = curDir === 'sv-en' ? 'Swedish → English' : 'English → Swedish';
+  document.getElementById('prompt').textContent = curDir === 'sv-en' ? c.swedish : core(c.english);
+  document.getElementById('badge').textContent = c.source !== 'anki' ? c.source : '';
+  document.getElementById('counter').textContent = `${cur + 1} / ${queue.length}`;
+  document.getElementById('scoreBar').textContent = `Score: ${score}`;
+  document.getElementById('fill').style.width = `${(cur / queue.length) * 100}%`;
+  const inp = document.getElementById('inp');
+  inp.value = ''; inp.disabled = false; inp.focus();
+  inp.placeholder = curDir === 'sv-en' ? 'English translation…' : 'Swedish word/phrase…';
+  document.getElementById('result').style.display = 'none';
+  document.getElementById('nextBtn').style.display = 'none';
+  document.getElementById('checkBtn').style.display = '';
+  checked = false;
+}
+function doCheck() {
+  if (checked) return;
+  const c = queue[cur];
+  const inp = document.getElementById('inp');
+  const answer = curDir === 'sv-en' ? c.english : c.swedish;
+  const ok = curDir === 'sv-en'
+    ? checkAns(inp.value.trim(), c.english)
+    : norm(inp.value.trim()) === norm(core(c.swedish));
+  if (ok) score++;
+  checked = true;
+  inp.disabled = true;
+  document.getElementById('checkBtn').style.display = 'none';
+  const res = document.getElementById('result');
+  res.className = 'result ' + (ok ? 'correct' : 'wrong');
+  res.style.display = 'block';
+  document.getElementById('rlabel').textContent = ok ? '✓ Correct' : '✗ Not quite';
+  document.getElementById('ranswer').textContent = answer;
+  document.getElementById('nextBtn').style.display = 'block';
+  document.getElementById('scoreBar').textContent = `Score: ${score}`;
+}
+function doNext() {
+  cur++;
+  if (cur >= queue.length) endQuiz(); else showCard();
+}
+function endQuiz() {
+  document.getElementById('quiz').style.display = 'none';
+  document.getElementById('end').style.display = 'block';
+  document.getElementById('sBig').textContent = score;
+  const pct = queue.length ? Math.round((score / Math.min(cur || 1, queue.length)) * 100) : 0;
+  document.getElementById('sSub').textContent = `out of ${Math.min(cur, queue.length)} answered · ${pct}%`;
+}
+
+document.getElementById('checkBtn').addEventListener('click', doCheck);
+document.getElementById('nextBtn').addEventListener('click', doNext);
+document.getElementById('inp').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !checked) { doCheck(); e.stopPropagation(); }
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && checked) doNext();
+});
+
+buildSetup();
+(function(){var s=new URLSearchParams(location.search).get('source');if(s)document.getElementById('navHome').href='index.html?source='+encodeURIComponent(s);})();
+</script>
+
+<script src="../../domains.js"></script>
+<script src="../../sr/engine.js"></script>
+<script src="../../sync.js"></script>
+<script>
+function swAddXP(amount) {
+  if (amount <= 0) return;
+  if (typeof engine !== 'undefined') engine.addXP(amount, 'swedish');
+  if (typeof sync   !== 'undefined' && sync.isConfigured()) sync.push().catch(function(){});
+  // Toast
+  var el = document.getElementById('xp-toast-sw');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'xp-toast-sw';
+    el.style.cssText = 'position:fixed;bottom:1.5rem;right:1rem;background:#b85430;color:#fff;'
+      + 'padding:.45rem .9rem;border-radius:8px;font-size:.85rem;font-weight:700;'
+      + 'opacity:0;transition:opacity .25s;pointer-events:none;z-index:9999;';
+    document.body.appendChild(el);
+  }
+  el.textContent = '+' + amount + ' XP';
+  el.style.opacity = '1';
+  setTimeout(function() { el.style.opacity = '0'; }, 2200);
+}
+</script>
+</body>
+</html>

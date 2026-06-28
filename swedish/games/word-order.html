@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Word Order · Swedish</title>
+<style>
+:root { --bg:#faf6f0; --surface:#ffffff; --surface2:#f2ece2; --border:#e8ddd0; --text:#2c1f12; --muted:#8a7a68; --blue:#b85430; --green:#3d6e30; --red:#b03428; --yellow:#a06820; }
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,sans-serif; min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:2.5rem 1rem; }
+h1 { font-size:1rem; font-weight:600; color:var(--muted); letter-spacing:.12em; text-transform:uppercase; margin-bottom:.5rem; }
+.subtitle { font-size:.8rem; color:var(--muted); opacity:.6; margin-bottom:1.5rem; }
+.rule-box { background:var(--surface2); border:1px solid var(--border); border-radius:.5rem; padding:.8rem 1rem; font-size:.82rem; color:var(--muted); line-height:1.7; width:100%; max-width:580px; margin-bottom:1.5rem; }
+.rule-box strong { color:var(--text); }
+.topbar { display:flex; justify-content:space-between; align-items:center; width:100%; max-width:580px; margin-bottom:1.2rem; font-size:.85rem; color:var(--muted); }
+.card { background:var(--surface); border:1px solid var(--border); border-radius:1rem; padding:1.8rem 1.5rem; width:100%; max-width:580px; margin-bottom:1.2rem; }
+.ctx-label { font-size:.72rem; text-transform:uppercase; letter-spacing:.1em; color:var(--blue); margin-bottom:.6rem; }
+.translation { font-size:1.25rem; font-weight:600; color:var(--text); }
+
+.zone-label { font-size:.72rem; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); opacity:.55; margin-bottom:.4rem; width:100%; max-width:580px; }
+.assembly {
+  min-height:3.2rem; background:var(--surface2); border:1.5px dashed var(--border);
+  border-radius:.5rem; padding:.5rem .6rem; display:flex; flex-wrap:wrap; gap:.4rem;
+  align-items:center; margin-bottom:1.2rem; width:100%; max-width:580px;
+}
+.pool {
+  min-height:3.2rem; display:flex; flex-wrap:wrap; gap:.4rem;
+  margin-bottom:1.5rem; width:100%; max-width:580px;
+}
+.chip {
+  background:var(--surface); border:1.5px solid var(--border); border-radius:.35rem;
+  padding:.4rem .75rem; font-size:1rem; font-weight:600; cursor:pointer;
+  user-select:none; transition:all .1s;
+}
+.chip:hover { border-color:var(--blue); background:var(--surface2); }
+.chip.in-asm { background:var(--surface2); border-color:var(--blue); color:var(--blue); }
+.chip.ok  { background:#2d3f2d; border-color:var(--green); color:var(--green); cursor:default; }
+.chip.bad { background:#3f2d2d; border-color:var(--red);   color:var(--red);   cursor:default; }
+
+.result { width:100%; max-width:580px; padding:.9rem 1.1rem; border-radius:.6rem; margin-bottom:.75rem; display:none; }
+.result.correct { background:#2d3f2d; border:1px solid var(--green); }
+.result.wrong   { background:#3f2d2d; border:1px solid var(--red); }
+.rlbl { font-weight:700; margin-bottom:.35rem; }
+.result.correct .rlbl { color:var(--green); }
+.result.wrong   .rlbl { color:var(--red); }
+.rans { color:var(--muted); font-size:.88rem; margin-bottom:.35rem; }
+.rtip { color:var(--muted); font-size:.82rem; line-height:1.55; }
+
+.btn-row { display:flex; gap:.5rem; width:100%; max-width:580px; margin-bottom:.75rem; }
+.btn { background:var(--blue); color:var(--bg); border:none; border-radius:.5rem; padding:.75rem 1.4rem; font-size:1rem; font-weight:700; cursor:pointer; transition:opacity .15s; }
+.btn:hover { opacity:.85; }
+.btn-ghost { background:var(--surface2); color:var(--text); }
+.placeholder { color:var(--muted); opacity:.35; font-size:.88rem; font-style:italic; align-self:center; }
+.nav-home { display:block; width:100%; max-width:600px; font-size:.75rem; color:var(--muted); text-decoration:none; letter-spacing:.06em; margin-bottom:1.25rem; opacity:.7; transition:color .15s, opacity .15s; }
+.nav-home:hover { color:var(--blue); opacity:1; }
+.end { display:none; text-align:center; max-width:580px; margin-top:1rem; }
+.score-big { font-size:5rem; font-weight:700; color:var(--blue); line-height:1; }
+.score-sub { color:var(--muted); margin-bottom:2rem; }
+</style>
+</head>
+<body>
+<nav style="background:var(--surface);border-bottom:1px solid var(--border);
+  padding:0 1.25rem;height:48px;display:flex;align-items:center;gap:1rem;
+  position:sticky;top:0;z-index:100;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <a href="../index.html" style="font-weight:700;font-size:.875rem;color:var(--text);text-decoration:none;">
+    🫎 Swedish
+  </a>
+  <span style="color:var(--border)">›</span>
+  <span style="font-size:.875rem;color:var(--muted)">Word Order</span>
+</nav>
+
+<a href="index.html" class="nav-home">← All tools</a>
+<h1>Word Order</h1>
+<div class="subtitle">Tap words to assemble the sentence in the correct order</div>
+
+<div class="rule-box">
+  <strong>V2 rule:</strong> the finite verb always sits in position&nbsp;2 in a main clause — if anything other than the subject comes first, subject and verb swap (inversion). &nbsp;·&nbsp;
+  <strong>Subordinate clauses:</strong> negation (inte) comes <em>before</em> the verb, not after it.
+</div>
+
+<div id="game">
+<div class="topbar">
+  <span id="counter">1 / ?</span>
+  <span id="scoreBar">0 correct</span>
+</div>
+
+<div class="card">
+  <div class="ctx-label" id="ctx"></div>
+  <div class="translation" id="translation"></div>
+</div>
+
+<div class="zone-label">Your sentence</div>
+<div class="assembly" id="assembly"></div>
+
+<div class="zone-label">Word bank</div>
+<div class="pool" id="pool"></div>
+
+<div class="result" id="result">
+  <div class="rlbl" id="rlbl"></div>
+  <div class="rans" id="rans"></div>
+  <div class="rtip" id="rtip"></div>
+</div>
+
+<div class="btn-row">
+  <button class="btn" id="checkBtn">Check</button>
+  <button class="btn btn-ghost" id="clearBtn">Clear</button>
+</div>
+<button class="btn btn-ghost" id="nextBtn" style="display:none;width:100%;max-width:580px">Next →</button>
+</div>
+
+<div class="end" id="end">
+  <div class="score-big" id="sBig"></div>
+  <div class="score-sub" id="sSub"></div>
+  <button class="btn" onclick="startRound()">Play again</button>
+</div>
+
+<script>
+// correct: words in correct order
+// ctx: grammar concept being practised
+// note: explanation shown after checking
+const SENTENCES = [
+  {
+    correct: ["Jag","läser","en","bok"],
+    translation: "I am reading a book",
+    ctx: "Basic SVO",
+    note: "Subject → verb → object. No inversion needed — subject is already in slot 1."
+  },
+  {
+    correct: ["Igår","köpte","jag","en","ny","bil"],
+    translation: "Yesterday I bought a new car",
+    ctx: "Time adverb first → inversion",
+    note: "Igår (time) occupies slot 1 → V2 rule: verb (köpte) moves to slot 2, subject (jag) follows."
+  },
+  {
+    correct: ["Nu","ska","vi","äta","middag"],
+    translation: "Now we will eat dinner",
+    ctx: "Time adverb first + modal",
+    note: "Nu fronted → modal (ska) in slot 2, subject (vi) after, infinitive (äta) last."
+  },
+  {
+    correct: ["Imorgon","flyger","hon","till","Stockholm"],
+    translation: "Tomorrow she flies to Stockholm",
+    ctx: "Time adverb first → inversion",
+    note: "Imorgon fronted → verb (flyger) in slot 2, subject (hon) follows."
+  },
+  {
+    correct: ["I","Stockholm","bor","många","människor"],
+    translation: "In Stockholm live many people",
+    ctx: "Place phrase first → inversion",
+    note: "Place phrase (I Stockholm) in slot 1 → verb (bor) slot 2, subject (många människor) after."
+  },
+  {
+    correct: ["Ofta","går","jag","till","jobbet"],
+    translation: "I often walk to work",
+    ctx: "Frequency adverb first → inversion",
+    note: "Ofta (frequency) in slot 1 → verb (går) slot 2, subject (jag) after."
+  },
+  {
+    correct: ["Han","talar","inte","svenska"],
+    translation: "He doesn't speak Swedish",
+    ctx: "Negation in main clause",
+    note: "Main clause: negation (inte) comes after the finite verb — verb stays in slot 2."
+  },
+  {
+    correct: ["Jag","har","inte","läst","boken"],
+    translation: "I haven't read the book",
+    ctx: "Negation — perfect tense",
+    note: "Perfect: negation (inte) comes after the auxiliary (har), before the supine (läst)."
+  },
+  {
+    correct: ["Jag","vet","att","han","inte","talar","svenska"],
+    translation: "I know that he doesn't speak Swedish",
+    ctx: "Subordinate clause (att) — negation before verb",
+    note: "In an att-clause: negation (inte) moves before the verb — the opposite of main clauses."
+  },
+  {
+    correct: ["Hon","sa","att","hon","inte","ville","komma"],
+    translation: "She said that she didn't want to come",
+    ctx: "Subordinate clause — negation before modal",
+    note: "Subordinate (att-) clause: inte before the modal (ville). Compare main clause: 'hon ville inte komma'."
+  },
+  {
+    correct: ["Vi","har","ätit","middag"],
+    translation: "We have eaten dinner",
+    ctx: "Perfect tense",
+    note: "Perfect: auxiliary (har) in slot 2 + supine (ätit). Har never changes form."
+  },
+  {
+    correct: ["Du","måste","träna","mer"],
+    translation: "You must exercise more",
+    ctx: "Modal verb",
+    note: "Modal (måste) in position 2, infinitive (träna) after — no 'att' before the infinitive with modals."
+  },
+  {
+    correct: ["Den","boken","har","jag","inte","läst"],
+    translation: "That book, I haven't read (it)",
+    ctx: "Fronted object (topicalisation)",
+    note: "Object (den boken) fronted → V2: auxiliary (har) slot 2, subject (jag) after — then negation after aux."
+  },
+  {
+    correct: ["Var","bor","du"],
+    translation: "Where do you live?",
+    ctx: "Wh-question → inversion",
+    note: "Question word (Var) in slot 1 → V2: verb (bor) slot 2, subject (du) after."
+  },
+  {
+    correct: ["Vad","gör","du","på","fredagarna"],
+    translation: "What do you do on Fridays?",
+    ctx: "Wh-question → inversion",
+    note: "Vad (what) fronted → verb (gör) slot 2, subject (du) after."
+  },
+  {
+    correct: ["I","år","har","vi","rest","mycket"],
+    translation: "This year we have travelled a lot",
+    ctx: "Time phrase + perfect → inversion",
+    note: "I år (time phrase) fronted → auxiliary (har) slot 2, subject (vi) after."
+  },
+  {
+    correct: ["Om","du","är","trött","borde","du","sova"],
+    translation: "If you're tired, you should sleep",
+    ctx: "Conditional clause first → inversion in main clause",
+    note: "Om-clause counts as one unit in slot 1 → V2 in main clause: verb (borde) slot 2, subject (du) after."
+  },
+  {
+    correct: ["När","jag","är","glad","sjunger","jag"],
+    translation: "When I am happy, I sing",
+    ctx: "When-clause first → inversion in main clause",
+    note: "När-clause in slot 1 → V2 in main clause: verb (sjunger) slot 2, subject (jag) after."
+  },
+  {
+    correct: ["Han","kanske","kommer","imorgon"],
+    translation: "He might come tomorrow",
+    ctx: "Kanske (maybe) — no inversion",
+    note: "Kanske does not trigger inversion when it begins the sentence (unlike most adverbs). Subject stays first."
+  },
+  {
+    correct: ["Aldrig","har","jag","sett","något","sådant"],
+    translation: "Never have I seen such a thing",
+    ctx: "Negative adverb first → inversion (emphatic)",
+    note: "Negative adverb (aldrig) fronted → strong V2 inversion, often for emphasis."
+  },
+];
+
+function shuffle(a){ const b=[...a]; for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];} return b; }
+
+let queue=[], cur=0, score=0, assembled=[], poolTokens=[], checked=false;
+
+function showCard(){
+  const s=queue[cur];
+  document.getElementById('ctx').textContent=s.ctx;
+  document.getElementById('translation').textContent='\u201c'+s.translation+'\u201d';
+  document.getElementById('counter').textContent=`${cur+1} / ${queue.length}`;
+  assembled=[];
+  // Assign stable indices to each token (handles duplicate words)
+  poolTokens=shuffle(s.correct.map((w,i)=>({w,i})));
+  document.getElementById('result').style.display='none';
+  document.getElementById('nextBtn').style.display='none';
+  document.getElementById('checkBtn').style.display='';
+  document.getElementById('clearBtn').style.display='';
+  checked=false;
+  render();
+}
+
+function render(){
+  // Pool
+  const poolEl=document.getElementById('pool');
+  poolEl.innerHTML=poolTokens.map(t=>
+    `<div class="chip" onclick="addWord(${t.i})">${t.w}</div>`
+  ).join('');
+  // Assembly
+  const asmEl=document.getElementById('assembly');
+  if(assembled.length===0){
+    asmEl.innerHTML='<span class="placeholder">Click words below to build the sentence\u2026</span>';
+  } else {
+    asmEl.innerHTML=assembled.map((t,pos)=>
+      `<div class="chip in-asm" onclick="removeWord(${pos})">${t.w}</div>`
+    ).join('');
+  }
+}
+
+function addWord(idx){
+  if(checked)return;
+  const i=poolTokens.findIndex(t=>t.i===idx);
+  if(i===-1)return;
+  assembled.push(poolTokens[i]);
+  poolTokens.splice(i,1);
+  render();
+}
+
+function removeWord(pos){
+  if(checked)return;
+  const t=assembled[pos];
+  assembled.splice(pos,1);
+  poolTokens.push(t);
+  poolTokens.sort((a,b)=>a.i-b.i);
+  render();
+}
+
+function clearAll(){
+  if(checked)return;
+  poolTokens=[...poolTokens,...assembled].sort((a,b)=>a.i-b.i);
+  assembled=[];
+  render();
+}
+
+function doCheck(){
+  if(checked||assembled.length===0)return;
+  const s=queue[cur];
+  // Must use all words
+  if(assembled.length!==s.correct.length){ return; }
+  const ok=assembled.map(t=>t.w).join(' ')===s.correct.join(' ');
+  if(ok)score++;
+  checked=true;
+  // Colour assembled chips
+  const asmEl=document.getElementById('assembly');
+  asmEl.innerHTML=assembled.map((t,pos)=>{
+    const cls=t.w===s.correct[pos]?'chip ok':'chip bad';
+    return `<div class="${cls}">${t.w}</div>`;
+  }).join('');
+  document.getElementById('checkBtn').style.display='none';
+  document.getElementById('clearBtn').style.display='none';
+  const res=document.getElementById('result');
+  res.className='result '+(ok?'correct':'wrong');
+  res.style.display='block';
+  document.getElementById('rlbl').textContent=ok?'\u2713 Correct':'\u2717 Incorrect';
+  document.getElementById('rans').textContent='Correct: '+s.correct.join(' ');
+  document.getElementById('rtip').textContent=s.note;
+  document.getElementById('nextBtn').style.display='block';
+  document.getElementById('scoreBar').textContent=`${score} correct`;
+}
+
+function doNext(){
+  cur++;
+  if(cur>=queue.length){ showEnd(); return; }
+  showCard();
+}
+
+function showEnd(){
+  document.getElementById('game').style.display='none';
+  document.getElementById('end').style.display='block';
+  document.getElementById('sBig').textContent=score;
+  document.getElementById('sSub').textContent=`out of ${queue.length}`;
+}
+
+function startRound(){
+  queue=shuffle(SENTENCES); cur=0; score=0;
+  document.getElementById('end').style.display='none';
+  document.getElementById('game').style.display='block';
+  document.getElementById('scoreBar').textContent='0 correct';
+  showCard();
+}
+
+document.getElementById('checkBtn').addEventListener('click',doCheck);
+document.getElementById('clearBtn').addEventListener('click',clearAll);
+document.getElementById('nextBtn').addEventListener('click',doNext);
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&!checked) doCheck();
+  else if(e.key==='Enter'&&checked) doNext();
+});
+
+startRound();
+</script>
+
+<script src="../../domains.js"></script>
+<script src="../../sr/engine.js"></script>
+<script src="../../sync.js"></script>
+<script>
+function swAddXP(amount) {
+  if (amount <= 0) return;
+  if (typeof engine !== 'undefined') engine.addXP(amount, 'swedish');
+  if (typeof sync   !== 'undefined' && sync.isConfigured()) sync.push().catch(function(){});
+  // Toast
+  var el = document.getElementById('xp-toast-sw');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'xp-toast-sw';
+    el.style.cssText = 'position:fixed;bottom:1.5rem;right:1rem;background:#b85430;color:#fff;'
+      + 'padding:.45rem .9rem;border-radius:8px;font-size:.85rem;font-weight:700;'
+      + 'opacity:0;transition:opacity .25s;pointer-events:none;z-index:9999;';
+    document.body.appendChild(el);
+  }
+  el.textContent = '+' + amount + ' XP';
+  el.style.opacity = '1';
+  setTimeout(function() { el.style.opacity = '0'; }, 2200);
+}
+</script>
+</body>
+</html>

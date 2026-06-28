@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Matching · Swedish</title>
+<script src="../flashcards.js"></script>
+<style>
+:root {
+  --bg:#faf6f0; --surface:#ffffff; --surface2:#f2ece2;
+  --border:#e8ddd0; --text:#2c1f12; --muted:#8a7a68;
+  --blue:#b85430; --green:#3d6e30; --red:#b03428;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: system-ui, -apple-system, sans-serif;
+  min-height: 100vh; display: flex; flex-direction: column;
+  align-items: center; padding: 2rem 1rem;
+}
+h1 { font-size: 1rem; font-weight: 600; color: var(--muted);
+  letter-spacing: .12em; text-transform: uppercase; margin-bottom: 1.5rem; }
+
+/* ── Setup ──────────────────────────────────────────────────────────────── */
+.setup {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 1rem; padding: 1.5rem; width: 100%; max-width: 560px;
+}
+.setup h2 { font-size: .8rem; text-transform: uppercase; letter-spacing: .1em;
+  color: var(--muted); margin-bottom: 1rem; }
+.filter-grid { display: grid; gap: .5rem; margin-bottom: 1.2rem; }
+.source-row {
+  display: flex; align-items: center; gap: .75rem;
+  background: var(--surface2); border-radius: .5rem; padding: .6rem .9rem;
+  cursor: pointer; user-select: none;
+}
+.source-row input[type=checkbox] { accent-color: var(--blue); width: 1rem; height: 1rem; }
+.source-name { flex: 1; }
+.source-count { color: var(--muted); font-size: .8rem; }
+.setup-row { display: flex; gap: 1rem; margin-bottom: 1.4rem; }
+.setup-group { flex: 1; }
+.setup-group label { display: block; font-size: .75rem; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--muted); margin-bottom: .5rem; }
+.setup-group select {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: .4rem; padding: .6rem .8rem; color: var(--text); font-size: .95rem; outline: none;
+}
+.btn { background: var(--blue); color: var(--bg); border: none; border-radius: .5rem;
+  padding: .75rem 1.4rem; font-size: 1rem; font-weight: 700; cursor: pointer; transition: opacity .15s; }
+.btn:hover { opacity: .85; }
+.btn-ghost { background: var(--surface2); color: var(--text); }
+.btn-full { width: 100%; }
+
+/* ── Game ───────────────────────────────────────────────────────────────── */
+.game { display: none; width: 100%; max-width: 700px; }
+.topbar { display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 1.2rem; font-size: .85rem; color: var(--muted); }
+.timer { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--blue); }
+.grid-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+.column-label { font-size: .7rem; text-transform: uppercase; letter-spacing: .1em;
+  color: var(--muted); margin-bottom: .5rem; opacity: .6; }
+.col { display: flex; flex-direction: column; gap: .5rem; }
+.tile {
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: .6rem; padding: .75rem 1rem; cursor: pointer;
+  font-size: .95rem; line-height: 1.3; text-align: center;
+  transition: border-color .15s, background .15s, opacity .2s;
+  user-select: none;
+}
+.tile:hover:not(.matched):not(.wrong-flash) { border-color: var(--blue); }
+.tile.selected { border-color: var(--blue); background: #2a3a4a; }
+.tile.matched { border-color: var(--green); background: #2d3f2d; color: var(--green); cursor: default; opacity: .7; }
+.tile.wrong-flash { border-color: var(--red); background: #3f2d2d; }
+
+/* ── End ─────────────────────────────────────────────────────────────────── */
+.end { display: none; text-align: center; max-width: 560px; }
+.score-big { font-size: 4.5rem; font-weight: 700; color: var(--blue); line-height: 1; margin-bottom: .3rem; }
+.score-sub { color: var(--muted); margin-bottom: 2rem; }
+.nav-home { display:block; width:100%; max-width:600px; font-size:.75rem; color:var(--muted); text-decoration:none; letter-spacing:.06em; margin-bottom:1.25rem; opacity:.7; transition:color .15s, opacity .15s; }
+.nav-home:hover { color:var(--blue); opacity:1; }
+.setup-err { background:#3f2d2d; border:1px solid var(--red); border-radius:.5rem; padding:.65rem 1rem; font-size:.85rem; color:var(--red); margin-top:.75rem; display:none; }
+</style>
+</head>
+<body>
+<nav style="background:var(--surface);border-bottom:1px solid var(--border);
+  padding:0 1.25rem;height:48px;display:flex;align-items:center;gap:1rem;
+  position:sticky;top:0;z-index:100;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <a href="../index.html" style="font-weight:700;font-size:.875rem;color:var(--text);text-decoration:none;">
+    🫎 Swedish
+  </a>
+  <span style="color:var(--border)">›</span>
+  <span style="font-size:.875rem;color:var(--muted)">Matching</span>
+</nav>
+
+<a href="index.html" class="nav-home" id="navHome">← All tools</a>
+<h1>Matching</h1>
+
+<!-- Setup -->
+<div class="setup" id="setup">
+  <h2>Sources</h2>
+  <div class="filter-grid" id="srcGrid"></div>
+  <div class="setup-row">
+    <div class="setup-group">
+      <label>Pairs per round</label>
+      <select id="pairsSelect">
+        <option value="6">6 pairs</option>
+        <option value="8" selected>8 pairs</option>
+        <option value="10">10 pairs</option>
+        <option value="12">12 pairs</option>
+      </select>
+    </div>
+  </div>
+  <button class="btn btn-full" id="startBtn">Start →</button>
+  <div class="setup-err" id="setupErr"></div>
+</div>
+
+<!-- Game -->
+<div class="game" id="game">
+  <div class="topbar">
+    <span id="matchCount">0 / 0 matched</span>
+    <span class="timer" id="timer">0:00</span>
+    <button class="btn btn-ghost" style="padding:.3rem .8rem;font-size:.8rem" onclick="showSetup()">← Setup</button>
+  </div>
+  <div class="grid-wrap">
+    <div>
+      <div class="column-label">Swedish</div>
+      <div class="col" id="colSv"></div>
+    </div>
+    <div>
+      <div class="column-label">English</div>
+      <div class="col" id="colEn"></div>
+    </div>
+  </div>
+</div>
+
+<!-- End -->
+<div class="end" id="end">
+  <div class="score-big" id="eBig"></div>
+  <div class="score-sub" id="eSub"></div>
+  <button class="btn" onclick="playAgain()" style="margin-right:.5rem">Play again</button>
+  <button class="btn btn-ghost" onclick="showSetup()">Change settings</button>
+</div>
+
+<script>
+let pairs = [], matched = 0, selSv = null, selEn = null, timerInterval = null, elapsed = 0, totalPairs = 0;
+
+/* ── Helpers ─────────────────────────────────────────────────────────────── */
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function core(s) {
+  return s.replace(/\*[^*]+\*/g, '')
+          .split(' — ')[0].split(';')[0].split('(')[0].split('[')[0]
+          .replace(/^\d+\.\s*/, '').trim();
+}
+function sources() {
+  const c = {};
+  FLASHCARDS.forEach(f => { c[f.source] = (c[f.source] || 0) + 1; });
+  return c;
+}
+
+/* ── Setup ──────────────────────────────────────────────────────────────── */
+function buildSetup() {
+  const counts = sources();
+  const order = ['anki', ...Object.keys(counts).filter(s => s !== 'anki').sort()];
+  document.getElementById('srcGrid').innerHTML = order.map(src => `
+    <label class="source-row">
+      <input type="checkbox" value="${src}" ${src !== 'anki' ? 'checked' : ''}>
+      <span class="source-name">${src}</span>
+      <span class="source-count">${counts[src]}</span>
+    </label>`).join('');
+  // Pre-select from URL param if present
+  const urlSrc = new URLSearchParams(location.search).get('source');
+  if (urlSrc) {
+    document.querySelectorAll('#srcGrid input[type=checkbox]').forEach(cb => {
+      if (urlSrc === 'my-words') cb.checked = cb.value !== 'anki';
+      else cb.checked = cb.value === urlSrc;
+    });
+  }
+  document.getElementById('startBtn').onclick = startGame;
+}
+function showSetup() {
+  clearInterval(timerInterval);
+  document.getElementById('setup').style.display = '';
+  document.getElementById('game').style.display = 'none';
+  document.getElementById('end').style.display = 'none';
+}
+
+/* ── Game ───────────────────────────────────────────────────────────────── */
+function showErr(msg){const e=document.getElementById('setupErr');e.textContent=msg;e.style.display='block';}
+
+function startGame() {
+  const selected = [...document.querySelectorAll('#srcGrid input:checked')].map(el => el.value);
+  if (!selected.length) { showErr('Select at least one source.'); return; }
+  const n = parseInt(document.getElementById('pairsSelect').value);
+  const pool = FLASHCARDS.filter(c => selected.includes(c.source) && c.english.trim());
+  if (pool.length < n) { showErr(`Not enough cards for ${n} pairs (have ${pool.length}). Reduce pairs or add more sources.`); return; }
+  document.getElementById('setupErr').style.display = 'none';
+  pairs = shuffle(pool).slice(0, n);
+  totalPairs = n;
+  launchGame();
+}
+function playAgain() {
+  launchGame();
+}
+function launchGame() {
+  matched = 0; selSv = null; selEn = null; elapsed = 0;
+  clearInterval(timerInterval);
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('game').style.display = 'block';
+  document.getElementById('end').style.display = 'none';
+  document.getElementById('matchCount').textContent = `0 / ${totalPairs} matched`;
+  document.getElementById('timer').textContent = '0:00';
+  renderGrid();
+  timerInterval = setInterval(() => {
+    elapsed++;
+    const m = Math.floor(elapsed / 60), s = elapsed % 60;
+    document.getElementById('timer').textContent = `${m}:${s.toString().padStart(2, '0')}`;
+  }, 1000);
+}
+function renderGrid() {
+  const svItems = shuffle(pairs.map((p, i) => ({id: i, text: p.swedish, side: 'sv'})));
+  const enItems = shuffle(pairs.map((p, i) => ({id: i, text: core(p.english), side: 'en'})));
+
+  const colSv = document.getElementById('colSv');
+  const colEn = document.getElementById('colEn');
+  colSv.innerHTML = '';
+  colEn.innerHTML = '';
+
+  svItems.forEach(item => colSv.appendChild(makeTile(item)));
+  enItems.forEach(item => colEn.appendChild(makeTile(item)));
+}
+function makeTile(item) {
+  const div = document.createElement('div');
+  div.className = 'tile';
+  div.dataset.id = item.id;
+  div.dataset.side = item.side;
+  div.textContent = item.text;
+  div.addEventListener('click', () => onTileClick(div));
+  return div;
+}
+function onTileClick(tile) {
+  if (tile.classList.contains('matched') || tile.classList.contains('wrong-flash')) return;
+  const side = tile.dataset.side;
+  const id = parseInt(tile.dataset.id);
+
+  if (side === 'sv') {
+    if (selSv) selSv.classList.remove('selected');
+    if (selSv === tile) { selSv = null; return; }
+    selSv = tile;
+    tile.classList.add('selected');
+  } else {
+    if (selEn) selEn.classList.remove('selected');
+    if (selEn === tile) { selEn = null; return; }
+    selEn = tile;
+    tile.classList.add('selected');
+  }
+
+  if (selSv && selEn) {
+    const svId = parseInt(selSv.dataset.id);
+    const enId = parseInt(selEn.dataset.id);
+    if (svId === enId) {
+      // Match!
+      selSv.classList.remove('selected'); selSv.classList.add('matched');
+      selEn.classList.remove('selected'); selEn.classList.add('matched');
+      selSv = null; selEn = null;
+      matched++;
+      document.getElementById('matchCount').textContent = `${matched} / ${totalPairs} matched`;
+      if (matched === totalPairs) setTimeout(showEnd, 400);
+    } else {
+      // No match
+      const sv = selSv, en = selEn;
+      sv.classList.remove('selected'); sv.classList.add('wrong-flash');
+      en.classList.remove('selected'); en.classList.add('wrong-flash');
+      selSv = null; selEn = null;
+      setTimeout(() => { sv.classList.remove('wrong-flash'); en.classList.remove('wrong-flash'); }, 600);
+    }
+  }
+}
+function showEnd() {
+  clearInterval(timerInterval);
+  document.getElementById('game').style.display = 'none';
+  document.getElementById('end').style.display = 'block';
+  const m = Math.floor(elapsed / 60), s = elapsed % 60;
+  document.getElementById('eBig').textContent = `${m}:${s.toString().padStart(2, '0')}`;
+  document.getElementById('eSub').textContent = `${totalPairs} pairs matched`;
+}
+
+buildSetup();
+(function(){var s=new URLSearchParams(location.search).get('source');if(s)document.getElementById('navHome').href='index.html?source='+encodeURIComponent(s);})();
+</script>
+
+<script src="../../domains.js"></script>
+<script src="../../sr/engine.js"></script>
+<script src="../../sync.js"></script>
+<script>
+function swAddXP(amount) {
+  if (amount <= 0) return;
+  if (typeof engine !== 'undefined') engine.addXP(amount, 'swedish');
+  if (typeof sync   !== 'undefined' && sync.isConfigured()) sync.push().catch(function(){});
+  // Toast
+  var el = document.getElementById('xp-toast-sw');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'xp-toast-sw';
+    el.style.cssText = 'position:fixed;bottom:1.5rem;right:1rem;background:#b85430;color:#fff;'
+      + 'padding:.45rem .9rem;border-radius:8px;font-size:.85rem;font-weight:700;'
+      + 'opacity:0;transition:opacity .25s;pointer-events:none;z-index:9999;';
+    document.body.appendChild(el);
+  }
+  el.textContent = '+' + amount + ' XP';
+  el.style.opacity = '1';
+  setTimeout(function() { el.style.opacity = '0'; }, 2200);
+}
+</script>
+</body>
+</html>
