@@ -213,12 +213,14 @@
       <a href="../index.html" class="btn-end">← Home</a>
       <button class="btn-end primary" onclick="location.reload()">Study more</button>
     </div>
+    <p id="sync-note" style="margin-top:1rem;font-size:.75rem;color:var(--muted)"></p>
   </div>
 
 </div>
 
 <script src="../domains.js"></script>
 <script src="engine.js"></script>
+<script src="../sync.js"></script>
 <script>
 // ── State ────────────────────────────────────────────────────
 let queue       = [];   // cards to study this session
@@ -230,6 +232,11 @@ let activeDomains   = [];
 
 // ── Boot ─────────────────────────────────────────────────────
 async function boot() {
+  // Pull latest progress from Gist before loading cards
+  if (sync.isConfigured()) {
+    await sync.pull().catch(() => {}); // silent fail — offline is fine
+  }
+
   const active = DOMAINS.filter(d => d.status === 'active');
   if (!active.length) { showEmpty(); return; }
 
@@ -381,7 +388,11 @@ function speak(text, lang) {
 }
 
 // ── End screen ───────────────────────────────────────────────
-function showEnd() {
+async function showEnd() {
+  // Push progress to Gist at end of session
+  if (sync.isConfigured()) {
+    sync.push().catch(() => {}); // fire-and-forget, silent fail
+  }
   document.getElementById('prog-fill').style.width = '100%';
   const total = sessionStats.got + sessionStats.near + sessionStats.miss;
   const pct   = total ? Math.round((sessionStats.got / total) * 100) : 0;
@@ -396,6 +407,16 @@ function showEnd() {
   document.getElementById('end-near').textContent = sessionStats.near;
   document.getElementById('end-miss').textContent = sessionStats.miss;
   document.getElementById('end-xp').textContent   = sessionStats.xp;
+
+  const syncNote = document.getElementById('sync-note');
+  if (sync.isConfigured()) {
+    syncNote.textContent = '☁ Syncing progress…';
+    sync.push()
+      .then(r => { syncNote.textContent = r.ok ? '☁ Progress synced.' : '⚠ Sync failed — progress saved locally.'; })
+      .catch(() => { syncNote.textContent = '⚠ Offline — progress saved locally.'; });
+  } else {
+    syncNote.innerHTML = '<a href="../sync-setup.html" style="color:var(--blue)">Set up sync</a> to keep progress across devices.';
+  }
 
   show('screen-end');
 }

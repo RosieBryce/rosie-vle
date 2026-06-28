@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sync Setup · Rosie's VLE</title>
+  <style>
+    :root {
+      --bg:#0d1117; --surface:#161b22; --surface2:#21262d;
+      --border:#30363d; --text:#e6edf3; --muted:#8b949e;
+      --green:#3fb950; --green-bg:rgba(63,185,80,.12);
+      --blue:#58a6ff; --red:#f85149; --red-bg:rgba(248,81,73,.12);
+      --yellow:#d29922; --yellow-bg:rgba(210,153,34,.12);
+    }
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    body { background:var(--bg); color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+      min-height:100vh; display:flex; flex-direction:column; }
+    nav { background:var(--surface); border-bottom:1px solid var(--border);
+      padding:0 1.25rem; height:48px; display:flex; align-items:center; gap:1rem; }
+    nav a { color:var(--text); text-decoration:none; font-size:.875rem; }
+    nav .brand { font-weight:700; }
+    nav .sep { color:var(--border); }
+    .shell { flex:1; display:flex; justify-content:center; padding:2.5rem 1rem 4rem; }
+    .wrap { width:100%; max-width:520px; }
+    h1 { font-size:1.25rem; font-weight:700; letter-spacing:-.02em; margin-bottom:.35rem; }
+    .subtitle { color:var(--muted); font-size:.875rem; margin-bottom:2rem; line-height:1.6; }
+
+    /* Status banner */
+    .status-banner { display:flex; align-items:center; gap:.65rem; padding:.85rem 1rem;
+      border-radius:9px; border:1px solid; margin-bottom:1.75rem; font-size:.875rem; }
+    .status-banner.ok  { background:var(--green-bg); border-color:rgba(63,185,80,.3); color:var(--green); }
+    .status-banner.off { background:var(--surface); border-color:var(--border); color:var(--muted); }
+    .status-dot { width:8px; height:8px; border-radius:50%; background:currentColor; flex-shrink:0; }
+
+    /* Form */
+    label { display:block; font-size:.8rem; font-weight:600; color:var(--muted);
+      text-transform:uppercase; letter-spacing:.06em; margin-bottom:.4rem; }
+    input { width:100%; background:var(--surface); border:1px solid var(--border);
+      border-radius:8px; padding:.65rem .9rem; color:var(--text); font-size:.9rem;
+      font-family:inherit; outline:none; transition:border-color .15s; margin-bottom:1.1rem; }
+    input:focus { border-color:var(--blue); }
+    input::placeholder { color:var(--muted); }
+
+    .field-hint { font-size:.78rem; color:var(--muted); margin-top:-.7rem;
+      margin-bottom:1.1rem; line-height:1.5; }
+    .field-hint a { color:var(--blue); }
+
+    .btn { width:100%; padding:.7rem 1rem; border-radius:8px; font-size:.9rem;
+      font-weight:600; cursor:pointer; border:none; transition:opacity .15s; }
+    .btn:hover { opacity:.85; }
+    .btn-primary { background:var(--green); color:#fff; }
+    .btn-danger  { background:var(--red-bg); color:var(--red);
+      border:1px solid rgba(248,81,73,.35); }
+    .btn:disabled { opacity:.45; cursor:not-allowed; }
+
+    /* Feedback */
+    .feedback { padding:.75rem 1rem; border-radius:8px; border:1px solid;
+      font-size:.875rem; margin-top:1rem; display:none; }
+    .feedback.ok  { background:var(--green-bg); border-color:rgba(63,185,80,.3); color:var(--green); }
+    .feedback.err { background:var(--red-bg);   border-color:rgba(248,81,73,.35); color:var(--red); }
+
+    /* Manual sync */
+    .section-title { font-size:.78rem; font-weight:700; text-transform:uppercase;
+      letter-spacing:.08em; color:var(--muted); margin:2rem 0 .75rem; }
+    .sync-row { display:flex; gap:.75rem; }
+    .btn-half { flex:1; padding:.6rem; border-radius:8px; font-size:.85rem;
+      font-weight:600; cursor:pointer; border:1px solid var(--border);
+      background:var(--surface2); color:var(--text); transition:border-color .15s; }
+    .btn-half:hover { border-color:var(--blue); color:var(--blue); }
+    .sync-status { font-size:.78rem; color:var(--muted); margin-top:.6rem; line-height:1.6; }
+
+    /* Data tools */
+    .data-row { display:flex; gap:.75rem; margin-top:.75rem; }
+    .divider { border:none; border-top:1px solid var(--border); margin:2rem 0; }
+  </style>
+</head>
+<body>
+<nav>
+  <a class="brand" href="index.html">Rosie's VLE</a>
+  <span class="sep">›</span>
+  <a href="#">Sync Setup</a>
+</nav>
+
+<div class="shell">
+  <div class="wrap">
+    <h1>Sync Setup</h1>
+    <p class="subtitle">Connect a private GitHub Gist so your XP, streaks, and SR progress sync between phone and desktop.</p>
+
+    <!-- Status -->
+    <div id="status-banner" class="status-banner off">
+      <span class="status-dot"></span>
+      <span id="status-text">Sync not configured</span>
+    </div>
+
+    <!-- Setup form (hidden when configured) -->
+    <div id="setup-form">
+      <label for="input-token">GitHub Personal Access Token</label>
+      <input id="input-token" type="password" placeholder="ghp_xxxxxxxxxxxx" autocomplete="off">
+      <p class="field-hint">
+        Needs <strong>gist</strong> scope only.
+        <a href="https://github.com/settings/tokens/new?scopes=gist&description=Rosie+VLE+Sync" target="_blank">Create one here ↗</a>
+      </p>
+
+      <label for="input-gist">Existing Gist ID <span style="font-weight:400;text-transform:none">(optional — leave blank to create new)</span></label>
+      <input id="input-gist" type="text" placeholder="abc123def456…" autocomplete="off">
+      <p class="field-hint">If you've already set up sync on another device, paste the Gist ID here to link to the same data.</p>
+
+      <button class="btn btn-primary" id="btn-setup">Connect Gist</button>
+      <div class="feedback" id="feedback-setup"></div>
+    </div>
+
+    <!-- Manual sync controls (shown when configured) -->
+    <div id="sync-controls" style="display:none">
+      <div class="section-title">Sync now</div>
+      <div class="sync-row">
+        <button class="btn-half" id="btn-pull">⬇ Pull from Gist</button>
+        <button class="btn-half" id="btn-push">⬆ Push to Gist</button>
+      </div>
+      <div class="sync-status" id="sync-status-text"></div>
+      <div class="feedback" id="feedback-sync"></div>
+
+      <hr class="divider">
+
+      <div class="section-title">Your Gist ID</div>
+      <input id="gist-id-display" type="text" readonly style="cursor:text;opacity:.7">
+      <p class="field-hint">Copy this to set up sync on another device.</p>
+
+      <button class="btn btn-danger" id="btn-disconnect" style="margin-top:.5rem">Disconnect sync</button>
+    </div>
+
+  </div>
+</div>
+
+<script src="sync.js"></script>
+<script src="sr/engine.js"></script>
+<script>
+function showFeedback(id, type, msg) {
+  const el = document.getElementById(id);
+  el.className = `feedback ${type}`;
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function updateStatusBanner() {
+  const st = sync.getStatus();
+  const banner = document.getElementById('status-banner');
+  const text   = document.getElementById('status-text');
+
+  if (st.configured) {
+    banner.className = 'status-banner ok';
+    const pushStr = st.lastPush ? `Last pushed ${new Date(st.lastPush).toLocaleString()}` : 'Never pushed';
+    text.textContent = `Sync active · Gist connected · ${pushStr}`;
+    document.getElementById('setup-form').style.display = 'none';
+    document.getElementById('sync-controls').style.display = 'block';
+    document.getElementById('gist-id-display').value = st.gistId;
+
+    const pullStr = st.lastPull ? new Date(st.lastPull).toLocaleString() : 'never';
+    document.getElementById('sync-status-text').textContent =
+      `Last pull: ${pullStr}  ·  Last push: ${st.lastPush ? new Date(st.lastPush).toLocaleString() : 'never'}`;
+  } else {
+    banner.className = 'status-banner off';
+    text.textContent = 'Sync not configured';
+  }
+}
+
+// ── Setup ──────────────────────────────────────────────────
+document.getElementById('btn-setup').addEventListener('click', async () => {
+  const token  = document.getElementById('input-token').value.trim();
+  const gistId = document.getElementById('input-gist').value.trim() || undefined;
+
+  if (!token) { showFeedback('feedback-setup', 'err', 'Please enter your GitHub token.'); return; }
+
+  const btn = document.getElementById('btn-setup');
+  btn.disabled = true;
+  btn.textContent = 'Connecting…';
+
+  const result = await sync.setup(token, gistId);
+
+  btn.disabled = false;
+  btn.textContent = 'Connect Gist';
+
+  if (result.ok) {
+    showFeedback('feedback-setup', 'ok', `Connected! Gist ID: ${result.gistId}`);
+    updateStatusBanner();
+  } else {
+    showFeedback('feedback-setup', 'err', `Error: ${result.error}`);
+  }
+});
+
+// ── Pull ───────────────────────────────────────────────────
+document.getElementById('btn-pull').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-pull');
+  btn.disabled = true; btn.textContent = 'Pulling…';
+  const result = await sync.pull();
+  btn.disabled = false; btn.textContent = '⬇ Pull from Gist';
+  showFeedback('feedback-sync', result.ok ? 'ok' : 'err',
+    result.ok ? `Pulled. Source: ${result.source}` : `Error: ${result.error}`);
+  updateStatusBanner();
+});
+
+// ── Push ───────────────────────────────────────────────────
+document.getElementById('btn-push').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-push');
+  btn.disabled = true; btn.textContent = 'Pushing…';
+  const result = await sync.push();
+  btn.disabled = false; btn.textContent = '⬆ Push to Gist';
+  showFeedback('feedback-sync', result.ok ? 'ok' : 'err',
+    result.ok ? 'Pushed successfully.' : `Error: ${result.error}`);
+  updateStatusBanner();
+});
+
+// ── Disconnect ─────────────────────────────────────────────
+document.getElementById('btn-disconnect').addEventListener('click', () => {
+  if (!confirm('Disconnect sync? Your local progress is kept, but the Gist link is removed.')) return;
+  localStorage.removeItem('VLE_SYNC_TOKEN');
+  localStorage.removeItem('VLE_SYNC_GIST_ID');
+  localStorage.removeItem('VLE_SYNC_META');
+  document.getElementById('setup-form').style.display = 'block';
+  document.getElementById('sync-controls').style.display = 'none';
+  updateStatusBanner();
+});
+
+updateStatusBanner();
+</script>
+</body>
+</html>
