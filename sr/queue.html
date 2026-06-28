@@ -425,7 +425,27 @@ async function showEnd() {
 function show(id) {
   ['screen-load','screen-pick','screen-empty','screen-study','screen-end']
     .forEach(s => document.getElementById(s).style.display = s === id ? 'block' : 'none');
+  // Push history entry so mobile back button works
+  if (id === 'screen-study' || id === 'screen-end') {
+    history.pushState({ screen: id }, '');
+  }
 }
+
+// Handle mobile back button
+window.addEventListener('popstate', function(e) {
+  const from = e.state && e.state.screen;
+  if (from === 'screen-study') {
+    // Back from end screen → go home
+    location.href = '../index.html';
+  } else {
+    // Back from study screen → picker if there were options, else home
+    if (activeDomains && activeDomains.length > 1) {
+      show('screen-pick');
+    } else {
+      location.href = '../index.html';
+    }
+  }
+});
 
 function showEmpty() {
   show('screen-empty');
