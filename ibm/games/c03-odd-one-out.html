@@ -6,6 +6,16 @@
   <title>C3 Odd One Out — Deep Learning with Keras & TF · VLE</title>
   <link rel="stylesheet" href="../shared.css">
   <script src="../shared.js"></script>
+  <script src="../../domains.js"></script>
+  <script src="../../sr/engine.js"></script>
+  <script src="../../sync.js"></script>
+  <style>
+    #xp-toast { position:fixed; bottom:1.5rem; right:1.5rem; z-index:999;
+      background:#d29922; color:#0d1117; font-size:.85rem; font-weight:700;
+      padding:.5rem 1rem; border-radius:99px; opacity:0; pointer-events:none;
+      transition:opacity .3s ease; }
+    #xp-toast.show { opacity:1; }
+  </style>
   <style>
     .game-shell { max-width: 680px; margin: 0 auto; }
 
@@ -274,7 +284,24 @@ function nextQuestion() {
   else showQuestion();
 }
 
+// ── XP toast ──────────────────────────────────────────────
+function showXPToast(xp) {
+  var el = document.getElementById('xp-toast');
+  if (!el) { el = document.createElement('div'); el.id = 'xp-toast'; document.body.appendChild(el); }
+  el.textContent = '+' + xp + ' XP';
+  el.classList.add('show');
+  setTimeout(function() { el.classList.remove('show'); }, 2200);
+}
 function showResults() {
+  // ── XP award ──
+  var _xp = correct * 4;
+  if (_xp > 0 && typeof engine !== 'undefined') {
+    engine.addXP(_xp, 'ibm');
+    showXPToast(_xp);
+    if (typeof sync !== 'undefined' && sync.isConfigured()) {
+      sync.push().catch(function(){});
+    }
+  }
   const total = activeQuestions.length;
   const pct = correct / total;
   let msg;
