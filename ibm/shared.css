@@ -5,21 +5,22 @@
 
 /* ── Design tokens ─────────────────────────────────────────── */
 :root {
-  --bg:        #0d1117;
-  --surface:   #161b22;
-  --surface2:  #21262d;
-  --border:    #30363d;
-  --text:      #e6edf3;
-  --muted:     #8b949e;
-  --green:     #3fb950;
-  --green-bg:  rgba(63,185,80,.12);
-  --blue:      #58a6ff;
-  --blue-bg:   rgba(88,166,255,.10);
-  --yellow:    #d29922;
-  --yellow-bg: rgba(210,153,34,.12);
-  --red:       #f85149;
-  --red-bg:    rgba(248,81,73,.12);
-  --purple:    #bc8cff;
+  --bg:        #faf6f0;
+  --surface:   #ffffff;
+  --surface2:  #f2ece2;
+  --border:    #e8ddd0;
+  --text:      #2c1f12;
+  --muted:     #8a7a68;
+  --green:     #3d6e30;
+  --green-bg:  rgba(61,110,48,.1);
+  --blue:      #b85430;
+  --blue-bg:   rgba(184,84,48,.1);
+  --yellow:    #a06820;
+  --yellow-bg: rgba(160,104,32,.1);
+  --red:       #b03428;
+  --red-bg:    rgba(176,52,40,.1);
+  --purple:    #7048a0;
+  --purple-bg: rgba(112,72,160,.1);
 }
 
 /* ── Reset + base ──────────────────────────────────────────── */
