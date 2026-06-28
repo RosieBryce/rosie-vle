@@ -424,7 +424,7 @@ async function showEnd() {
 // ── Utils ─────────────────────────────────────────────────────
 function show(id) {
   ['screen-load','screen-pick','screen-empty','screen-study','screen-end']
-    .forEach(s => document.getElementById(s).style.display = s === id ? '' : 'none');
+    .forEach(s => document.getElementById(s).style.display = s === id ? 'block' : 'none');
 }
 
 function showEmpty() {
