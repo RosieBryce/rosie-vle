@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SR Queue · Rosie's VLE</title>
+  <style>
+    /* ── Tokens ── */
+    :root {
+      --bg:#0d1117; --surface:#161b22; --surface2:#21262d;
+      --border:#30363d; --text:#e6edf3; --muted:#8b949e;
+      --green:#3fb950; --green-bg:rgba(63,185,80,.12);
+      --blue:#58a6ff;  --blue-bg:rgba(88,166,255,.10);
+      --yellow:#d29922; --yellow-bg:rgba(210,153,34,.12);
+      --red:#f85149;   --red-bg:rgba(248,81,73,.12);
+    }
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    body { background:var(--bg); color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+      min-height:100vh; display:flex; flex-direction:column; }
+
+    /* ── Nav ── */
+    nav { background:var(--surface); border-bottom:1px solid var(--border);
+      padding:0 1.25rem; height:48px; display:flex; align-items:center; gap:1rem; }
+    nav a { color:var(--text); text-decoration:none; font-size:.875rem; }
+    nav .brand { font-weight:700; }
+    nav .sep { color:var(--border); }
+
+    /* ── Shell ── */
+    .shell { flex:1; display:flex; flex-direction:column; align-items:center;
+      justify-content:center; padding:1.5rem 1rem 3rem; }
+    .card-wrap { width:100%; max-width:560px; }
+
+    /* ── Progress bar ── */
+    .prog-row { display:flex; justify-content:space-between; align-items:center;
+      font-size:.78rem; color:var(--muted); margin-bottom:.5rem; }
+    .prog-bar { height:4px; background:var(--surface2); border-radius:99px;
+      overflow:hidden; margin-bottom:1.5rem; }
+    .prog-fill { height:100%; background:var(--green); border-radius:99px;
+      transition:width .35s ease; }
+
+    /* ── Flashcard ── */
+    .flashcard { background:var(--surface); border:1px solid var(--border);
+      border-radius:14px; overflow:hidden; cursor:pointer; transition:border-color .2s; }
+    .flashcard:hover { border-color:var(--blue); }
+
+    .card-face { padding:2rem 1.75rem; }
+    .face-label { font-size:.7rem; font-weight:700; text-transform:uppercase;
+      letter-spacing:.1em; margin-bottom:.75rem; }
+    .face-label.front { color:var(--blue); }
+    .face-label.back  { color:var(--green); }
+    .face-text { font-size:1rem; line-height:1.7; }
+    .face-text em { font-style:italic; color:var(--muted); }
+
+    .card-back { border-top:1px solid var(--border); background:var(--surface2);
+      display:none; }
+
+    .card-hint { text-align:center; font-size:.75rem; color:var(--muted);
+      padding:.6rem; border-top:1px solid var(--border); }
+
+    /* ── Audio button ── */
+    .audio-row { display:flex; justify-content:flex-end; padding:.5rem .75rem 0; }
+    .btn-audio { background:none; border:1px solid var(--border); border-radius:8px;
+      color:var(--muted); font-size:.8rem; padding:.3rem .7rem; cursor:pointer;
+      display:flex; align-items:center; gap:.3rem; transition:border-color .15s, color .15s; }
+    .btn-audio:hover { border-color:var(--blue); color:var(--blue); }
+
+    /* ── Self-assess ── */
+    .assess { display:flex; gap:.625rem; margin-top:1rem; }
+    .btn-assess { flex:1; padding:.65rem .5rem; border-radius:9px; font-size:.85rem;
+      font-weight:600; border:1px solid; cursor:pointer; transition:opacity .15s; }
+    .btn-assess:hover { opacity:.8; }
+    .btn-got  { background:var(--green-bg);  border-color:rgba(63,185,80,.4);  color:var(--green); }
+    .btn-near { background:var(--yellow-bg); border-color:rgba(210,153,34,.4); color:var(--yellow); }
+    .btn-miss { background:var(--red-bg);    border-color:rgba(248,81,73,.35); color:var(--red); }
+
+    /* ── XP flash ── */
+    .xp-flash { text-align:center; font-size:.8rem; font-weight:700; color:var(--yellow);
+      height:1.4rem; margin-top:.5rem; opacity:0; transition:opacity .2s; }
+    .xp-flash.show { opacity:1; }
+
+    /* ── Domain badge ── */
+    .domain-badge { display:inline-flex; align-items:center; gap:.35rem;
+      font-size:.72rem; font-weight:700; padding:.25rem .65rem; border-radius:99px;
+      border:1px solid; margin-bottom:1rem; }
+
+    /* ── Session end ── */
+    #screen-end { display:none; text-align:center; max-width:480px; }
+    #screen-end h2 { font-size:1.4rem; font-weight:700; margin-bottom:.4rem; }
+    #screen-end p { color:var(--muted); font-size:.9rem; margin-bottom:1.75rem; }
+    .end-stats { display:flex; gap:.75rem; justify-content:center; flex-wrap:wrap; margin-bottom:1.75rem; }
+    .stat-box { background:var(--surface); border:1px solid var(--border); border-radius:10px;
+      padding:.9rem 1.4rem; min-width:90px; }
+    .stat-num { font-size:2rem; font-weight:700; }
+    .stat-lbl { font-size:.72rem; font-weight:600; text-transform:uppercase;
+      letter-spacing:.06em; color:var(--muted); margin-top:.2rem; }
+    .stat-box.green { background:var(--green-bg); border-color:rgba(63,185,80,.3); color:var(--green); }
+    .stat-box.yellow { background:var(--yellow-bg); border-color:rgba(210,153,34,.3); color:var(--yellow); }
+    .end-actions { display:flex; gap:.75rem; justify-content:center; flex-wrap:wrap; }
+    .btn-end { padding:.6rem 1.4rem; border-radius:8px; font-size:.875rem; font-weight:600;
+      cursor:pointer; border:1px solid var(--border); background:var(--surface2);
+      color:var(--text); text-decoration:none; transition:border-color .12s; }
+    .btn-end:hover { border-color:var(--green); color:var(--green); }
+    .btn-end.primary { background:var(--green); border-color:var(--green); color:#fff; }
+    .btn-end.primary:hover { opacity:.85; }
+
+    /* ── Loading / empty ── */
+    #screen-load, #screen-empty { text-align:center; color:var(--muted); }
+    #screen-empty h2 { font-size:1.2rem; color:var(--text); margin-bottom:.5rem; }
+    #screen-empty p  { font-size:.9rem; }
+
+    /* ── Domain picker ── */
+    #screen-pick { text-align:center; max-width:420px; }
+    #screen-pick h2 { font-size:1.1rem; font-weight:700; margin-bottom:.25rem; }
+    #screen-pick p  { color:var(--muted); font-size:.85rem; margin-bottom:1.25rem; }
+    .pick-list { display:flex; flex-direction:column; gap:.75rem; }
+    .btn-pick { display:flex; align-items:center; gap:.85rem; padding:1rem 1.25rem;
+      background:var(--surface); border:1px solid var(--border); border-radius:10px;
+      cursor:pointer; text-align:left; transition:border-color .15s; width:100%; }
+    .btn-pick:hover { border-color:var(--blue); }
+    .pick-icon { font-size:1.4rem; }
+    .pick-name { font-weight:600; font-size:.95rem; }
+    .pick-due  { font-size:.78rem; color:var(--muted); margin-top:.15rem; }
+    .btn-all { margin-top:1rem; padding:.55rem 1.25rem; border-radius:8px;
+      font-size:.85rem; font-weight:600; border:1px solid var(--border);
+      background:var(--surface2); color:var(--text); cursor:pointer; width:100%;
+      transition:border-color .12s; }
+    .btn-all:hover { border-color:var(--blue); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="brand" href="../index.html">Rosie's VLE</a>
+  <span class="sep">›</span>
+  <a href="#">SR Queue</a>
+</nav>
+
+<div class="shell">
+
+  <!-- Loading -->
+  <div id="screen-load" class="card-wrap">Loading deck…</div>
+
+  <!-- Domain picker (shown if IBM deck exists too) -->
+  <div id="screen-pick" class="card-wrap" style="display:none">
+    <h2>What are we studying?</h2>
+    <p>Choose a domain or do everything that's due.</p>
+    <div class="pick-list" id="pick-list"></div>
+    <button class="btn-all" id="btn-all-domains">Study everything due today</button>
+  </div>
+
+  <!-- Empty state -->
+  <div id="screen-empty" class="card-wrap" style="display:none">
+    <h2>All caught up 🎉</h2>
+    <p>Nothing due right now. Come back later or add new cards.</p>
+  </div>
+
+  <!-- Study screen -->
+  <div id="screen-study" class="card-wrap" style="display:none">
+    <div class="prog-row">
+      <span id="prog-label">0 / 0</span>
+      <span id="domain-badge" class="domain-badge"></span>
+    </div>
+    <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+
+    <div class="flashcard" id="flashcard">
+      <div class="audio-row" id="audio-row" style="display:none">
+        <button class="btn-audio" id="btn-audio">🔊 Hear it</button>
+      </div>
+      <div class="card-face">
+        <div class="face-label front">Question</div>
+        <div class="face-text" id="card-front"></div>
+      </div>
+      <div class="card-face card-back" id="card-back">
+        <div class="face-label back">Answer</div>
+        <div class="face-text" id="card-back-text"></div>
+      </div>
+      <div class="card-hint" id="card-hint">Tap to reveal answer</div>
+    </div>
+
+    <div class="assess" id="assess-row" style="display:none">
+      <button class="btn-assess btn-miss" onclick="submitReview(1)">✗ Missed</button>
+      <button class="btn-assess btn-near" onclick="submitReview(3)">~ Nearly</button>
+      <button class="btn-assess btn-got"  onclick="submitReview(5)">✓ Got it</button>
+    </div>
+
+    <div class="xp-flash" id="xp-flash"></div>
+  </div>
+
+  <!-- End screen -->
+  <div id="screen-end" class="card-wrap">
+    <h2 id="end-emoji">✅ Session done!</h2>
+    <p id="end-subtitle"></p>
+    <div class="end-stats">
+      <div class="stat-box green">
+        <div class="stat-num" id="end-got">0</div>
+        <div class="stat-lbl">Got it</div>
+      </div>
+      <div class="stat-box yellow">
+        <div class="stat-num" id="end-near">0</div>
+        <div class="stat-lbl">Nearly</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" id="end-miss">0</div>
+        <div class="stat-lbl">Missed</div>
+      </div>
+      <div class="stat-box green">
+        <div class="stat-num" id="end-xp">0</div>
+        <div class="stat-lbl">XP earned</div>
+      </div>
+    </div>
+    <div class="end-actions">
+      <a href="../index.html" class="btn-end">← Home</a>
+      <button class="btn-end primary" onclick="location.reload()">Study more</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="../domains.js"></script>
+<script src="engine.js"></script>
+<script>
+// ── State ────────────────────────────────────────────────────
+let queue       = [];   // cards to study this session
+let idx         = 0;
+let revealed    = false;
+let sessionStats = { got: 0, near: 0, miss: 0, xp: 0 };
+let currentDomainId = null;
+let activeDomains   = [];
+
+// ── Boot ─────────────────────────────────────────────────────
+async function boot() {
+  const active = DOMAINS.filter(d => d.status === 'active');
+  if (!active.length) { showEmpty(); return; }
+
+  // Fetch all active decks
+  const loaded = [];
+  for (const domain of active) {
+    try {
+      const res = await fetch('../' + domain.deck);
+      if (!res.ok) continue;
+      const cards = await res.json();
+      const { due, fresh } = engine.getDueCards(cards, domain.id, domain.newPerDay || 20);
+      const total = due.length + fresh.length;
+      loaded.push({ domain, due, fresh, total });
+    } catch (e) {
+      console.warn('Could not load deck for', domain.id, e);
+    }
+  }
+
+  const withCards = loaded.filter(d => d.total > 0);
+  if (!withCards.length) { showEmpty(); return; }
+
+  // If only one domain has cards, go straight in
+  if (withCards.length === 1) {
+    startSession(withCards[0]);
+    return;
+  }
+
+  // Otherwise show picker
+  showPicker(withCards);
+}
+
+// ── Picker ───────────────────────────────────────────────────
+function showPicker(options) {
+  activeDomains = options;
+  show('screen-pick');
+
+  const list = document.getElementById('pick-list');
+  list.innerHTML = options.map((o, i) => `
+    <button class="btn-pick" onclick="startSession(activeDomains[${i}])">
+      <span class="pick-icon">${o.domain.icon}</span>
+      <div>
+        <div class="pick-name">${o.domain.name}</div>
+        <div class="pick-due">${o.due.length} due · ${o.fresh.length} new</div>
+      </div>
+    </button>
+  `).join('');
+
+  document.getElementById('btn-all-domains').onclick = () => startAll(options);
+}
+
+function startAll(options) {
+  // Merge all queues, shuffle
+  const merged = [];
+  for (const o of options) {
+    for (const c of [...o.due, ...o.fresh]) merged.push({ ...c, _domainId: o.domain.id });
+  }
+  merged.sort(() => Math.random() - 0.5);
+  queue = merged;
+  idx = 0;
+  currentDomainId = null;
+  show('screen-study');
+  showCard();
+}
+
+// ── Session ──────────────────────────────────────────────────
+function startSession(option) {
+  currentDomainId = option.domain.id;
+  queue = [...option.due, ...option.fresh].map(c => ({ ...c, _domainId: option.domain.id }));
+  idx = 0;
+  show('screen-study');
+  showCard();
+}
+
+function showCard() {
+  if (idx >= queue.length) { showEnd(); return; }
+
+  const card = queue[idx];
+  const domainId = card._domainId || currentDomainId;
+  const domain = DOMAINS.find(d => d.id === domainId);
+
+  revealed = false;
+
+  // Progress
+  document.getElementById('prog-label').textContent = `${idx + 1} / ${queue.length}`;
+  document.getElementById('prog-fill').style.width = `${(idx / queue.length) * 100}%`;
+
+  // Domain badge
+  const badge = document.getElementById('domain-badge');
+  badge.textContent = `${domain.icon} ${domain.name}`;
+  badge.style.color = domain.color;
+  badge.style.borderColor = domain.color + '44';
+  badge.style.background = domain.color + '18';
+
+  // Card content
+  document.getElementById('card-front').innerHTML = formatText(card.front);
+  document.getElementById('card-back-text').innerHTML = formatText(card.back);
+  document.getElementById('card-back').style.display = 'none';
+  document.getElementById('card-hint').textContent = 'Tap to reveal answer';
+  document.getElementById('assess-row').style.display = 'none';
+  document.getElementById('xp-flash').classList.remove('show');
+
+  // Audio
+  const audioRow = document.getElementById('audio-row');
+  if (domain.audio) {
+    audioRow.style.display = 'flex';
+    document.getElementById('btn-audio').onclick = () => speak(card.front, domain.audioLang);
+  } else {
+    audioRow.style.display = 'none';
+  }
+}
+
+// Tap card to reveal
+document.getElementById('flashcard').addEventListener('click', function(e) {
+  if (e.target.closest('#btn-audio')) return;
+  if (revealed) return;
+  revealed = true;
+  document.getElementById('card-back').style.display = 'block';
+  document.getElementById('card-hint').textContent = 'How did you do?';
+  document.getElementById('assess-row').style.display = 'flex';
+});
+
+function submitReview(quality) {
+  const card = queue[idx];
+  const domainId = card._domainId || currentDomainId;
+  const { xpGain } = engine.review(card.id, quality, domainId);
+
+  // Stats
+  if (quality === 5) sessionStats.got++;
+  else if (quality === 3) sessionStats.near++;
+  else sessionStats.miss++;
+  sessionStats.xp += xpGain;
+
+  // XP flash
+  const flash = document.getElementById('xp-flash');
+  flash.textContent = `+${xpGain} XP`;
+  flash.classList.add('show');
+
+  idx++;
+  setTimeout(showCard, 350);
+}
+
+// ── TTS ──────────────────────────────────────────────────────
+function speak(text, lang) {
+  if (!('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = lang || 'sv-SE';
+  speechSynthesis.speak(u);
+}
+
+// ── End screen ───────────────────────────────────────────────
+function showEnd() {
+  document.getElementById('prog-fill').style.width = '100%';
+  const total = sessionStats.got + sessionStats.near + sessionStats.miss;
+  const pct   = total ? Math.round((sessionStats.got / total) * 100) : 0;
+
+  document.getElementById('end-emoji').textContent =
+    pct >= 80 ? '🔥 Strong session!' :
+    pct >= 50 ? '✅ Session done!' : '💪 Keep at it!';
+  document.getElementById('end-subtitle').textContent =
+    `${total} cards reviewed · ${pct}% got it first time`;
+
+  document.getElementById('end-got').textContent  = sessionStats.got;
+  document.getElementById('end-near').textContent = sessionStats.near;
+  document.getElementById('end-miss').textContent = sessionStats.miss;
+  document.getElementById('end-xp').textContent   = sessionStats.xp;
+
+  show('screen-end');
+}
+
+// ── Utils ─────────────────────────────────────────────────────
+function show(id) {
+  ['screen-load','screen-pick','screen-empty','screen-study','screen-end']
+    .forEach(s => document.getElementById(s).style.display = s === id ? '' : 'none');
+}
+
+function showEmpty() {
+  show('screen-empty');
+}
+
+function formatText(text) {
+  // Convert *italic* markdown to <em> and preserve newlines
+  return text
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/\n/g, '<br>');
+}
+
+// ── Go ────────────────────────────────────────────────────────
+boot();
+</script>
+</body>
+</html>
