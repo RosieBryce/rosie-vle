@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="sv">
 <head>
 <meta charset="UTF-8">
@@ -93,6 +93,7 @@ input[type=text]:disabled { opacity:.4; }
     <div class="tense-label" id="tenseLabel"></div>
     <div class="tense-hint" id="tenseHint"></div>
     <div class="inf" id="inf"></div>
+    <button class="btn-hear" onclick="swSpeak(document.getElementById('inf').textContent)">🔊 Hear again</button>
     <div class="en-gloss" id="enGloss"></div>
     <div class="group-badge" id="groupBadge"></div>
   </div>
@@ -218,6 +219,7 @@ function showCard(){
   document.getElementById('tenseLabel').textContent=TENSES[tense].toUpperCase();
   document.getElementById('tenseHint').textContent=TENSE_HINTS[tense];
   document.getElementById('inf').textContent=verb.inf;
+  swSpeak(verb.inf);
   document.getElementById('enGloss').textContent='to '+verb.en;
   document.getElementById('groupBadge').textContent='Group '+verb.g;
   document.getElementById('counter').textContent=`${cur+1} / ${queue.length}`;

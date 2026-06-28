@@ -94,7 +94,8 @@ input[type=text]:disabled { opacity:.4; }
   <div class="card">
     <div class="form-label" id="formLabel"></div>
     <div class="form-hint" id="formHint"></div>
-    <div class="noun-big" id="nounBig"></div>
+    <div class="noun-big" id="nounBig">
+    <button class="btn-hear" id="btn-hear-plural" onclick="swSpeak(document.getElementById(\'nounBig\').textContent)">🔊 Hear again</button></div>
     <div class="en-gloss" id="enGloss"></div>
     <div class="group-badge" id="groupBadge"></div>
   </div>
@@ -228,6 +229,8 @@ function showCard(){
   document.getElementById('formLabel').textContent=fd.label;
   document.getElementById('formHint').textContent=fd.hint;
   document.getElementById('nounBig').textContent=noun.sg;
+  swSpeak(noun.sg);
+  var bh=document.getElementById('btn-hear-plural'); if(bh) bh.style.display='inline-flex';
   document.getElementById('enGloss').textContent=noun.en;
   document.getElementById('groupBadge').textContent=GROUPS[noun.g];
   document.getElementById('counter').textContent=`${cur+1} / ${queue.length}`;

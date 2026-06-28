@@ -165,7 +165,7 @@
 
     <div class="flashcard" id="flashcard">
       <div class="audio-row" id="audio-row" style="display:none">
-        <button class="btn-audio" id="btn-audio">🔊 Hear it</button>
+        <button class="btn-audio" id="btn-audio">🔊 Hear again</button>
       </div>
       <div class="card-face">
         <div class="face-label front">Question</div>
@@ -350,6 +350,8 @@ function showCard() {
   if (domain.audio) {
     audioRow.style.display = 'flex';
     document.getElementById('btn-audio').onclick = () => speak(card.front, domain.audioLang);
+    // Auto-speak on card load
+    speak(card.front, domain.audioLang);
   } else {
     audioRow.style.display = 'none';
   }
