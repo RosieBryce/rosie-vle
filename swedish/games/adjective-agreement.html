@@ -39,6 +39,13 @@ input[type=text]:disabled { opacity:.4; }
 .end { display:none; text-align:center; max-width:480px; margin-top:1rem; }
 .score-big { font-size:5rem; font-weight:700; color:var(--blue); line-height:1; }
 .score-sub { color:var(--muted); margin-bottom:2rem; }
+.btn-hear {
+  background:none; border:1px solid var(--border); border-radius:8px;
+  color:var(--muted); font-size:.8rem; padding:.3rem .75rem; cursor:pointer;
+  display:inline-flex; align-items:center; gap:.3rem;
+  transition:border-color .15s, color .15s; margin-top:.5rem;
+}
+.btn-hear:hover { border-color:var(--blue); color:var(--blue); }
 </style>
 </head>
 <body>
@@ -225,6 +232,14 @@ startRound();
 <script src="../../sr/engine.js"></script>
 <script src="../../sync.js"></script>
 <script>
+function swSpeak(text) {
+  if (!text || !('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  var u = new SpeechSynthesisUtterance(text.trim());
+  u.lang = 'sv-SE';
+  speechSynthesis.speak(u);
+}
+
 function swAddXP(amount) {
   if (amount <= 0) return;
   if (typeof engine !== 'undefined') engine.addXP(amount, 'swedish');

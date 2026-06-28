@@ -79,6 +79,13 @@ h1 { font-size: 1rem; font-weight: 600; color: var(--muted);
 .nav-home { display:block; width:100%; max-width:600px; font-size:.75rem; color:var(--muted); text-decoration:none; letter-spacing:.06em; margin-bottom:1.25rem; opacity:.7; transition:color .15s, opacity .15s; }
 .nav-home:hover { color:var(--blue); opacity:1; }
 .setup-err { background:#3f2d2d; border:1px solid var(--red); border-radius:.5rem; padding:.65rem 1rem; font-size:.85rem; color:var(--red); margin-top:.75rem; display:none; }
+.btn-hear {
+  background:none; border:1px solid var(--border); border-radius:8px;
+  color:var(--muted); font-size:.8rem; padding:.3rem .75rem; cursor:pointer;
+  display:inline-flex; align-items:center; gap:.3rem;
+  transition:border-color .15s, color .15s; margin-top:.5rem;
+}
+.btn-hear:hover { border-color:var(--blue); color:var(--blue); }
 </style>
 </head>
 <body>
@@ -241,6 +248,8 @@ function makeTile(item) {
   div.dataset.id = item.id;
   div.dataset.side = item.side;
   div.textContent = item.text;
+  div.dataset.id = item.id;
+  div.dataset.side = item.side;
   div.addEventListener('click', () => onTileClick(div));
   return div;
 }
@@ -299,6 +308,14 @@ buildSetup();
 <script src="../../sr/engine.js"></script>
 <script src="../../sync.js"></script>
 <script>
+function swSpeak(text) {
+  if (!text || !('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  var u = new SpeechSynthesisUtterance(text.trim());
+  u.lang = 'sv-SE';
+  speechSynthesis.speak(u);
+}
+
 function swAddXP(amount) {
   if (amount <= 0) return;
   if (typeof engine !== 'undefined') engine.addXP(amount, 'swedish');
