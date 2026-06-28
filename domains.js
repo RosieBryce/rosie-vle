@@ -11,7 +11,7 @@ const DOMAINS = [
     icon:     '🤖',
     status:   'active',       // 'active' | 'snoozed' | 'done'
     color:    '#2563eb',
-    deadline: '2026-07-31',
+    deadline: '2026-09-01',
     prize:    'Nintendo Switch 2 + Pokopia',
     deck:     'data/decks/ibm.json',
     hub:      'ibm/index.html',
