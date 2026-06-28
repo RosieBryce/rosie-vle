@@ -5,76 +5,407 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rosie's VLE</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background: #0d1117;
-      color: #e6edf3;
-      font-family: system-ui, -apple-system, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem;
+    :root {
+      --bg:#0d1117; --surface:#161b22; --surface2:#21262d;
+      --border:#30363d; --text:#e6edf3; --muted:#8b949e;
+      --green:#3fb950; --green-bg:rgba(63,185,80,.12);
+      --blue:#58a6ff;  --blue-bg:rgba(88,166,255,.10);
+      --yellow:#d29922; --yellow-bg:rgba(210,153,34,.12);
+      --red:#f85149;   --red-bg:rgba(248,81,73,.12);
+      --purple:#bc8cff; --purple-bg:rgba(188,140,255,.12);
     }
-    h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -.03em; margin-bottom: .5rem; }
-    p { color: #8b949e; font-size: .9rem; margin-bottom: 2rem; }
-    .domains { display: flex; flex-direction: column; gap: 1rem; width: 100%; max-width: 400px; }
-    a.domain-card {
-      display: flex; align-items: center; gap: 1rem;
-      padding: 1.25rem 1.5rem;
-      border: 1px solid #21262d;
-      border-radius: 10px;
-      background: #161b22;
-      text-decoration: none;
-      color: #e6edf3;
-      font-weight: 600;
-      font-size: 1rem;
-      transition: border-color .15s;
-    }
-    a.domain-card:hover { border-color: #58a6ff; }
-    .icon { font-size: 1.5rem; }
-    .meta { font-size: .8rem; color: #8b949e; font-weight: 400; margin-top: .2rem; }
-    .coming-soon {
-      margin-top: 2.5rem;
-      font-size: .78rem;
-      color: #484f58;
-      text-align: center;
-    }
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    body { background:var(--bg); color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+      min-height:100vh; }
+
+    /* ── Nav ── */
+    nav { background:var(--surface); border-bottom:1px solid var(--border);
+      padding:0 1.25rem; height:48px; display:flex; align-items:center;
+      justify-content:space-between; }
+    .nav-brand { font-weight:700; font-size:.95rem; color:var(--text); text-decoration:none; }
+    .nav-links { display:flex; gap:1.25rem; }
+    .nav-links a { color:var(--muted); font-size:.8rem; text-decoration:none;
+      transition:color .15s; }
+    .nav-links a:hover { color:var(--text); }
+
+    /* ── Layout ── */
+    .page { max-width:600px; margin:0 auto; padding:1.5rem 1rem 4rem; }
+
+    /* ── XP Hero ── */
+    .hero { background:var(--surface); border:1px solid var(--border);
+      border-radius:14px; padding:1.5rem; margin-bottom:1.25rem; }
+    .hero-top { display:flex; justify-content:space-between; align-items:flex-start;
+      margin-bottom:1rem; }
+    .level-badge { font-size:.72rem; font-weight:700; text-transform:uppercase;
+      letter-spacing:.08em; padding:.25rem .7rem; border-radius:99px;
+      background:var(--purple-bg); color:var(--purple); border:1px solid rgba(188,140,255,.3); }
+    .xp-numbers { text-align:right; }
+    .xp-total { font-size:1.5rem; font-weight:700; letter-spacing:-.03em; color:var(--text); }
+    .xp-label { font-size:.72rem; color:var(--muted); }
+    .level-name { font-size:1.1rem; font-weight:700; letter-spacing:-.02em; margin-bottom:.25rem; }
+    .level-sub  { font-size:.8rem; color:var(--muted); margin-bottom:.85rem; }
+
+    /* XP bar */
+    .xp-bar-wrap { margin-bottom:.4rem; }
+    .xp-bar { height:6px; background:var(--surface2); border-radius:99px; overflow:hidden; }
+    .xp-bar-fill { height:100%; background:linear-gradient(90deg,#bc8cff,#58a6ff);
+      border-radius:99px; transition:width .6s ease; }
+    .xp-bar-label { display:flex; justify-content:space-between;
+      font-size:.72rem; color:var(--muted); margin-top:.35rem; }
+
+    /* ── Streak row ── */
+    .streak-row { display:flex; gap:.75rem; margin-bottom:1.25rem; }
+    .streak-card { flex:1; background:var(--surface); border:1px solid var(--border);
+      border-radius:10px; padding:.85rem 1rem; text-align:center; }
+    .streak-num { font-size:1.6rem; font-weight:700; }
+    .streak-num.hot { color:var(--yellow); }
+    .streak-lbl { font-size:.72rem; color:var(--muted); font-weight:600;
+      text-transform:uppercase; letter-spacing:.05em; margin-top:.1rem; }
+
+    /* ── Section header ── */
+    .section-head { font-size:.75rem; font-weight:700; text-transform:uppercase;
+      letter-spacing:.08em; color:var(--muted); margin:1.5rem 0 .7rem; }
+
+    /* ── SR banner ── */
+    .sr-banner { background:var(--surface); border:1px solid var(--border);
+      border-radius:12px; padding:1rem 1.25rem; margin-bottom:1.25rem;
+      display:flex; align-items:center; justify-content:space-between; gap:1rem; }
+    .sr-info { flex:1; }
+    .sr-count { font-size:1.3rem; font-weight:700; letter-spacing:-.02em; }
+    .sr-count span { color:var(--green); }
+    .sr-sub   { font-size:.8rem; color:var(--muted); margin-top:.15rem; }
+    .btn-study { padding:.6rem 1.25rem; background:var(--green); color:#fff;
+      border:none; border-radius:8px; font-size:.875rem; font-weight:600;
+      cursor:pointer; text-decoration:none; white-space:nowrap;
+      transition:opacity .15s; display:inline-block; }
+    .btn-study:hover { opacity:.85; }
+    .btn-study.empty { background:var(--surface2); color:var(--muted);
+      border:1px solid var(--border); cursor:default; }
+    .btn-study.empty:hover { opacity:1; }
+
+    /* ── Domain cards ── */
+    .domain-grid { display:flex; flex-direction:column; gap:.75rem; }
+    .domain-card { background:var(--surface); border:1px solid var(--border);
+      border-radius:12px; padding:1.1rem 1.25rem;
+      display:flex; align-items:center; gap:1rem;
+      text-decoration:none; color:var(--text); transition:border-color .15s; }
+    .domain-card:hover { border-color:var(--blue); }
+    .domain-card.snoozed { opacity:.45; }
+    .d-icon  { font-size:1.5rem; flex-shrink:0; }
+    .d-body  { flex:1; min-width:0; }
+    .d-name  { font-weight:600; font-size:.95rem; }
+    .d-meta  { font-size:.78rem; color:var(--muted); margin-top:.2rem; }
+    .d-right { text-align:right; flex-shrink:0; }
+    .d-due   { font-size:1rem; font-weight:700; color:var(--green); }
+    .d-due-lbl { font-size:.7rem; color:var(--muted); }
+    .d-due.none { color:var(--muted); font-size:.85rem; font-weight:400; }
+    .d-badge { font-size:.68rem; font-weight:700; padding:.15rem .5rem;
+      border-radius:99px; margin-top:.3rem; display:inline-block; }
+    .badge-active { background:var(--green-bg); color:var(--green); }
+    .badge-snoozed { background:var(--surface2); color:var(--muted); }
+    .badge-done    { background:var(--blue-bg); color:var(--blue); }
+
+    /* ── Deadline countdown ── */
+    .deadline-card { background:var(--surface); border:1px solid var(--border);
+      border-radius:12px; padding:1rem 1.25rem; margin-bottom:.75rem; }
+    .deadline-top { display:flex; align-items:center; justify-content:space-between;
+      margin-bottom:.6rem; }
+    .deadline-label { font-size:.78rem; font-weight:700; color:var(--yellow); }
+    .deadline-prize { font-size:.75rem; color:var(--muted); }
+    .countdown-row { display:flex; gap:.5rem; }
+    .count-unit { background:var(--surface2); border-radius:7px; padding:.5rem .6rem;
+      text-align:center; flex:1; }
+    .count-num { font-size:1.2rem; font-weight:700; letter-spacing:-.02em; }
+    .count-lbl { font-size:.6rem; color:var(--muted); text-transform:uppercase;
+      letter-spacing:.05em; margin-top:.1rem; }
+
+    /* ── Sync note ── */
+    .sync-note { text-align:center; font-size:.75rem; color:var(--muted);
+      margin-top:2rem; }
+    .sync-note a { color:var(--blue); text-decoration:none; }
+    .sync-note a:hover { text-decoration:underline; }
+
+    /* ── Loading skeleton ── */
+    .skeleton { background:var(--surface2); border-radius:6px;
+      animation:pulse 1.5s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:.9} }
   </style>
 </head>
 <body>
-  <h1>Rosie's VLE</h1>
-  <p>Command Centre — coming soon</p>
 
-  <div class="domains">
-    <a class="domain-card" href="ibm/index.html">
-      <span class="icon">🤖</span>
+<nav>
+  <a class="nav-brand" href="index.html">Rosie's VLE</a>
+  <div class="nav-links">
+    <a href="sr/queue.html">SR Queue</a>
+    <a href="ibm/index.html">IBM</a>
+    <a href="sync-setup.html">Sync</a>
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- XP Hero -->
+  <div class="hero">
+    <div class="hero-top">
       <div>
-        IBM AI Engineering
-        <div class="meta">Active · deadline Jul 31 2026</div>
+        <div class="level-name" id="level-name">—</div>
+        <div class="level-sub"  id="level-sub">Loading…</div>
       </div>
-    </a>
-    <a class="domain-card" href="swedish/index.html">
-      <span class="icon">🫎</span>
-      <div>
-        Swedish
-        <div class="meta">Active</div>
+      <div class="xp-numbers">
+        <div class="xp-total" id="xp-total">—</div>
+        <div class="xp-label">total XP</div>
       </div>
-    </a>
+    </div>
+    <div class="xp-bar-wrap">
+      <div class="xp-bar"><div class="xp-bar-fill" id="xp-fill" style="width:0%"></div></div>
+      <div class="xp-bar-label">
+        <span id="xp-level-floor">0</span>
+        <span id="xp-next-label">next level</span>
+        <span id="xp-level-ceil">—</span>
+      </div>
+    </div>
   </div>
 
-  <a class="domain-card" href="sr/queue.html" style="border-color:#6e40c9;margin-top:.5rem">
-    <span class="icon">🃏</span>
-    <div>
-      SR Queue
-      <div class="meta">Spaced repetition · all domains</div>
+  <!-- Streak row -->
+  <div class="streak-row" id="streak-row">
+    <div class="streak-card">
+      <div class="streak-num" id="streak-global">—</div>
+      <div class="streak-lbl">day streak</div>
     </div>
-  </a>
+    <!-- domain streaks injected here -->
+  </div>
 
-  <p class="coming-soon" style="margin-top:1.5rem">
-    Full command centre coming in Phase 6 ·
-    <a href="sync-setup.html" style="color:#58a6ff">Set up sync ↗</a>
-  </p>
+  <!-- SR Banner -->
+  <div class="section-head">Today's queue</div>
+  <div class="sr-banner">
+    <div class="sr-info">
+      <div class="sr-count" id="sr-count"><span>—</span> cards due</div>
+      <div class="sr-sub"  id="sr-sub">Loading…</div>
+    </div>
+    <a href="sr/queue.html" class="btn-study" id="btn-study">Study now</a>
+  </div>
+
+  <!-- IBM Deadline -->
+  <div class="section-head">Deadline</div>
+  <div class="deadline-card">
+    <div class="deadline-top">
+      <span class="deadline-label">🎮 IBM AI Engineering</span>
+      <span class="deadline-prize">Prize: Nintendo Switch 2 + Pokopia</span>
+    </div>
+    <div class="countdown-row">
+      <div class="count-unit"><div class="count-num" id="cd-days">—</div><div class="count-lbl">days</div></div>
+      <div class="count-unit"><div class="count-num" id="cd-hours">—</div><div class="count-lbl">hours</div></div>
+      <div class="count-unit"><div class="count-num" id="cd-mins">—</div><div class="count-lbl">mins</div></div>
+      <div class="count-unit"><div class="count-num" id="cd-secs">—</div><div class="count-lbl">secs</div></div>
+    </div>
+  </div>
+
+  <!-- Domain Cards -->
+  <div class="section-head">Domains</div>
+  <div class="domain-grid" id="domain-grid">
+    <div class="skeleton" style="height:72px;border-radius:12px"></div>
+    <div class="skeleton" style="height:72px;border-radius:12px"></div>
+  </div>
+
+  <!-- Sync note -->
+  <div class="sync-note" id="sync-note"></div>
+
+</div>
+
+<script src="domains.js"></script>
+<script src="sr/engine.js"></script>
+<script src="sync.js"></script>
+<script>
+
+/* ── Levels ──────────────────────────────────────────────── */
+const LEVELS = [
+  { min:0,     max:499,   name:'Perceptron',       sub:'Just getting started' },
+  { min:500,   max:1499,  name:'Gradient Descender', sub:'Finding your footing' },
+  { min:1500,  max:3499,  name:'Deep Learner',      sub:'Going layer by layer' },
+  { min:3500,  max:6999,  name:'Transformer',       sub:'Attention is all you need' },
+  { min:7000,  max:11999, name:'Fine-tuner',        sub:'Dialling in the details' },
+  { min:12000, max:Infinity, name:'Gradient Wizard', sub:'Maximum intelligence unlocked' },
+];
+
+function getLevel(xp) {
+  return LEVELS.find(l => xp >= l.min && xp <= l.max) || LEVELS[0];
+}
+
+/* ── XP display ──────────────────────────────────────────── */
+function renderXP(xp) {
+  const level = getLevel(xp);
+  const isMax = level.max === Infinity;
+  const floor = level.min;
+  const ceil  = isMax ? xp : level.max + 1;
+  const pct   = isMax ? 100 : Math.round(((xp - floor) / (ceil - floor)) * 100);
+
+  document.getElementById('level-name').textContent  = level.name;
+  document.getElementById('level-sub').textContent   = level.sub;
+  document.getElementById('xp-total').textContent    = xp.toLocaleString();
+  document.getElementById('xp-fill').style.width     = pct + '%';
+  document.getElementById('xp-level-floor').textContent = floor.toLocaleString();
+  document.getElementById('xp-level-ceil').textContent  = isMax ? '∞' : ceil.toLocaleString();
+  document.getElementById('xp-next-label').textContent  = isMax ? 'max level' : 'next level';
+}
+
+/* ── Streaks ─────────────────────────────────────────────── */
+function renderStreaks(streakData) {
+  document.getElementById('streak-global').textContent = streakData.global;
+  if (streakData.global > 0) {
+    document.getElementById('streak-global').classList.add('hot');
+  }
+
+  const row = document.getElementById('streak-row');
+  const active = DOMAINS.filter(d => d.status === 'active');
+  active.forEach(domain => {
+    const val = streakData.byDomain[domain.id] || 0;
+    const div = document.createElement('div');
+    div.className = 'streak-card';
+    div.innerHTML = `
+      <div class="streak-num${val > 0 ? ' hot' : ''}">${val}</div>
+      <div class="streak-lbl">${domain.icon} streak</div>`;
+    row.appendChild(div);
+  });
+}
+
+/* ── SR count ────────────────────────────────────────────── */
+async function renderSRCount() {
+  let totalDue = 0, totalNew = 0;
+  const active = DOMAINS.filter(d => d.status === 'active');
+
+  for (const domain of active) {
+    try {
+      const res = await fetch(domain.deck);
+      if (!res.ok) continue;
+      const cards = await res.json();
+      const { due, fresh } = engine.getDueCards(cards, domain.id, domain.newPerDay || 20);
+      totalDue += due.length;
+      totalNew += fresh.length;
+    } catch {}
+  }
+
+  const total = totalDue + totalNew;
+  const countEl = document.getElementById('sr-count');
+  const subEl   = document.getElementById('sr-sub');
+  const btn     = document.getElementById('btn-study');
+
+  countEl.innerHTML = `<span>${total}</span> cards due`;
+  subEl.textContent = total > 0
+    ? `${totalDue} reviews · ${totalNew} new · ~${Math.ceil(total * 0.5)} min`
+    : 'All caught up — check back later';
+
+  if (total === 0) {
+    btn.className = 'btn-study empty';
+    btn.textContent = 'All clear ✓';
+  }
+
+  return { totalDue, totalNew };
+}
+
+/* ── Domain cards ────────────────────────────────────────── */
+async function renderDomains() {
+  const grid = document.getElementById('domain-grid');
+  grid.innerHTML = '';
+
+  for (const domain of DOMAINS) {
+    let dueCount = null;
+    if (domain.status === 'active') {
+      try {
+        const res = await fetch(domain.deck);
+        if (res.ok) {
+          const cards = await res.json();
+          const { due, fresh } = engine.getDueCards(cards, domain.id, domain.newPerDay || 20);
+          dueCount = due.length + fresh.length;
+        }
+      } catch {}
+    }
+
+    const deadlineStr = domain.deadline
+      ? ` · deadline ${new Date(domain.deadline).toLocaleDateString('en-GB', {day:'numeric',month:'short'})}`
+      : '';
+
+    const dueHtml = domain.status === 'snoozed'
+      ? `<div class="d-due none">snoozed</div>`
+      : dueCount === null
+        ? `<div class="d-due none">deck pending</div>`
+      : dueCount > 0
+        ? `<div class="d-due">${dueCount}</div><div class="d-due-lbl">due today</div>`
+        : `<div class="d-due none">all clear</div>`;
+
+    const card = document.createElement('a');
+    card.href = domain.hub;
+    card.className = `domain-card${domain.status === 'snoozed' ? ' snoozed' : ''}`;
+    card.innerHTML = `
+      <span class="d-icon">${domain.icon}</span>
+      <div class="d-body">
+        <div class="d-name">${domain.name}</div>
+        <div class="d-meta">${domain.status}${deadlineStr}</div>
+      </div>
+      <div class="d-right">
+        ${dueHtml}
+        <span class="d-badge badge-${domain.status}">${domain.status}</span>
+      </div>`;
+    grid.appendChild(card);
+  }
+}
+
+/* ── Countdown ───────────────────────────────────────────── */
+function updateCountdown() {
+  const ibm = DOMAINS.find(d => d.id === 'ibm');
+  if (!ibm?.deadline) return;
+
+  const target = new Date(ibm.deadline + 'T23:59:59').getTime();
+  const now    = Date.now();
+  const diff   = Math.max(0, target - now);
+
+  const days  = Math.floor(diff / 86400000);
+  const hours = Math.floor((diff % 86400000) / 3600000);
+  const mins  = Math.floor((diff % 3600000)  / 60000);
+  const secs  = Math.floor((diff % 60000)    / 1000);
+
+  document.getElementById('cd-days').textContent  = days;
+  document.getElementById('cd-hours').textContent = String(hours).padStart(2,'0');
+  document.getElementById('cd-mins').textContent  = String(mins).padStart(2,'0');
+  document.getElementById('cd-secs').textContent  = String(secs).padStart(2,'0');
+}
+
+/* ── Sync note ───────────────────────────────────────────── */
+function renderSyncNote() {
+  const note = document.getElementById('sync-note');
+  if (sync.isConfigured()) {
+    const st = sync.getStatus();
+    const when = st.lastPull ? new Date(st.lastPull).toLocaleTimeString() : 'never';
+    note.innerHTML = `☁ Synced · last pull ${when} · <a href="sync-setup.html">settings</a>`;
+  } else {
+    note.innerHTML = `<a href="sync-setup.html">Set up sync</a> to keep progress across devices.`;
+  }
+}
+
+/* ── Boot ────────────────────────────────────────────────── */
+async function boot() {
+  // Pull from Gist first
+  if (sync.isConfigured()) {
+    await sync.pull().catch(() => {});
+  }
+
+  const progress = engine.getProgress();
+  const streaks  = engine.getStreak();
+
+  renderXP(progress.xp || 0);
+  renderStreaks(streaks);
+  renderSyncNote();
+
+  // These fetch decks — run in parallel
+  renderSRCount();
+  renderDomains();
+
+  // Countdown — tick every second
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+}
+
+boot();
+</script>
 </body>
 </html>
